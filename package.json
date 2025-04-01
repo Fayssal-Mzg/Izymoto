@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "vercel-build": "next build"
+  },
+  "engines": {
+    "node": ">=18.x"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.2",
@@ -23,11 +27,13 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-intersection-observer": "^9.16.0",
+    "react-toastify": "^11.0.5",
     "recharts": "^2.15.1",
     "shadcn-ui": "^0.9.4",
     "stripe": "^17.7.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
+    "toastify": "^2.0.1",
     "ui": "github:shadcn/ui"
   },
   "devDependencies": {
