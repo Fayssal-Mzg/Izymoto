@@ -22,6 +22,8 @@
       ]
     }
   ],
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next"
+  "installCommand": "npm install --no-optional --legacy-peer-deps --force",
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs"
 }
