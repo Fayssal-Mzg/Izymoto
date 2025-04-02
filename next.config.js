@@ -1,24 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  // Pas besoin de spécifier swcMinify: true car c'est déjà la valeur par défaut
   images: {
-    domains: ["firebasestorage.googleapis.com"], // Ajoutez ici vos domaines d'images si nécessaire
+    domains: ["firebasestorage.googleapis.com"],
     unoptimized: true,
   },
+  // Configuration ESLint et TypeScript pour le déploiement
   eslint: {
-    // Désactiver ESLint pendant la build pour éviter les erreurs bloquantes
-    // Mais gardez lint activé pendant le développement
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Désactiver TypeScript pendant la build pour éviter les erreurs bloquantes
-    // Mais gardez la vérification activée pendant le développement
     ignoreBuildErrors: true,
-  },
-  experimental: {
-    serverComponentsExternalPackages: ["firebase", "firebase-admin"],
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
