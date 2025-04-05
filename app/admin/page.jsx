@@ -1,4 +1,3 @@
-// app/admin/page.jsx
 "use client";
 
 import AdminLayout from "./components/AdminLayout";
@@ -52,61 +51,71 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold mb-6">Tableau de bord</h1>
+      <div className="px-4 sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-bold mb-6">Tableau de bord</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-500 uppercase">
-            Total Réservations
-          </h2>
-          <p className="mt-2 text-3xl font-bold">{stats?.totalBookings || 0}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-500 uppercase">
+              Total Réservations
+            </h2>
+            <p className="mt-2 text-2xl sm:text-3xl font-bold">
+              {stats?.totalBookings || 0}
+            </p>
+          </div>
+
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-500 uppercase">
+              Réservations aujourd'hui
+            </h2>
+            <p className="mt-2 text-2xl sm:text-3xl font-bold">
+              {stats?.todayBookings || 0}
+            </p>
+          </div>
+
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-500 uppercase">
+              Utilisateurs
+            </h2>
+            <p className="mt-2 text-2xl sm:text-3xl font-bold">
+              {stats?.totalUsers || 0}
+            </p>
+          </div>
+
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-500 uppercase">
+              Chiffre d'affaires
+            </h2>
+            <p className="mt-2 text-2xl sm:text-3xl font-bold">
+              {(stats?.totalRevenue || 0).toFixed(2)}€
+            </p>
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-500 uppercase">
-            Réservations aujourd'hui
-          </h2>
-          <p className="mt-2 text-3xl font-bold">{stats?.todayBookings || 0}</p>
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow mb-8">
+          <h2 className="text-lg font-medium mb-4">Aperçu</h2>
+          <div className="h-64 sm:h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="total" fill="#ffc107" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-500 uppercase">
-            Utilisateurs
-          </h2>
-          <p className="mt-2 text-3xl font-bold">{stats?.totalUsers || 0}</p>
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+          <h2 className="text-lg font-medium mb-4">Activité récente</h2>
+          <p className="text-gray-500">
+            Consultez la page des réservations pour voir les activités récentes.
+          </p>
         </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-sm font-medium text-gray-500 uppercase">
-            Chiffre d'affaires
-          </h2>
-          <p className="mt-2 text-3xl font-bold">{stats?.totalRevenue || 0}€</p>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-lg shadow mb-8">
-        <h2 className="text-lg font-medium mb-4">Aperçu</h2>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="total" fill="#ffc107" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-medium mb-4">Activité récente</h2>
-        <p className="text-gray-500">
-          Consultez la page des réservations pour voir les activités récentes.
-        </p>
       </div>
     </AdminLayout>
   );

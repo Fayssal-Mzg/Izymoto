@@ -179,79 +179,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Notre équipe */}
-      <section
-        ref={teamRef}
-        className={cn(
-          "py-20 bg-gray-100 transition-all duration-1000 transform",
-          teamInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
-        )}
-      >
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-12 text-center">
-              Notre équipe
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-white rounded-lg overflow-hidden shadow-md">
-                <div className="h-64 bg-gray-300 relative">
-                  <Image
-                    src="/founder.jpg"
-                    alt="Fondateur d'IzyMoto"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-1">Thomas Martin</h3>
-                  <p className="text-primary mb-3">Fondateur & CEO</p>
-                  <p className="text-gray-600">
-                    Passionné de deux-roues et d'innovation, Thomas a fondé
-                    IzyMoto avec la vision de transformer la mobilité urbaine.
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white rounded-lg overflow-hidden shadow-md">
-                <div className="h-64 bg-gray-300 relative">
-                  <Image
-                    src="/operations.jpg"
-                    alt="Directrice des opérations"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-1">Sophie Durand</h3>
-                  <p className="text-primary mb-3">Directrice des Opérations</p>
-                  <p className="text-gray-600">
-                    Avec une expérience dans la logistique, Sophie coordonne
-                    notre flotte et assure l'efficacité de nos services.
-                  </p>
-                </div>
-              </div>
-              <div className="bg-white rounded-lg overflow-hidden shadow-md">
-                <div className="h-64 bg-gray-300 relative">
-                  <Image
-                    src="/lead-driver.jpg"
-                    alt="Chef pilote"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-1">Julien Lefort</h3>
-                  <p className="text-primary mb-3">Chef Pilote</p>
-                  <p className="text-gray-600">
-                    Ancien pilote professionnel, Julien forme notre équipe de
-                    pilotes et garantit les plus hauts standards de conduite.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Nos chiffres */}
       <section className="py-20 bg-black text-white">
         <div className="container mx-auto px-4">
@@ -260,25 +187,25 @@ export default function AboutPage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-primary mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">
                 25+
               </div>
               <p className="text-lg">Pilotes experts</p>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-primary mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">
                 5000+
               </div>
               <p className="text-lg">Courses réalisées</p>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-primary mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">
                 98%
               </div>
               <p className="text-lg">Clients satisfaits</p>
             </div>
             <div>
-              <div className="text-4xl md:text-5xl font-bold text-primary mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2">
                 15 min
               </div>
               <p className="text-lg">Délai moyen d'arrivée</p>

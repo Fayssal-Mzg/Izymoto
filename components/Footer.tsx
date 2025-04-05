@@ -14,10 +14,6 @@ export function Footer() {
             Accueil
           </Link>
           <span className="text-muted-foreground">|</span>
-          <Link href="/services" className="text-foreground hover:underline">
-            Services
-          </Link>
-          <span className="text-muted-foreground">|</span>
           <Link href="/nos-tarifs" className="text-foreground hover:underline">
             Tarifs
           </Link>
