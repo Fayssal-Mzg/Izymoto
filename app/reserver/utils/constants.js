@@ -36,6 +36,7 @@ export const tarifs = [
   { depart: "La Défense", arrivee: "Roissy CDG", prix: 110 },
   { depart: "Orly", arrivee: "Roissy CDG", prix: 150 },
   { depart: "Paris", arrivee: "Le Bourget", prix: 80 },
+  { depart: "Beauvais", arrivee: "Orly", prix: 120 }, // Exemple pour Beauvais - Orly
 ];
 
 // Définition des zones pour la tarification

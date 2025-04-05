@@ -20,13 +20,25 @@ import {
   ReactNode,
 } from "react";
 
+// Define the structure of reservation details
+interface ReservationDetails {
+  depart: string;
+  arrivee: string;
+  distance: number;
+  duree: number;
+  prix: number;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  reservationDetails: ReservationDetails | null;
   signUp: (email: string, password: string) => Promise<void>;
   logIn: (email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  setReservationDetails: (details: ReservationDetails) => void;
+  clearReservationDetails: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -34,18 +46,40 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reservationDetails, setReservationDetailsState] =
+    useState<ReservationDetails | null>(null);
+
+  // Load reservation details from localStorage on initial load
+  useEffect(() => {
+    const storedReservation = localStorage.getItem("pendingReservation");
+    if (storedReservation) {
+      setReservationDetailsState(JSON.parse(storedReservation));
+    }
+  }, []);
+
+  // Save reservation details to localStorage whenever they change
+  const setReservationDetails = (details: ReservationDetails) => {
+    setReservationDetailsState(details);
+    localStorage.setItem("pendingReservation", JSON.stringify(details));
+  };
+
+  // Clear reservation details
+  const clearReservationDetails = () => {
+    setReservationDetailsState(null);
+    localStorage.removeItem("pendingReservation");
+  };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+      // Supprimer toute logique de redirection ici
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Retirez reservationDetails des dépendances
 
   const signUp = async (email: string, password: string) => {
-    // Créer l'utilisateur dans Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -53,13 +87,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
     const newUser = userCredential.user;
 
-    // Créer le document utilisateur dans Firestore
+    // Create user document in Firestore
     await setDoc(doc(db, "users", newUser.uid), {
       uid: newUser.uid,
       email: newUser.email,
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
-      isAdmin: false, // Par défaut, les nouveaux utilisateurs ne sont pas administrateurs
+      isAdmin: false,
+      ...(reservationDetails ? { pendingReservation: reservationDetails } : {}),
     });
   };
 
@@ -71,24 +106,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
     const user = userCredential.user;
 
-    // Vérifier si l'utilisateur a un document dans Firestore
+    // Check if user has a document in Firestore
     const userDoc = await getDoc(doc(db, "users", user.uid));
 
     if (!userDoc.exists()) {
-      // Si l'utilisateur n'a pas de profil, en créer un (pour les comptes créés avant cette mise à jour)
+      // Create profile if it doesn't exist
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
         isAdmin: false,
+        ...(reservationDetails
+          ? { pendingReservation: reservationDetails }
+          : {}),
       });
     } else {
-      // Mettre à jour la date de dernière connexion
+      // Update last login and potentially add pending reservation
       await setDoc(
         doc(db, "users", user.uid),
         {
           lastLogin: serverTimestamp(),
+          ...(reservationDetails
+            ? { pendingReservation: reservationDetails }
+            : {}),
+        },
+        { merge: true }
+      );
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
+
+    // Check if user has a document in Firestore
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+
+    if (!userDoc.exists()) {
+      // Create profile for Google user
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || null,
+        photoURL: user.photoURL,
+        createdAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+        isAdmin: false,
+        ...(reservationDetails
+          ? { pendingReservation: reservationDetails }
+          : {}),
+      });
+    } else {
+      // Update last login and potentially add pending reservation
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          lastLogin: serverTimestamp(),
+          photoURL: user.photoURL,
+          ...(reservationDetails
+            ? { pendingReservation: reservationDetails }
+            : {}),
         },
         { merge: true }
       );
@@ -99,41 +178,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   };
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    const user = userCredential.user;
-
-    // Vérifier si l'utilisateur a un document dans Firestore
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-
-    if (!userDoc.exists()) {
-      // Créer un profil pour l'utilisateur Google s'il n'existe pas encore
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || null,
-        photoURL: user.photoURL,
-        createdAt: serverTimestamp(),
-        lastLogin: serverTimestamp(),
-        isAdmin: false,
-      });
-    } else {
-      // Mettre à jour la date de dernière connexion
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          lastLogin: serverTimestamp(),
-          photoURL: user.photoURL, // Mettre à jour la photo de profil si elle a changé
-        },
-        { merge: true }
-      );
-    }
-  };
-
   return (
     <AuthContext.Provider
-      value={{ user, loading, signUp, logIn, logOut, signInWithGoogle }}
+      value={{
+        user,
+        loading,
+        reservationDetails,
+        signUp,
+        logIn,
+        logOut,
+        signInWithGoogle,
+        setReservationDetails,
+        clearReservationDetails,
+      }}
     >
       {children}
     </AuthContext.Provider>

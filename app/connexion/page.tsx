@@ -3,15 +3,32 @@
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function ConnexionPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { logIn, signInWithGoogle } = useAuth();
+  const { logIn, signInWithGoogle, reservationDetails, setReservationDetails } =
+    useAuth();
   const router = useRouter();
+
+  // Vérifier localStorage au chargement
+  useEffect(() => {
+    const pendingReservation = localStorage.getItem("pendingReservation");
+    if (pendingReservation && !reservationDetails) {
+      try {
+        const details = JSON.parse(pendingReservation);
+        setReservationDetails(details);
+      } catch (error) {
+        console.error(
+          "Erreur lors de la lecture des détails de réservation:",
+          error
+        );
+      }
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +42,16 @@ export default function ConnexionPage() {
     try {
       await logIn(email, password);
       toast.success("Connexion réussie!");
-      router.push("/"); // Rediriger vers la page d'accueil après connexion
+
+      // Nettoyer localStorage
+      localStorage.removeItem("pendingReservation");
+
+      // Rediriger vers la page de réservation si des détails sont en attente
+      if (reservationDetails) {
+        router.push("/reserver");
+      } else {
+        router.push("/"); // Sinon, rediriger vers la page d'accueil
+      }
     } catch (err) {
       toast.error("Échec de la connexion. Veuillez vérifier vos identifiants.");
       console.error(err);
@@ -36,12 +62,31 @@ export default function ConnexionPage() {
     try {
       await signInWithGoogle();
       toast.success("Connexion avec Google réussie!");
-      router.push("/");
+
+      // Nettoyer localStorage
+      localStorage.removeItem("pendingReservation");
+
+      // Même logique pour la connexion Google
+      if (reservationDetails) {
+        router.push("/reserver");
+      } else {
+        router.push("/");
+      }
     } catch (err) {
       toast.error("Échec de la connexion avec Google.");
       console.error(err);
     }
   };
+
+  // Afficher un message si l'utilisateur a une réservation en attente
+  const reservationMessage = reservationDetails ? (
+    <div className="mb-4 p-3 bg-blue-50 rounded-lg text-blue-700">
+      <p>
+        Connectez-vous pour finaliser votre réservation de{" "}
+        {reservationDetails.depart} à {reservationDetails.arrivee}
+      </p>
+    </div>
+  ) : null;
 
   return (
     <div className="flex justify-center items-center min-h-[calc(100vh-80px)] bg-gray-50">
@@ -50,6 +95,9 @@ export default function ConnexionPage() {
           <h1 className="text-3xl font-bold">Connexion</h1>
           <p className="mt-2 text-gray-600">Connectez-vous à votre compte</p>
         </div>
+
+        {/* Afficher le message de réservation en attente s'il y en a un */}
+        {reservationMessage}
 
         <form onSubmit={handleLogin} className="mt-8 space-y-6">
           <div>
