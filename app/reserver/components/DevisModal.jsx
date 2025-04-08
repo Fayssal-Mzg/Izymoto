@@ -13,67 +13,92 @@ export default function DevisModal({
   onProceed,
 }) {
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md mx-4 overflow-hidden">
-        <div className="bg-[#ffc107] p-4">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white rounded-lg w-full h-full sm:h-auto sm:w-full sm:max-w-md mx-auto flex flex-col sm:max-h-[90vh]">
+        <div className="bg-[#ffc107] p-4 rounded-t-lg flex-shrink-0">
           <h3 className="text-xl font-bold text-black">Votre devis</h3>
         </div>
 
-        <div className="p-6 space-y-4">
-          <div className="flex justify-between">
-            <span className="font-medium">De :</span>
-            <span className="text-right">{depart}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="font-medium">À :</span>
-            <span className="text-right">{arrivee}</span>
-          </div>
-          <div className="border-t border-gray-200 my-2"></div>
-          <div className="flex justify-between">
-            <span>Distance :</span>
-            <span>{distance.toFixed(1)} km</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Durée estimée :</span>
-            <span>
-              {Math.floor(duree / 60)}h
-              {duree % 60 > 0 ? ` ${duree % 60}min` : ""}
-            </span>
-          </div>
-          <div className="flex justify-between font-bold text-lg">
-            <span>Prix total :</span>
-            <span>{Math.round(prix)}€</span>
-          </div>
+        {/* Conteneur avec scrolling */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
+          <div className="space-y-4">
+            <div className="mb-6">
+              <p className="text-gray-700 mb-1 text-sm">
+                <span className="font-medium">De :</span> {depart}
+              </p>
+              <p className="text-gray-700 text-sm">
+                <span className="font-medium">À :</span> {arrivee}
+              </p>
+            </div>
 
-          <div className="border-t border-gray-200 my-2"></div>
+            <div className="bg-gray-50 p-4 rounded-md space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Distance estimée :</span>
+                <span className="font-medium">
+                  {Math.round(distance * 10) / 10} km
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Durée estimée :</span>
+                <span className="font-medium">{duree} min</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-700">Prix de base :</span>
+                <span className="font-medium">{Math.round(prix)}€</span>
+              </div>
+            </div>
 
-          {/* Options supplémentaires */}
-          <div>
-            <h4 className="font-medium mb-2">Options supplémentaires</h4>
-            <label className="flex items-center space-x-2 mb-2">
-              <input
-                type="checkbox"
-                className="rounded text-[#ffc107]"
-                checked={prioriteReservation}
-                onChange={(e) => setPrioriteReservation(e.target.checked)}
-              />
-              <span>Réservation prioritaire (+20€)</span>
-            </label>
-          </div>
+            <div className="border border-gray-200 rounded-md p-4">
+              <div className="flex items-start mb-3">
+                <input
+                  type="checkbox"
+                  id="priority"
+                  checked={prioriteReservation}
+                  onChange={() => setPrioriteReservation(!prioriteReservation)}
+                  className="mt-1 mr-3"
+                />
+                <div>
+                  <label
+                    htmlFor="priority"
+                    className="font-medium block mb-1 text-sm"
+                  >
+                    Option priorité (+20€)
+                  </label>
+                  <p className="text-gray-600 text-xs">
+                    Service prioritaire : votre course sera traitée en priorité,
+                    garantissant l'arrivée d'un chauffeur dans les meilleurs
+                    délais.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-          <div className="flex space-x-3 mt-6">
-            <button
-              onClick={onCancel}
-              className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={onProceed}
-              className="flex-1 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition"
-            >
-              Réserver maintenant
-            </button>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <div className="flex justify-between text-base font-medium">
+                <span>Prix total :</span>
+                <span>
+                  {Math.round(prix + (prioriteReservation ? 20 : 0))}€
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                TVA incluse. Paiement sécurisé en ligne.
+              </p>
+            </div>
+
+            <div className="flex space-x-3 pt-4">
+              <button
+                onClick={onCancel}
+                className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition text-sm"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={onProceed}
+                className="flex-1 py-2 bg-[#ffc107] text-black rounded-md hover:bg-[#e5ad06] transition text-sm"
+              >
+                Réserver
+              </button>
+            </div>
           </div>
         </div>
       </div>

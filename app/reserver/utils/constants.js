@@ -42,7 +42,7 @@ export const tarifs = [
 // Définition des zones pour la tarification
 export const zones = {
   paris: [
-    { nom: "Paris", pattern: /paris/i },
+    { nom: "Paris", pattern: /^75|paris\b/i }, // Ajouté '\b' pour éviter les correspondances partielles
     { nom: "75", pattern: /^75/ },
   ],
   premiere_couronne: [
@@ -50,9 +50,29 @@ export const zones = {
     { nom: "Hauts-de-Seine", pattern: /hauts-de-seine/i },
     { nom: "Seine-Saint-Denis", pattern: /seine-saint-denis/i },
     { nom: "Val-de-Marne", pattern: /val-de-marne/i },
+    { nom: "Courbevoie", pattern: /courbevoie/i }, // Ajouté explicitement pour être sûr
   ],
-  laDefense: [{ nom: "La Défense", pattern: /la défense/i }],
-  orly: [{ nom: "Orly", pattern: /orly/i }],
-  roissy: [{ nom: "Roissy", pattern: /roissy|charles de gaulle|cdg/i }],
-  leBourget: [{ nom: "Le Bourget", pattern: /le bourget/i }],
+  laDefense: [
+    { nom: "La Défense", pattern: /\bla défense\b/i }, // Ajouté '\b' pour éviter les correspondances partielles
+  ],
+  orly: [
+    { nom: "Orly", pattern: /\borly\b/i }, // Ajouté '\b' pour éviter les correspondances partielles
+    { nom: "Aéroport d'Orly", pattern: /aéroport d'orly/i },
+  ],
+  roissy: [
+    { nom: "Roissy", pattern: /\broissy\b/i }, // Ajouté '\b' pour éviter les correspondances partielles
+    { nom: "Charles de Gaulle", pattern: /\bcharles de gaulle\b|\bcdg\b/i },
+    { nom: "CDG", pattern: /\bcdg\b/i },
+    {
+      nom: "Aéroport Paris-Charles de Gaulle",
+      pattern: /aéroport paris-charles de gaulle/i,
+    },
+  ],
+  leBourget: [
+    { nom: "Le Bourget", pattern: /\ble bourget\b/i }, // Ajouté '\b' pour éviter les correspondances partielles
+    {
+      nom: "Aéroport de Paris-Le Bourget",
+      pattern: /aéroport de paris-le bourget/i,
+    },
+  ],
 };

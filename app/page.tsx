@@ -13,7 +13,7 @@ import React, { useState } from "react";
 import { useInView } from "react-intersection-observer";
 
 const Home = () => {
-  // State for route calculation
+  // Etat de calcule de la route
 
   const [depart, setDepart] = useState("");
   const [arrivee, setArrivee] = useState("");

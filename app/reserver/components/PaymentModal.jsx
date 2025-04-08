@@ -11,15 +11,197 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { useState, useEffect } from "react";
+import { getAuth } from "firebase/auth";
+import { doc, setDoc, getDoc, getFirestore } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "react-toastify";
 
-// Gardez votre initialisation de Stripe
+// Stripe initialization
 const stripePromise = loadStripe(
-  "pk_test_51R7yIDCaUgDUSBsLiD906SbJVNEXT_PUBLIC_STRIPE_PUBLISHABLE_KEYwgeMdKCxgNkqo35X4XW1MymxdqEQHD7cEbc19GWzP4zm3lQHoAlAFHYmfXzFjPp00QCyxMS4Q"
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 );
 
+// Composant de connexion nécessaire
+function LoginRedirect({ bookingData }) {
+  const router = useRouter();
+  const { setReservationDetails } = useAuth();
+
+  const handleSaveAndRedirect = () => {
+    // Sauvegarder les détails dans le contexte d'authentification
+    const reservationInfo = {
+      depart: bookingData.depart,
+      arrivee: bookingData.arrivee,
+      distance: bookingData.distance,
+      duree: bookingData.duree,
+      prix: bookingData.prix,
+    };
+
+    setReservationDetails(reservationInfo);
+
+    // Rediriger vers la page de connexion
+    router.push("/connexion");
+  };
+
+  return (
+    <div className="space-y-6 text-center p-4">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-16 w-16 text-blue-500 mx-auto"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+        />
+      </svg>
+
+      <h3 className="text-xl font-bold">Connexion requise</h3>
+
+      <p className="text-gray-600">
+        Vous devez être connecté pour finaliser votre réservation. Vos
+        informations de trajet seront sauvegardées.
+      </p>
+
+      <div className="flex space-x-3 pt-4">
+        <button
+          onClick={handleSaveAndRedirect}
+          className="flex-1 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+        >
+          Se connecter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Composant de vérification du numéro de téléphone
+function PhoneVerification({ onVerified, onCancel, initialPhone }) {
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { user } = useAuth();
+
+  const handleVerifyPhone = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!phoneNumber || phoneNumber.trim() === "") {
+      setError("Le numéro de téléphone est obligatoire");
+      return;
+    }
+
+    // Vérifier le format du numéro
+    const phoneRegex = /^(\+33|0)[1-9](\d{2}){4}$/;
+    const formattedPhone = phoneNumber.startsWith("+")
+      ? phoneNumber
+      : `+33${
+          phoneNumber.startsWith("0") ? phoneNumber.substring(1) : phoneNumber
+        }`;
+
+    if (
+      !phoneRegex.test(formattedPhone.replace(/\s/g, "")) &&
+      !phoneRegex.test(phoneNumber.replace(/\s/g, ""))
+    ) {
+      setError(
+        "Format de numéro invalide. Exemple valide: 0612345678 ou +33612345678"
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Sauvegarder le numéro dans Firestore
+      const db = getFirestore();
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          phoneNumber: formattedPhone,
+          phoneVerified: true,
+        },
+        { merge: true }
+      );
+
+      // Notifier l'utilisateur du succès
+      toast.success("Numéro de téléphone enregistré avec succès");
+
+      // Informer le composant parent que le numéro est vérifié
+      onVerified(formattedPhone);
+    } catch (err) {
+      console.error("Erreur lors de l'enregistrement du numéro:", err);
+      setError("Une erreur est survenue lors de l'enregistrement du numéro");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 p-4">
+      <h3 className="text-lg font-medium">Numéro de téléphone</h3>
+
+      <p className="text-gray-600 text-sm">
+        Veuillez fournir votre numéro de téléphone pour permettre au chauffeur
+        de vous contacter.
+      </p>
+
+      {error && (
+        <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleVerifyPhone} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Numéro de téléphone*
+          </label>
+          <input
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            placeholder="+33 6 12 34 56 78"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Format: +33612345678 ou 0612345678
+          </p>
+        </div>
+
+        <div className="flex space-x-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition text-sm"
+            disabled={isLoading}
+          >
+            Retour
+          </button>
+          <button
+            type="submit"
+            className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
+            disabled={isLoading}
+          >
+            {isLoading ? "Traitement..." : "Continuer"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // Composant de formulaire Stripe
-function CheckoutForm({ clientSecret, prixFinal, onSuccess, onCancel }) {
+function CheckoutForm({
+  clientSecret,
+  prixFinal,
+  onSuccess,
+  onCancel,
+  phoneNumber,
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +219,12 @@ function CheckoutForm({ clientSecret, prixFinal, onSuccess, onCancel }) {
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/confirmation`,
+          payment_method_data: {
+            // Inclure le numéro de téléphone dans les métadonnées du paiement
+            billing_details: {
+              phone: phoneNumber,
+            },
+          },
         },
         redirect: "if_required",
       });
@@ -55,11 +243,33 @@ function CheckoutForm({ clientSecret, prixFinal, onSuccess, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 p-4">
+      <div className="bg-green-50 p-3 rounded-md border border-green-200 mb-4">
+        <div className="flex items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 text-green-500 mr-2"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-green-700 text-sm">
+            Numéro enregistré: {phoneNumber}
+          </span>
+        </div>
+      </div>
+
       <PaymentElement />
 
       {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-md">{error}</div>
+        <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+          {error}
+        </div>
       )}
 
       <div className="bg-gray-50 p-4 rounded-md">
@@ -69,11 +279,11 @@ function CheckoutForm({ clientSecret, prixFinal, onSuccess, onCancel }) {
         </div>
       </div>
 
-      <div className="flex space-x-3 mt-6">
+      <div className="flex space-x-3">
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+          className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition text-sm"
           disabled={isLoading}
         >
           Retour
@@ -81,7 +291,7 @@ function CheckoutForm({ clientSecret, prixFinal, onSuccess, onCancel }) {
         <button
           type="submit"
           disabled={!stripe || isLoading}
-          className="flex-1 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex justify-center items-center"
+          className="flex-1 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex justify-center items-center text-sm"
         >
           {isLoading ? (
             <span className="flex items-center">
@@ -116,7 +326,7 @@ function CheckoutForm({ clientSecret, prixFinal, onSuccess, onCancel }) {
   );
 }
 
-// Modal complet
+// Modal complet avec scrolling interne
 export default function PaymentModal({
   prixFinal,
   bookingData,
@@ -126,68 +336,127 @@ export default function PaymentModal({
 }) {
   const [clientSecret, setClientSecret] = useState("");
   const [error, setError] = useState(null);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
 
-  // Ajoutez ceci pour accéder à l'utilisateur connecté
+  // Accéder à l'utilisateur connecté
   const { user } = useAuth();
+  const router = useRouter();
 
+  // Vérifier si l'utilisateur a déjà un numéro de téléphone vérifié
   useEffect(() => {
-    // Créer l'intention de paiement au chargement du modal
-    const createPaymentIntent = async () => {
+    if (!user) {
+      // Si l'utilisateur n'est pas connecté, ne pas continuer
+      return;
+    }
+
+    const checkExistingPhoneNumber = async () => {
       try {
-        console.log(
-          "Tentative de création d'intention de paiement (TEST MODE)"
-        );
+        // Vérifier si l'utilisateur a déjà un numéro enregistré dans Firestore
+        const db = getFirestore();
+        const userDoc = await getDoc(doc(db, "users", user.uid));
 
-        const response = await fetch("/api/create-payment-intent", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: prixFinal,
-            metadata: bookingData,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.error || "Erreur lors de la création du paiement"
-          );
+        if (userDoc.exists() && userDoc.data().phoneNumber) {
+          setPhoneNumber(userDoc.data().phoneNumber);
+          setPhoneVerified(true);
+        } else if (bookingData && bookingData.phone) {
+          // Utiliser le téléphone du formulaire précédent comme valeur initiale
+          setPhoneNumber(bookingData.phone);
         }
-
-        const data = await response.json();
-        console.log("Intention de paiement créée avec succès");
-        setClientSecret(data.clientSecret);
-      } catch (error) {
-        console.error("Erreur:", error);
-        setError(
-          error.message ||
-            "Une erreur est survenue lors de la création du paiement"
-        );
+      } catch (err) {
+        console.error("Erreur lors de la vérification du numéro:", err);
       }
     };
 
-    createPaymentIntent();
-  }, [prixFinal, bookingData]);
+    checkExistingPhoneNumber();
+  }, [user, bookingData]);
+
+  useEffect(() => {
+    // Ne créer l'intention de paiement que si l'utilisateur est connecté et a vérifié son téléphone
+    if (user && phoneVerified) {
+      createPaymentIntent();
+    }
+  }, [phoneVerified, prixFinal, user]);
+
+  // Créer l'intention de paiement
+  const createPaymentIntent = async () => {
+    try {
+      console.log("Tentative de création d'intention de paiement");
+
+      // Ajouter le numéro de téléphone aux métadonnées
+      const bookingWithPhone = {
+        ...bookingData,
+        phone: phoneNumber, // Remplacer par le numéro vérifié
+      };
+
+      const response = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: prixFinal,
+          metadata: bookingWithPhone,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Erreur lors de la création du paiement"
+        );
+      }
+
+      const data = await response.json();
+      console.log("Intention de paiement créée avec succès");
+      setClientSecret(data.clientSecret);
+    } catch (error) {
+      console.error("Erreur:", error);
+      setError(
+        error.message ||
+          "Une erreur est survenue lors de la création du paiement"
+      );
+    }
+  };
+
+  const handlePhoneVerified = (phone) => {
+    setPhoneVerified(true);
+    setPhoneNumber(phone);
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md mx-4 overflow-hidden">
-        <div className="bg-[#ffc107] p-4">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white rounded-lg w-full h-full sm:h-auto sm:w-full sm:max-w-md mx-auto flex flex-col sm:max-h-[90vh]">
+        <div className="bg-[#ffc107] p-4 rounded-t-lg flex-shrink-0">
           <h3 className="text-xl font-bold text-black">
-            Paiement sécurisé (MODE TEST)
+            {!user
+              ? "Connexion requise"
+              : !phoneVerified
+              ? "Information de contact"
+              : "Paiement sécurisé"}
           </h3>
         </div>
 
-        <div className="p-6 space-y-4">
+        {/* Conteneur avec scrolling */}
+        <div className="overflow-y-auto flex-grow">
           {error && (
-            <div className="p-3 bg-red-100 text-red-700 rounded-md mb-4">
+            <div className="p-3 bg-red-100 text-red-700 rounded-md m-4 text-sm">
               {error}
             </div>
           )}
 
-          {clientSecret ? (
+          {!user ? (
+            // Si l'utilisateur n'est pas connecté
+            <LoginRedirect bookingData={bookingData} />
+          ) : !phoneVerified ? (
+            // Si l'utilisateur est connecté mais n'a pas encore vérifié son téléphone
+            <PhoneVerification
+              onVerified={handlePhoneVerified}
+              onCancel={onCancel}
+              initialPhone={phoneNumber}
+            />
+          ) : clientSecret ? (
+            // Si l'utilisateur est connecté, a vérifié son téléphone et l'intention de paiement est créée
             <Elements
               stripe={getStripe()}
               options={{
@@ -203,8 +472,9 @@ export default function PaymentModal({
               <CheckoutForm
                 clientSecret={clientSecret}
                 prixFinal={prixFinal}
-                onSuccess={onSuccess} // Transmission directe de la callback du parent
+                onSuccess={onSuccess}
                 onCancel={onCancel}
+                phoneNumber={phoneNumber}
               />
             </Elements>
           ) : (
