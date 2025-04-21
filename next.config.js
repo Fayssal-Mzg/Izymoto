@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+
 const nextConfig = {
   // Mode strict de React pour détecter les problèmes potentiels
   reactStrictMode: true,
@@ -56,4 +57,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
