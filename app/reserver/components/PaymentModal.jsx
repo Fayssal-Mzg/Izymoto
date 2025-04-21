@@ -394,6 +394,12 @@ export default function PaymentModal({
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
+      // Générer un numéro de commande
+      const reservationId = `CMD-${Math.random()
+        .toString(36)
+        .substring(2, 10)
+        .toUpperCase()}`;
+
       // Vérifier et préparer l'email
       const emailToUse =
         user.email || bookingData.email || "contact@izymoto.com";
@@ -404,20 +410,38 @@ export default function PaymentModal({
           ...bookingData,
           paymentIntentId,
           status: "paid",
-          reservationId: `CMD-${Math.random()
-            .toString(36)
-            .substring(2, 10)
-            .toUpperCase()}`,
-          name, // Assurez-vous que cette variable existe dans votre scope
+          reservationId,
+          name,
           phone: phoneNumber,
-          email: emailToUse,
+          email: emailToUse, // Ajout explicite de l'email
         },
         user.uid
       );
 
+      // Préparer les données pour les emails
+      const emailData = {
+        bookingId: savedBooking.id,
+        reservationId,
+        clientName: name || user.displayName || user.email,
+        email: emailToUse, // Utiliser l'email vérifié
+        ...bookingData,
+        prix: prixFinal,
+        phone: phoneNumber,
+        paymentIntentId,
+        duree: bookingData.duree,
+        isPaid: true,
+      };
+
+      // Envoi des emails en parallèle
+      await Promise.all([
+        sendClientConfirmationEmail(emailData),
+        sendAdminNotificationEmail(emailData),
+      ]);
+
+      // Notifier l'utilisateur du succès
+      toast.success("Réservation confirmée !");
+
       // Appeler onSuccess du parent pour finaliser le processus
-      // Ce qui va déclencher handlePaymentSuccess dans useReservation
-      // qui lui-même appelle handleSuccessfulPayment qui enverra les emails
       onSuccess(savedBooking);
 
       // La redirection est gérée dans le CheckoutForm
