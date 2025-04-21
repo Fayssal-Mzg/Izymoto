@@ -394,55 +394,33 @@ export default function PaymentModal({
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
-      // Générer un numéro de commande
-      const reservationId = `CMD-${Math.random()
-        .toString(36)
-        .substring(2, 10)
-        .toUpperCase()}`;
-
       // Vérifier et préparer l'email
       const emailToUse =
         user.email || bookingData.email || "contact@izymoto.com";
 
-      // Sauvegarde de la réservation avec le numéro de commande
-      const savedBooking = await saveBooking(
-        {
+      // Utiliser le service centralisé pour gérer tout le processus
+      // Le service s'occupera de :
+      // 1. Sauvegarder la réservation
+      // 2. Envoyer les emails
+      // 3. Afficher les notifications
+      await handleSuccessfulPayment({
+        user,
+        bookingData: {
           ...bookingData,
-          paymentIntentId,
-          status: "paid",
-          reservationId,
-          name,
-          phone: phoneNumber,
-          email: emailToUse, // Ajout explicite de l'email
+          email: emailToUse,
         },
-        user.uid
-      );
-
-      // Préparer les données pour les emails
-      const emailData = {
-        bookingId: savedBooking.id,
-        reservationId,
-        clientName: name || user.displayName || user.email,
-        email: emailToUse, // Utiliser l'email vérifié
-        ...bookingData,
-        prix: prixFinal,
+        paymentId: paymentIntentId,
+        name: name || user.displayName || "Client",
         phone: phoneNumber,
-        paymentIntentId,
-        duree: bookingData.duree,
-        isPaid: true,
-      };
-
-      // Envoi des emails en parallèle
-      await Promise.all([
-        sendClientConfirmationEmail(emailData),
-        sendAdminNotificationEmail(emailData),
-      ]);
-
-      // Notifier l'utilisateur du succès
-      toast.success("Réservation confirmée !");
-
-      // Appeler onSuccess du parent pour finaliser le processus
-      onSuccess(savedBooking);
+        prixFinal,
+        reservationDate,
+        notes: bookingData.notes || "",
+        prioriteReservation: bookingData.prioriteReservation || false,
+        onSuccess: (savedBooking) => {
+          // Appeler onSuccess du parent pour finaliser le processus
+          onSuccess(savedBooking);
+        },
+      });
 
       // La redirection est gérée dans le CheckoutForm
     } catch (error) {
