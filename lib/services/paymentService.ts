@@ -84,6 +84,20 @@ export async function handleSuccessfulPayment({
       isPaid: true,
     };
 
+    // Envoyer les emails de confirmation
+    await Promise.all([
+      sendClientConfirmationEmail(emailData),
+      sendAdminNotificationEmail(emailData),
+    ]);
+
+    // Afficher une notification de succès
+    toast.success("Réservation confirmée !");
+
+    // Appeler le callback de succès si fourni
+    if (onSuccess) {
+      onSuccess(savedBooking);
+    }
+
     return savedBooking;
   } catch (error) {
     console.error("Erreur lors de la finalisation de la réservation", error);
