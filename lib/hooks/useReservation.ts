@@ -378,11 +378,10 @@ export function useReservation() {
           distance,
           duree,
           prix,
-          phone, // S'assurer que le numéro de téléphone est inclus ici
         },
         paymentId,
         name,
-        phone, // Le numéro de téléphone doit être passé ici
+        phone,
         prixFinal,
         reservationDate,
         notes,
@@ -393,9 +392,11 @@ export function useReservation() {
         },
       });
     } catch (error) {
+      // Géré dans la fonction handleSuccessfulPayment
       console.error("Erreur lors du paiement", error);
     }
   };
+
   const resetForm = () => {
     setDepart("");
     setArrivee("");

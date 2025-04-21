@@ -82,7 +82,6 @@ export async function handleSuccessfulPayment({
       bookingId: savedBooking.id,
       clientName: name || user.displayName || user.email,
       isPaid: true,
-      client_phone: phone,
     };
 
     // Envoyer les emails de confirmation
