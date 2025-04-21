@@ -405,15 +405,18 @@ export default function PaymentModal({
           paymentIntentId,
           status: "paid",
           name, // Assurez-vous que cette variable existe dans votre scope
-          phone: phoneNumber,
+          phone: phoneNumber, // Le numéro de téléphone vérifié
           email: emailToUse,
         },
         user.uid
       );
 
       // Appeler onSuccess du parent pour finaliser le processus
-      // L'envoi d'emails sera géré par le hook useReservation
-      onSuccess(savedBooking);
+      // S'assurer que le numéro de téléphone est inclus
+      onSuccess({
+        ...savedBooking,
+        phone: phoneNumber, // S'assurer que le téléphone est bien transmis
+      });
 
       // La redirection est gérée dans le CheckoutForm
     } catch (error) {
