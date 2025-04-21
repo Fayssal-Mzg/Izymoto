@@ -36,7 +36,7 @@ export default function AdminAccessButton() {
         href="/admin"
         className="block w-full px-4 py-2 text-center text-white bg-black rounded-md hover:bg-gray-800"
       >
-        Accéder à l'espace administrateur
+        Accéder à l&apos;espace administrateur
       </Link>
     </div>
   );

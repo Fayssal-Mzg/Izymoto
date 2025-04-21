@@ -50,7 +50,7 @@ export default function ConnexionPage() {
       if (reservationDetails) {
         router.push("/reserver");
       } else {
-        router.push("/"); // Sinon, rediriger vers la page d'accueil
+        router.push("/"); // Sinon, rediriger vers la page d&apos;accueil
       }
     } catch (err) {
       toast.error("Échec de la connexion. Veuillez vérifier vos identifiants.");
@@ -78,7 +78,7 @@ export default function ConnexionPage() {
     }
   };
 
-  // Afficher un message si l'utilisateur a une réservation en attente
+  // Afficher un message si l&apos;utilisateur a une réservation en attente
   const reservationMessage = reservationDetails ? (
     <div className="mb-4 p-3 bg-blue-50 rounded-lg text-blue-700">
       <p>
@@ -96,7 +96,7 @@ export default function ConnexionPage() {
           <p className="mt-2 text-gray-600">Connectez-vous à votre compte</p>
         </div>
 
-        {/* Afficher le message de réservation en attente s'il y en a un */}
+        {/* Afficher le message de réservation en attente s&apos;il y en a un */}
         {reservationMessage}
 
         <form onSubmit={handleLogin} className="mt-8 space-y-6">
