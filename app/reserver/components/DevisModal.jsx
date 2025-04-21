@@ -1,7 +1,7 @@
-// app/reserver/components/DevisModal.jsx
 "use client";
 
-import { useState } from "react";
+import DateTimeInput from "./DateTimeInput";
+import { useState, useEffect } from "react";
 
 export default function DevisModal({
   depart,
@@ -17,22 +17,64 @@ export default function DevisModal({
   onProceed,
   onRequestDevis,
 }) {
-  // Fonction pour obtenir la date/heure minimale (maintenant + 15min)
-  const getMinDateTime = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + 15);
-    return now.toISOString().slice(0, 16);
-  };
+  // État pour gérer les erreurs de validation
+  const [validationError, setValidationError] = useState("");
 
   // Validation avant de passer à onRequestDevis
   const validateAndRequestDevis = () => {
     if (!reservationDate) {
-      alert("Veuillez sélectionner une date et heure pour votre course");
+      setValidationError(
+        "Veuillez sélectionner une date et heure pour votre course"
+      );
       return;
     }
 
+    // Vérification de la date
+    const selectedDate = new Date(reservationDate);
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 15);
+
+    // Vérification de la réservation dans l'heure
+    const diffInHours = (selectedDate - now) / (1000 * 60 * 60);
+    if (diffInHours < 1 && !prioriteReservation) {
+      setValidationError(
+        "Pour une réservation dans l'heure, l'option priorité est obligatoire"
+      );
+      return;
+    }
+
+    // Réinitialiser l'erreur si tout est correct
+    setValidationError("");
+
     // Utiliser la fonction passée en prop directement
     onRequestDevis();
+  };
+
+  // Fonction de validation pour le bouton Réserver
+  const handleProceed = () => {
+    if (!reservationDate) {
+      setValidationError(
+        "Veuillez sélectionner une date et heure pour votre course"
+      );
+      return;
+    }
+
+    const selectedDate = new Date(reservationDate);
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 15);
+
+    // Vérification de la réservation dans l'heure
+    const diffInHours = (selectedDate - now) / (1000 * 60 * 60);
+    if (diffInHours < 1 && !prioriteReservation) {
+      setValidationError(
+        "Pour une réservation dans l'heure, l'option priorité est obligatoire"
+      );
+      return;
+    }
+
+    // Réinitialiser l'erreur si tout est correct
+    setValidationError("");
+    onProceed();
   };
 
   return (
@@ -54,24 +96,23 @@ export default function DevisModal({
               </p>
             </div>
 
-            {/* Ajout du champ date et heure */}
-            <div>
-              <label
-                htmlFor="reservationDate"
-                className="block text-sm font-medium text-gray-700 mb-1"
+            {/* Nouveau composant de gestion de date et heure */}
+            <DateTimeInput
+              reservationDate={reservationDate}
+              setReservationDate={setReservationDate}
+              prioriteReservation={prioriteReservation}
+              setPrioriteReservation={setPrioriteReservation}
+            />
+
+            {/* Affichage des erreurs de validation */}
+            {validationError && (
+              <div
+                className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded relative"
+                role="alert"
               >
-                Date et heure souhaitées*
-              </label>
-              <input
-                type="datetime-local"
-                id="reservationDate"
-                value={reservationDate || ""}
-                onChange={(e) => setReservationDate(e.target.value)}
-                className="block w-full p-2 border border-gray-300 rounded-md text-base"
-                min={getMinDateTime()}
-                required
-              />
-            </div>
+                <span className="block sm:inline">{validationError}</span>
+              </div>
+            )}
 
             <div className="bg-gray-50 p-4 rounded-md space-y-2">
               <div className="flex justify-between text-sm">
@@ -90,6 +131,7 @@ export default function DevisModal({
               </div>
             </div>
 
+            {/* Section Option Priorité */}
             <div className="border border-gray-200 rounded-md p-4">
               <div className="flex items-start mb-3">
                 <input
@@ -135,15 +177,7 @@ export default function DevisModal({
                 Annuler
               </button>
               <button
-                onClick={() => {
-                  if (!reservationDate) {
-                    alert(
-                      "Veuillez sélectionner une date et heure pour votre course"
-                    );
-                    return;
-                  }
-                  onProceed();
-                }}
+                onClick={handleProceed}
                 className="flex-1 py-2 bg-[#ffc107] text-black rounded-md hover:bg-[#e5ad06] transition text-sm"
               >
                 Réserver
