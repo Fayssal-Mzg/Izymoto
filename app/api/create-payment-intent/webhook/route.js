@@ -3,7 +3,7 @@
 import {
   sendClientConfirmationEmail,
   sendAdminNotificationEmail,
-} from "@/lib/emailjs";
+} from "@/lib/emails/confirmationEmail";
 import { saveBooking } from "@/lib/firebase/bookings";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
