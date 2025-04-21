@@ -31,9 +31,24 @@ export default function SearchForm({
   // Géolocalisation
   const getMyLocation = () => {
     if (navigator.geolocation) {
+      // Options de géolocalisation pour améliorer la précision
+      const options = {
+        enableHighAccuracy: true, // Demande la plus haute précision possible
+        timeout: 10000, // 10 secondes avant timeout
+        maximumAge: 0, // N'utilise pas une position mise en cache
+      };
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          console.log(
+            "Position obtenue:",
+            latitude,
+            longitude,
+            "Précision:",
+            position.coords.accuracy,
+            "mètres"
+          );
 
           // Convertir les coordonnées en adresse lisible (géocodage inversé)
           const geocoder = new google.maps.Geocoder();
@@ -41,6 +56,7 @@ export default function SearchForm({
             { location: { lat: latitude, lng: longitude } },
             (results, status) => {
               if (status === "OK" && results[0]) {
+                console.log("Adresse trouvée:", results[0].formatted_address);
                 setDepart(results[0].formatted_address);
               } else {
                 console.error("Géocodage inversé échoué:", status);
@@ -49,11 +65,16 @@ export default function SearchForm({
           );
         },
         (error) => {
-          console.error("Erreur de géolocalisation:", error);
+          console.error(
+            "Erreur de géolocalisation:",
+            error.code,
+            error.message
+          );
           alert(
             "Impossible d'obtenir votre position. Veuillez vérifier les permissions."
           );
-        }
+        },
+        options // Utilisation des options définies
       );
     } else {
       alert(
