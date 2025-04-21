@@ -398,29 +398,22 @@ export default function PaymentModal({
       const emailToUse =
         user.email || bookingData.email || "contact@izymoto.com";
 
-      // Utiliser le service centralisé pour gérer tout le processus
-      // Le service s'occupera de :
-      // 1. Sauvegarder la réservation
-      // 2. Envoyer les emails
-      // 3. Afficher les notifications
-      await handleSuccessfulPayment({
-        user,
-        bookingData: {
+      // Sauvegarde de la réservation avec le numéro de commande
+      const savedBooking = await saveBooking(
+        {
           ...bookingData,
+          paymentIntentId,
+          status: "paid",
+          name, // Assurez-vous que cette variable existe dans votre scope
+          phone: phoneNumber,
           email: emailToUse,
         },
-        paymentId: paymentIntentId,
-        name: name || user.displayName || "Client",
-        phone: phoneNumber,
-        prixFinal,
-        reservationDate,
-        notes: bookingData.notes || "",
-        prioriteReservation: bookingData.prioriteReservation || false,
-        onSuccess: (savedBooking) => {
-          // Appeler onSuccess du parent pour finaliser le processus
-          onSuccess(savedBooking);
-        },
-      });
+        user.uid
+      );
+
+      // Appeler onSuccess du parent pour finaliser le processus
+      // L'envoi d'emails sera géré par le hook useReservation
+      onSuccess(savedBooking);
 
       // La redirection est gérée dans le CheckoutForm
     } catch (error) {
