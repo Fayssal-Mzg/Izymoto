@@ -3,6 +3,7 @@
 import AdminButton from "@/components/AdminButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { getUserBookings } from "@/lib/firebase/bookings";
+import { db } from "@/lib/firebaseConfig";
 import {
   updateProfile,
   updateEmail,
@@ -11,6 +12,7 @@ import {
   EmailAuthProvider,
   User,
 } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -26,8 +28,7 @@ interface Booking {
 }
 
 export default function ProfilPage() {
-  // Utilisez logOut au lieu de _logOut si c'est le nom correct dans votre contexte
-  const { user, loading, logOut } = useAuth();
+  const { user, loading, logOut, updatePhoneNumber } = useAuth();
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,23 +44,49 @@ export default function ProfilPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [password, setPassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
-
   useEffect(() => {
     if (!loading && !user) {
       router.push("/connexion");
     }
 
     if (user) {
-      setDisplayName(user.displayName || "");
-      setEmail(user.email || "");
-      setPhoneNumber(user.phoneNumber || "");
+      // Récupérer les données complètes de l'utilisateur depuis Firestore
+      const fetchUserData = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
 
-      // Charger les réservations de l'utilisateur
-      const fetchBookings = async () => {
+            // Nom complet (priorité : Firestore > Firebase Auth > chaîne vide)
+            setDisplayName(userData.displayName || user.displayName || "");
+
+            // Email (toujours depuis Firebase Auth)
+            setEmail(user.email || "");
+
+            // Numéro de téléphone (priorité : Firestore > chaîne vide)
+            setPhoneNumber(userData.phoneNumber || "");
+          }
+        } catch (error) {
+          console.error(
+            "Erreur lors de la récupération des données utilisateur:",
+            error
+          );
+        }
+
+        // Charger les réservations de l'utilisateur
         try {
           setIsLoading(true);
           const userBookings = await getUserBookings(user.uid);
-          setBookings(userBookings as Booking[]); // Cast vers le type Booking[]
+
+          // Filtrer les réservations pour ne garder que celles correspondant à l'utilisateur
+          const filteredBookings = userBookings.filter(
+            (booking) =>
+              booking.userId === user.uid ||
+              booking.userId === `registered_${user.uid}` ||
+              booking.email === user.email
+          );
+
+          setBookings(filteredBookings as Booking[]);
         } catch (error) {
           console.error("Erreur lors du chargement des réservations:", error);
         } finally {
@@ -67,7 +94,7 @@ export default function ProfilPage() {
         }
       };
 
-      fetchBookings();
+      fetchUserData();
     }
   }, [user, loading, router]);
 
@@ -82,6 +109,11 @@ export default function ProfilPage() {
 
         if (email !== user.email && user.email !== null) {
           await updateEmail(user, email);
+        }
+
+        // Mettre à jour le numéro de téléphone
+        if (phoneNumber !== user.phoneNumber) {
+          await updatePhoneNumber(phoneNumber);
         }
 
         setMessage({ text: "Profil mis à jour avec succès!", isError: false });
@@ -103,23 +135,16 @@ export default function ProfilPage() {
     }
 
     try {
-      // Vérifier que l'utilisateur est connecté et a un email
       if (!user || !user.email) {
         setDeleteError("Utilisateur non connecté ou email manquant");
         return;
       }
 
-      // Réauthentifier l'utilisateur avant la suppression
       const credential = EmailAuthProvider.credential(user.email, password);
       await reauthenticateWithCredential(user, credential);
-
-      // Supprimer le compte
       await deleteUser(user);
-
-      // Rediriger vers la page d'accueil
       router.push("/");
     } catch (error: any) {
-      // Typer error comme any pour accéder à error.code
       console.error("Erreur lors de la suppression du compte:", error);
       setDeleteError(
         error.code === "auth/wrong-password"
@@ -392,4 +417,7 @@ export default function ProfilPage() {
       </div>
     </div>
   );
+}
+function updateUserPhoneNumber(phoneNumber: string) {
+  throw new Error("Function not implemented.");
 }

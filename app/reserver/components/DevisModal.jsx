@@ -1,6 +1,8 @@
 // app/reserver/components/DevisModal.jsx
 "use client";
 
+import { useState } from "react";
+
 export default function DevisModal({
   depart,
   arrivee,
@@ -9,9 +11,30 @@ export default function DevisModal({
   prix,
   prioriteReservation,
   setPrioriteReservation,
+  reservationDate,
+  setReservationDate,
   onCancel,
   onProceed,
+  onRequestDevis,
 }) {
+  // Fonction pour obtenir la date/heure minimale (maintenant + 15min)
+  const getMinDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 15);
+    return now.toISOString().slice(0, 16);
+  };
+
+  // Validation avant de passer à onRequestDevis
+  const validateAndRequestDevis = () => {
+    if (!reservationDate) {
+      alert("Veuillez sélectionner une date et heure pour votre course");
+      return;
+    }
+
+    // Utiliser la fonction passée en prop directement
+    onRequestDevis();
+  };
+
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-0 sm:p-4">
       <div className="bg-white rounded-lg w-full h-full sm:h-auto sm:w-full sm:max-w-md mx-auto flex flex-col sm:max-h-[90vh]">
@@ -29,6 +52,25 @@ export default function DevisModal({
               <p className="text-gray-700 text-sm">
                 <span className="font-medium">À :</span> {arrivee}
               </p>
+            </div>
+
+            {/* Ajout du champ date et heure */}
+            <div>
+              <label
+                htmlFor="reservationDate"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Date et heure souhaitées*
+              </label>
+              <input
+                type="datetime-local"
+                id="reservationDate"
+                value={reservationDate || ""}
+                onChange={(e) => setReservationDate(e.target.value)}
+                className="block w-full p-2 border border-gray-300 rounded-md text-base"
+                min={getMinDateTime()}
+                required
+              />
             </div>
 
             <div className="bg-gray-50 p-4 rounded-md space-y-2">
@@ -93,11 +135,27 @@ export default function DevisModal({
                 Annuler
               </button>
               <button
-                onClick={onProceed}
+                onClick={() => {
+                  if (!reservationDate) {
+                    alert(
+                      "Veuillez sélectionner une date et heure pour votre course"
+                    );
+                    return;
+                  }
+                  onProceed();
+                }}
                 className="flex-1 py-2 bg-[#ffc107] text-black rounded-md hover:bg-[#e5ad06] transition text-sm"
               >
                 Réserver
               </button>
+              {onRequestDevis && (
+                <button
+                  onClick={validateAndRequestDevis}
+                  className="flex-1 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition text-sm"
+                >
+                  Demander un devis
+                </button>
+              )}
             </div>
           </div>
         </div>

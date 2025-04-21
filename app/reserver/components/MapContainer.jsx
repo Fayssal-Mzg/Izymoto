@@ -13,18 +13,7 @@ const center = {
   lng: 2.3522,
 };
 
-export default function MapContainer({ isLoaded, directions }) {
-  if (!isLoaded) {
-    return (
-      <div
-        style={containerStyle}
-        className="flex items-center justify-center bg-gray-200"
-      >
-        <p>Chargement de la carte...</p>
-      </div>
-    );
-  }
-
+export default function MapContainer({ directions }) {
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}

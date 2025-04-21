@@ -27,7 +27,11 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next.config.js"
+    "next.config.js",
+    "lib/emails/confirmationEmail.js",
+    "components/maps/GoogleMapsProvider.tsx",
+    "app/reserver/components/GuestInformationModal.jsx",
+    "app/reserver/components/GuestInformationModal.jsx"
   ],
   "exclude": ["node_modules"]
 }

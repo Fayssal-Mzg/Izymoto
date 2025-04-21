@@ -1,4 +1,3 @@
-// contexts/AuthContext.tsx
 "use client";
 
 import { auth, db } from "@/lib/firebaseConfig";
@@ -10,6 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   User,
+  updateProfile,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import {
@@ -24,9 +24,9 @@ import {
 interface ReservationDetails {
   depart: string;
   arrivee: string;
-  distance: number;
-  duree: number;
-  prix: number;
+  distance: number | null;
+  duree: number | null;
+  prix: number | null;
 }
 
 interface AuthContextType {
@@ -39,6 +39,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   setReservationDetails: (details: ReservationDetails) => void;
   clearReservationDetails: () => void;
+  updatePhoneNumber: (phoneNumber: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -73,11 +74,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setLoading(false);
-      // Supprimer toute logique de redirection ici
     });
 
     return () => unsubscribe();
-  }, []); // Retirez reservationDetails des dépendances
+  }, []);
 
   const signUp = async (email: string, password: string) => {
     const userCredential = await createUserWithEmailAndPassword(
@@ -178,6 +178,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   };
 
+  const updatePhoneNumber = async (phoneNumber: string) => {
+    if (user) {
+      try {
+        // Mettre à jour le document Firestore
+        await setDoc(
+          doc(db, "users", user.uid),
+          { phoneNumber, phoneVerified: true },
+          { merge: true }
+        );
+      } catch (error) {
+        console.error(
+          "Erreur lors de la mise à jour du numéro de téléphone:",
+          error
+        );
+        throw error;
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -190,6 +209,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signInWithGoogle,
         setReservationDetails,
         clearReservationDetails,
+        updatePhoneNumber,
       }}
     >
       {children}

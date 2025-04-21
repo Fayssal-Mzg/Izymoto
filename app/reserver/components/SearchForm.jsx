@@ -9,7 +9,6 @@ import { MapPin, Locate, Plane, Train, Euro } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export default function SearchForm({
-  isLoaded,
   depart,
   setDepart,
   arrivee,
@@ -18,6 +17,8 @@ export default function SearchForm({
   distance,
   duree,
   calculateRoute,
+  customInputClass = "",
+  customButtonClass = "",
 }) {
   const [showAeroportsDepart, setShowAeroportsDepart] = useState(false);
   const [showGaresDepart, setShowGaresDepart] = useState(false);
@@ -91,6 +92,12 @@ export default function SearchForm({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+  useEffect(() => {
+    // Ne calculer la route que si les deux champs sont remplis
+    if (depart && arrivee && window.google) {
+      calculateRoute();
+    }
+  }, [depart, arrivee]);
 
   return (
     <div className="">
@@ -98,7 +105,7 @@ export default function SearchForm({
         {/* Ligne de départ */}
         <div className="grid grid-cols-12 items-center mb-6">
           <div className="col-span-12 relative dropdown-container">
-            {isLoaded && (
+            {
               <Autocomplete
                 onLoad={(autocomplete) => {
                   autocompleteRefDepart.current = autocomplete;
@@ -107,7 +114,13 @@ export default function SearchForm({
                   if (autocompleteRefDepart.current) {
                     const place = autocompleteRefDepart.current.getPlace();
                     if (place && place.formatted_address) {
+                      // Réinitialiser les états de calcul
                       setDepart(place.formatted_address);
+
+                      // Appeler directement la fonction de calcul si les deux champs sont remplis
+                      if (arrivee) {
+                        calculateRoute();
+                      }
                     }
                   }
                 }}
@@ -151,14 +164,14 @@ export default function SearchForm({
                   {/* Rest of the dropdown code remains the same */}
                 </div>
               </Autocomplete>
-            )}
+            }
           </div>
         </div>
 
         {/* Ligne d'arrivée (same modifications) */}
         <div className="grid grid-cols-12 items-center mb-6">
           <div className="col-span-12 relative dropdown-container">
-            {isLoaded && (
+            {
               <Autocomplete
                 onLoad={(autocomplete) => {
                   autocompleteRefArrivee.current = autocomplete;
@@ -242,7 +255,7 @@ export default function SearchForm({
                   )}
                 </div>
               </Autocomplete>
-            )}
+            }
           </div>
         </div>
       </div>

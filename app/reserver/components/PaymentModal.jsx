@@ -2,6 +2,10 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  sendClientConfirmationEmail,
+  sendAdminNotificationEmail,
+} from "@/lib/emails/confirmationEmail";
 import { saveBooking } from "@/lib/firebase/bookings";
 import { getStripe } from "@/lib/stripe";
 import {
@@ -206,6 +210,7 @@ function CheckoutForm({
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -218,9 +223,8 @@ function CheckoutForm({
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/confirmation`,
+          // Ne pas utiliser return_url ici pour gérer la redirection manuellement
           payment_method_data: {
-            // Inclure le numéro de téléphone dans les métadonnées du paiement
             billing_details: {
               phone: phoneNumber,
             },
@@ -231,8 +235,18 @@ function CheckoutForm({
 
       if (error) {
         setError(error.message);
+        // Rediriger vers la page d'annulation si c'est une erreur d'abandon de paiement
+        if (
+          error.type === "card_error" &&
+          error.code === "payment_intent_canceled"
+        ) {
+          router.push("/paiement-annule");
+        }
       } else if (paymentIntent && paymentIntent.status === "succeeded") {
-        onSuccess(paymentIntent.id);
+        // Traiter le succès du paiement
+        await onSuccess(paymentIntent.id);
+        // Rediriger vers la page de succès après le traitement
+        router.push("/paiement-reussi");
       }
     } catch (err) {
       setError("Une erreur est survenue lors du traitement du paiement.");
@@ -290,7 +304,7 @@ function CheckoutForm({
         </button>
         <button
           type="submit"
-          disabled={!stripe || isLoading}
+          disabled={!stripe || !elements || isLoading}
           className="flex-1 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex justify-center items-center text-sm"
         >
           {isLoading ? (
@@ -377,6 +391,65 @@ export default function PaymentModal({
       createPaymentIntent();
     }
   }, [phoneVerified, prixFinal, user]);
+
+  const handlePaymentSuccess = async (paymentIntentId) => {
+    try {
+      // Générer un numéro de commande
+      const reservationId = `CMD-${Math.random()
+        .toString(36)
+        .substring(2, 10)
+        .toUpperCase()}`;
+
+      // Vérifier et préparer l'email
+      const emailToUse =
+        user.email || bookingData.email || "contact@izymoto.com";
+
+      // Sauvegarde de la réservation avec le numéro de commande
+      const savedBooking = await saveBooking(
+        {
+          ...bookingData,
+          paymentIntentId,
+          status: "paid",
+          reservationId,
+          name,
+          phone: phoneNumber,
+          email: emailToUse, // Ajout explicite de l'email
+        },
+        user.uid
+      );
+
+      // Préparer les données pour les emails
+      const emailData = {
+        bookingId: savedBooking.id,
+        reservationId,
+        clientName: name || user.displayName || user.email,
+        email: emailToUse, // Utiliser l'email vérifié
+        ...bookingData,
+        prix: prixFinal,
+        phone: phoneNumber,
+        paymentIntentId,
+        duree: bookingData.duree,
+        isPaid: true,
+      };
+
+      // Envoi des emails en parallèle
+      await Promise.all([
+        sendClientConfirmationEmail(emailData),
+        sendAdminNotificationEmail(emailData),
+      ]);
+
+      // Notifier l'utilisateur du succès
+      toast.success("Réservation confirmée !");
+
+      // Appeler onSuccess du parent pour finaliser le processus
+      onSuccess(savedBooking);
+
+      // La redirection est gérée dans le CheckoutForm
+    } catch (error) {
+      console.error("Erreur lors de la finalisation de la réservation", error);
+      toast.error("Une erreur est survenue lors de la confirmation.");
+    }
+  };
 
   // Créer l'intention de paiement
   const createPaymentIntent = async () => {
@@ -472,7 +545,7 @@ export default function PaymentModal({
               <CheckoutForm
                 clientSecret={clientSecret}
                 prixFinal={prixFinal}
-                onSuccess={onSuccess}
+                onSuccess={handlePaymentSuccess}
                 onCancel={onCancel}
                 phoneNumber={phoneNumber}
               />

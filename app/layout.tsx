@@ -1,6 +1,6 @@
-// app/layout.tsx
 import { Footer } from "@/components/Footer";
 import Header from "@/components/Header";
+import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "@/app/globals.css";
 
@@ -13,9 +13,11 @@ export default function RootLayout({
     <html lang="fr">
       <body className="min-h-screen bg-white text-black">
         <AuthProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
+          <GoogleMapsProvider>
+            <Header />
+            <main>{children}</main>
+            <Footer />
+          </GoogleMapsProvider>
         </AuthProvider>
       </body>
     </html>

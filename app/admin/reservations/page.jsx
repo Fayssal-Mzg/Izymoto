@@ -7,6 +7,7 @@ import {
   getAllBookings,
   updateBookingStatus,
   deleteBooking,
+  generateInvoicePDF,
 } from "@/lib/firebase/admin";
 import { useState, useEffect } from "react";
 
@@ -35,14 +36,12 @@ export default function ReservationsPage() {
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
       await updateBookingStatus(bookingId, newStatus);
-      // Mettre à jour l'interface utilisateur
       setBookings(
         bookings.map((booking) =>
           booking.id === bookingId ? { ...booking, status: newStatus } : booking
         )
       );
 
-      // Si le booking est actuellement sélectionné, mettre à jour son statut
       if (selectedBooking && selectedBooking.id === bookingId) {
         setSelectedBooking({ ...selectedBooking, status: newStatus });
       }
@@ -55,10 +54,8 @@ export default function ReservationsPage() {
     if (confirm("Êtes-vous sûr de vouloir supprimer cette réservation ?")) {
       try {
         await deleteBooking(bookingId);
-        // Mettre à jour l'interface utilisateur
         setBookings(bookings.filter((booking) => booking.id !== bookingId));
 
-        // Si le booking supprimé était affiché dans le modal, fermer le modal
         if (selectedBooking && selectedBooking.id === bookingId) {
           setShowDetailsModal(false);
         }
@@ -68,6 +65,16 @@ export default function ReservationsPage() {
           error
         );
       }
+    }
+  };
+
+  const handleGenerateInvoice = async (booking) => {
+    try {
+      const { pdfUrl } = await generateInvoicePDF(booking);
+      window.open(pdfUrl, "_blank");
+    } catch (error) {
+      console.error("Erreur lors de la génération de la facture:", error);
+      alert("Impossible de générer la facture");
     }
   };
 
@@ -88,12 +95,30 @@ export default function ReservationsPage() {
 
   return (
     <AdminLayout>
-      <h1 className="text-2xl font-bold mb-6">Gestion des réservations</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Gestion des réservations</h1>
+
+        {/* Filtre de statut */}
+        <div className="flex space-x-2">
+          <select
+            className="px-4 py-2 border rounded"
+            onChange={(e) => {
+              // Logique de filtrage des réservations
+            }}
+          >
+            <option value="">Tous les statuts</option>
+            <option value="pending">En attente</option>
+            <option value="confirmed">Confirmé</option>
+            <option value="completed">Terminé</option>
+          </select>
+        </div>
+      </div>
 
       <ReservationsTable
         bookings={bookings}
         onStatusChange={handleStatusChange}
         onViewDetails={openDetailsModal}
+        onGenerateInvoice={handleGenerateInvoice}
       />
 
       {showDetailsModal && selectedBooking && (
@@ -102,6 +127,7 @@ export default function ReservationsPage() {
           onClose={() => setShowDetailsModal(false)}
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
+          onGenerateInvoice={handleGenerateInvoice}
         />
       )}
     </AdminLayout>

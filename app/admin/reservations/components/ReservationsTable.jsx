@@ -1,9 +1,10 @@
-import { Check, Clock, X, MoreHorizontal } from "lucide-react";
+import { Check, Clock, X, MoreHorizontal, FileText } from "lucide-react";
 
 export default function ReservationsTable({
   bookings,
   onStatusChange,
   onViewDetails,
+  onGenerateInvoice,
 }) {
   const getStatusBadge = (status) => {
     switch (status) {
@@ -131,6 +132,16 @@ export default function ReservationsTable({
                       >
                         <MoreHorizontal className="h-5 w-5" />
                       </button>
+
+                      {booking.status === "completed" && (
+                        <button
+                          onClick={() => onGenerateInvoice(booking)}
+                          className="text-gold-600 hover:text-gold-900"
+                          title="Générer la facture"
+                        >
+                          <FileText className="h-5 w-5" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
