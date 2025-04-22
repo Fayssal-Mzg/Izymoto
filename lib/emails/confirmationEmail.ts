@@ -50,7 +50,8 @@ if (typeof window !== "undefined") {
     console.error("EmailJS initialization error:", error);
   }
 }
-// Interface pour les données de réservation (conservée de votre implémentation précédente)
+
+// Interface pour les données de réservation
 interface EmailBookingData {
   clientName: string;
   bookingId: string;
@@ -60,21 +61,32 @@ interface EmailBookingData {
   heure: string;
   prix: number | string;
   distance: number | string;
+  duree?: string;
   email: string;
   phone?: string;
   isPaid?: boolean;
   notes?: string;
   prioriteReservation?: boolean;
+  paymentId?: string; // Ajout du payment_id pour le template admin
+  company_name?: string; // Ajout pour le template admin
 }
 
 /**
  * Prépare les données de réservation pour l'envoi d'emails
- * (Fonction conservée de votre implémentation précédente)
  */
 export function prepareEmailData(bookingData: any): EmailBookingData {
+  console.log("⚙️ PRÉPARATION DONNÉES EMAIL - Données reçues:", {
+    name: bookingData.name,
+    phone: bookingData.phone,
+    email: bookingData.email,
+    bookingId: bookingData.bookingId,
+    paymentId: bookingData.paymentId,
+  });
+
   let dateStr = "";
   let heureStr = "";
 
+  // Traitement de la date
   if (bookingData.reservationDate) {
     const date = new Date(bookingData.reservationDate);
     dateStr = date.toLocaleDateString();
@@ -89,7 +101,7 @@ export function prepareEmailData(bookingData: any): EmailBookingData {
   }
 
   // Ajout de valeurs par défaut et fallback plus robustes
-  return {
+  const result = {
     clientName:
       bookingData.name ||
       bookingData.userName ||
@@ -106,6 +118,8 @@ export function prepareEmailData(bookingData: any): EmailBookingData {
 
     date: dateStr,
     heure: heureStr,
+
+    duree: bookingData.duree || "",
 
     prix:
       typeof bookingData.prix === "number"
@@ -126,7 +140,22 @@ export function prepareEmailData(bookingData: any): EmailBookingData {
     notes: bookingData.notes || "Aucune note",
 
     prioriteReservation: bookingData.prioriteReservation || false,
+
+    paymentId: bookingData.paymentId || bookingData.paymentIntentId || "",
+
+    company_name: "IzyMoto",
   };
+
+  console.log("⚙️ PRÉPARATION DONNÉES EMAIL - Résultat:", {
+    clientName: result.clientName,
+    phone: result.phone,
+    email: result.email,
+    bookingId: result.bookingId,
+    paymentId: result.paymentId,
+    isPaid: result.isPaid,
+  });
+
+  return result;
 }
 
 /**
@@ -170,10 +199,7 @@ export const sendDevisEmail = async (bookingData: any) => {
   }
 };
 
-// Vous n'avez plus besoin de la fonction sendDevisAdminEmail séparée car
-// votre API route envoie déjà les deux emails (client et admin) en une seule fois.
-// Vous pouvez donc supprimer cette fonction ou la modifier comme suit:
-
+// L'API route envoie déjà les deux emails (client et admin) en une seule fois
 export const sendDevisAdminEmail = async (bookingData: any) => {
   console.log(
     "L'email admin est déjà envoyé par l'API route, pas besoin d'appel séparé"
@@ -182,9 +208,15 @@ export const sendDevisAdminEmail = async (bookingData: any) => {
 };
 
 /**
- * Emails via EmailJS (autres types d'emails)
+ * Email client via EmailJS
  */
 export const sendClientConfirmationEmail = async (bookingData: any) => {
+  console.log("📧 ENVOI EMAIL CLIENT - Données entrantes:", {
+    phone: bookingData.phone,
+    email: bookingData.email,
+    name: bookingData.name || bookingData.clientName,
+  });
+
   try {
     const emailData = prepareEmailData(bookingData);
 
@@ -197,7 +229,7 @@ export const sendClientConfirmationEmail = async (bookingData: any) => {
 
     // Validation stricte de l'email
     if (!recipientEmail || !recipientEmail.includes("@")) {
-      console.error("Email invalide:", recipientEmail);
+      console.error("Email client invalide:", recipientEmail);
       return; // Ou utilisez un email par défaut
     }
 
@@ -210,7 +242,7 @@ export const sendClientConfirmationEmail = async (bookingData: any) => {
       "template_47csinh"
     );
 
-    // Convertir tous les paramètres en chaînes de caractères
+    // Convertir tous les paramètres en chaînes de caractères pour le template client
     const templateParams = {
       client_name: String(emailData.clientName),
       order_id: String(emailData.bookingId),
@@ -221,11 +253,18 @@ export const sendClientConfirmationEmail = async (bookingData: any) => {
       prix: String(emailData.prix),
       distance: String(emailData.distance),
       client_email: String(recipientEmail),
-      phone: String(emailData.phone),
+      phone: String(emailData.phone || ""),
       payment_status: emailData.isPaid
         ? "Payé en ligne"
         : "À régler au chauffeur",
     };
+
+    console.log("📧 ENVOI EMAIL CLIENT - Paramètres du template:", {
+      client_name: templateParams.client_name,
+      phone: templateParams.phone,
+      client_email: templateParams.client_email,
+      payment_status: templateParams.payment_status,
+    });
 
     // Filtrer les valeurs undefined ou null
     const cleanedParams = Object.fromEntries(
@@ -234,10 +273,10 @@ export const sendClientConfirmationEmail = async (bookingData: any) => {
 
     const response = await emailjs.send(serviceId, templateId, cleanedParams);
 
-    console.log("Email client envoyé avec succès", response);
+    console.log("📧 EMAIL CLIENT ENVOYÉ avec succès", response);
     return response;
   } catch (error) {
-    console.error("Erreur lors de l'envoi de l'email client", error);
+    console.error("❌ ÉCHEC ENVOI EMAIL CLIENT:", error);
 
     // Log plus détaillé de l'erreur
     if (error instanceof Error) {
@@ -251,7 +290,18 @@ export const sendClientConfirmationEmail = async (bookingData: any) => {
     throw error;
   }
 };
+
+/**
+ * Email admin via EmailJS
+ */
 export const sendAdminNotificationEmail = async (bookingData: any) => {
+  console.log("📧 ENVOI EMAIL ADMIN - Données entrantes:", {
+    phone: bookingData.phone,
+    email: bookingData.email,
+    name: bookingData.name || bookingData.clientName,
+    paymentId: bookingData.paymentId || bookingData.paymentIntentId,
+  });
+
   try {
     const emailData = prepareEmailData(bookingData);
 
@@ -264,28 +314,47 @@ export const sendAdminNotificationEmail = async (bookingData: any) => {
       "template_6uzak99"
     );
 
-    const response = await emailjs.send(serviceId, templateId, {
-      client_name: emailData.clientName,
-      booking_id: emailData.bookingId, // Numéro de commande
-      depart: emailData.depart,
-      arrivee: emailData.arrivee,
-      date: emailData.date,
-      heure: emailData.heure,
-      prix: emailData.prix,
-      distance: emailData.distance,
-      client_email: emailData.email,
-      client_phone: emailData.phone, // Numéro de téléphone
+    // Paramètres pour le template admin
+    const templateParams = {
+      client_name: String(emailData.clientName),
+      booking_id: String(emailData.bookingId),
+      depart: String(emailData.depart),
+      arrivee: String(emailData.arrivee),
+      date: String(emailData.date),
+      heure: String(emailData.heure),
+      prix: String(emailData.prix),
+      distance: String(emailData.distance),
+      duree: emailData.duree ? String(emailData.duree) : "",
+      client_email: String(emailData.email),
+      client_phone: String(emailData.phone || "Non communiqué"),
       payment_status: emailData.isPaid
         ? "Payé en ligne"
         : "À régler au chauffeur",
-      notes: emailData.notes || "Aucune note spécifique",
-      reservation_number: emailData.bookingId, // Encore une référence au numéro de commande
+      notes: String(emailData.notes || "Aucune note spécifique"),
+      payment_id: String(emailData.paymentId || ""),
+      company_name: String(emailData.company_name || "IzyMoto"),
+      reservation_number: String(emailData.bookingId),
+    };
+
+    console.log("📧 ENVOI EMAIL ADMIN - Paramètres du template:", {
+      client_name: templateParams.client_name,
+      client_phone: templateParams.client_phone,
+      client_email: templateParams.client_email,
+      payment_id: templateParams.payment_id,
+      payment_status: templateParams.payment_status,
     });
 
-    console.log("Email admin envoyé avec succès", response);
+    // Filtrer les valeurs undefined ou null
+    const cleanedParams = Object.fromEntries(
+      Object.entries(templateParams).filter(([_, v]) => v != null)
+    );
+
+    const response = await emailjs.send(serviceId, templateId, cleanedParams);
+
+    console.log("📧 EMAIL ADMIN ENVOYÉ avec succès", response);
     return response;
   } catch (error) {
-    console.error("Erreur lors de l'envoi de l'email admin", error);
+    console.error("❌ ÉCHEC ENVOI EMAIL ADMIN:", error);
     throw error;
   }
 };
@@ -294,23 +363,22 @@ export const sendAdminNotificationEmail = async (bookingData: any) => {
  * Envoie les emails de devis (client et admin)
  */
 export const sendDevisEmails = async (bookingData: any): Promise<boolean> => {
-  console.log("Envoi des emails de devis pour:", bookingData);
-  let success = false;
+  console.log("Envoi des emails de devis pour:", {
+    phone: bookingData.phone,
+    email: bookingData.email,
+  });
 
-  // Un seul appel à l'API qui envoie les deux emails
   try {
     await sendDevisEmail(bookingData);
-    success = true;
-    // Nous n'avons plus besoin d'appeler sendDevisAdminEmail car l'API s'en charge
+    return true;
   } catch (error) {
     console.warn(
       "Erreur lors de l'envoi des emails de devis, mais on continue:",
       error
     );
+    // Même si les emails échouent, considérer l'opération comme réussie pour ne pas bloquer le flux
+    return true;
   }
-
-  // Même si les emails échouent, considérer l'opération comme réussie pour ne pas bloquer le flux
-  return true;
 };
 
 /**
@@ -319,6 +387,13 @@ export const sendDevisEmails = async (bookingData: any): Promise<boolean> => {
 export const sendConfirmationEmails = async (
   bookingData: any
 ): Promise<boolean> => {
+  console.log("📧 CONFIRMATION EMAILS - Données initiales reçues:", {
+    phone: bookingData.phone,
+    email: bookingData.email,
+    name: bookingData.name || bookingData.clientName,
+    paymentId: bookingData.paymentId,
+  });
+
   try {
     // Envoyer l'email au client via EmailJS
     await sendClientConfirmationEmail(bookingData);
@@ -328,7 +403,10 @@ export const sendConfirmationEmails = async (
 
     return true;
   } catch (error) {
-    console.error("Erreur lors de l'envoi des emails de confirmation:", error);
+    console.error(
+      "❌ Erreur lors de l'envoi des emails de confirmation:",
+      error
+    );
     return false;
   }
 };

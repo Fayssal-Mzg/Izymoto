@@ -369,32 +369,14 @@ export function useReservation() {
   const handlePaymentSuccess = async (paymentId: string) => {
     if (!user) return;
 
-    try {
-      await handleSuccessfulPayment({
-        user,
-        bookingData: {
-          depart,
-          arrivee,
-          distance,
-          duree,
-          prix,
-        },
-        paymentId,
-        name,
-        phone,
-        prixFinal,
-        reservationDate,
-        notes,
-        prioriteReservation,
-        onSuccess: () => {
-          clearReservationDetails();
-          setCurrentStep("confirmation");
-        },
-      });
-    } catch (error) {
-      // Géré dans la fonction handleSuccessfulPayment
-      console.error("Erreur lors du paiement", error);
-    }
+    // Pour éviter les doublons, vérifie si le paiement est déjà traité
+    console.log(
+      "🔄 useReservation - handlePaymentSuccess appelé. Pas besoin de traiter à nouveau"
+    );
+
+    // Au lieu d'appeler handleSuccessfulPayment une seconde fois, fais simplement :
+    clearReservationDetails();
+    setCurrentStep("confirmation");
   };
 
   const resetForm = () => {

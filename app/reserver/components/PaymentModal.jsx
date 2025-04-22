@@ -2,11 +2,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  sendClientConfirmationEmail,
-  sendAdminNotificationEmail,
-} from "@/lib/emails/confirmationEmail";
-import { saveBooking } from "@/lib/firebase/bookings";
+import { handleSuccessfulPayment } from "@/lib/services/paymentService";
+// Service de paiement
 import { getStripe } from "@/lib/stripe";
 import {
   Elements,
@@ -15,10 +12,9 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { getAuth } from "firebase/auth";
 import { doc, setDoc, getDoc, getFirestore } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 
 // Stripe initialization
@@ -205,6 +201,7 @@ function CheckoutForm({
   onSuccess,
   onCancel,
   phoneNumber,
+  userName,
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -227,6 +224,7 @@ function CheckoutForm({
           payment_method_data: {
             billing_details: {
               phone: phoneNumber,
+              name: userName,
             },
           },
         },
@@ -243,14 +241,18 @@ function CheckoutForm({
           router.push("/paiement-annule");
         }
       } else if (paymentIntent && paymentIntent.status === "succeeded") {
+        console.log("💳 Paiement confirmé avec ID:", paymentIntent.id);
+        console.log("☎️ Numéro de téléphone utilisé:", phoneNumber);
+
         // Traiter le succès du paiement
         await onSuccess(paymentIntent.id);
+
         // Rediriger vers la page de succès après le traitement
         router.push("/paiement-reussi");
       }
     } catch (err) {
       setError("Une erreur est survenue lors du traitement du paiement.");
-      console.error(err);
+      console.error("❌ Erreur lors du traitement de paiement:", err);
     } finally {
       setIsLoading(false);
     }
@@ -352,6 +354,7 @@ export default function PaymentModal({
   const [error, setError] = useState(null);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [name, setName] = useState("");
 
   // Accéder à l'utilisateur connecté
   const { user } = useAuth();
@@ -370,12 +373,30 @@ export default function PaymentModal({
         const db = getFirestore();
         const userDoc = await getDoc(doc(db, "users", user.uid));
 
-        if (userDoc.exists() && userDoc.data().phoneNumber) {
-          setPhoneNumber(userDoc.data().phoneNumber);
-          setPhoneVerified(true);
-        } else if (bookingData && bookingData.phone) {
-          // Utiliser le téléphone du formulaire précédent comme valeur initiale
-          setPhoneNumber(bookingData.phone);
+        if (userDoc.exists()) {
+          // Récupérer le numéro de téléphone
+          if (userDoc.data().phoneNumber) {
+            setPhoneNumber(userDoc.data().phoneNumber);
+            setPhoneVerified(true);
+          }
+
+          // Récupérer le nom si disponible
+          if (userDoc.data().displayName) {
+            setName(userDoc.data().displayName);
+          } else if (user.displayName) {
+            setName(user.displayName);
+          }
+        }
+
+        // Utiliser des valeurs de bookingData si disponibles
+        if (bookingData) {
+          if (bookingData.phone && !phoneNumber) {
+            setPhoneNumber(bookingData.phone);
+          }
+
+          if (bookingData.name && (!name || name === "")) {
+            setName(bookingData.name);
+          }
         }
       } catch (err) {
         console.error("Erreur lors de la vérification du numéro:", err);
@@ -394,57 +415,28 @@ export default function PaymentModal({
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
-      // Générer un numéro de commande
-      const reservationId = `CMD-${Math.random()
-        .toString(36)
-        .substring(2, 10)
-        .toUpperCase()}`;
+      console.log("🔄 handlePaymentSuccess - Début avec ID:", paymentIntentId);
+      console.log("📱 Données téléphone:", phoneNumber);
 
-      // Vérifier et préparer l'email
-      const emailToUse =
-        user.email || bookingData.email || "contact@izymoto.com";
-
-      // Sauvegarde de la réservation avec le numéro de commande
-      const savedBooking = await saveBooking(
-        {
-          ...bookingData,
-          paymentIntentId,
-          status: "paid",
-          reservationId,
-          name,
-          phone: phoneNumber,
-          email: emailToUse, // Ajout explicite de l'email
-        },
-        user.uid
-      );
-
-      // Préparer les données pour les emails
-      const emailData = {
-        bookingId: savedBooking.id,
-        reservationId,
-        clientName: name || user.displayName || user.email,
-        email: emailToUse, // Utiliser l'email vérifié
-        ...bookingData,
-        prix: prixFinal,
+      // Utiliser le service de paiement factorié
+      await handleSuccessfulPayment({
+        user,
+        bookingData,
+        paymentId: paymentIntentId,
+        name: name || user.displayName || "",
         phone: phoneNumber,
-        paymentIntentId,
-        duree: bookingData.duree,
-        isPaid: true,
-      };
-
-      // Envoi des emails en parallèle
-      await Promise.all([
-        sendClientConfirmationEmail(emailData),
-        sendAdminNotificationEmail(emailData),
-      ]);
+        prixFinal,
+        reservationDate,
+        notes: bookingData.notes || "",
+        prioriteReservation: bookingData.prioriteReservation || false,
+        onSuccess: (savedBooking) => {
+          console.log("✅ Réservation confirmée avec succès:", savedBooking.id);
+          onSuccess(savedBooking);
+        },
+      });
 
       // Notifier l'utilisateur du succès
       toast.success("Réservation confirmée !");
-
-      // Appeler onSuccess du parent pour finaliser le processus
-      onSuccess(savedBooking);
-
-      // La redirection est gérée dans le CheckoutForm
     } catch (error) {
       console.error("Erreur lors de la finalisation de la réservation", error);
       toast.error("Une erreur est survenue lors de la confirmation.");
@@ -460,6 +452,7 @@ export default function PaymentModal({
       const bookingWithPhone = {
         ...bookingData,
         phone: phoneNumber, // Remplacer par le numéro vérifié
+        name: name, // Ajouter le nom
       };
 
       const response = await fetch("/api/create-payment-intent", {
@@ -508,6 +501,11 @@ export default function PaymentModal({
               ? "Information de contact"
               : "Paiement sécurisé"}
           </h3>
+          {phoneVerified && (
+            <p className="text-xs text-gray-800 mt-1">
+              Téléphone: {phoneNumber}
+            </p>
+          )}
         </div>
 
         {/* Conteneur avec scrolling */}
@@ -548,6 +546,7 @@ export default function PaymentModal({
                 onSuccess={handlePaymentSuccess}
                 onCancel={onCancel}
                 phoneNumber={phoneNumber}
+                userName={name}
               />
             </Elements>
           ) : (
