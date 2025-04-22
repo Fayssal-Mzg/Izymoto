@@ -10,18 +10,32 @@ export default function DateTimeInput({
 }) {
   const [error, setError] = useState("");
 
-  // Fonction pour obtenir la date/heure minimale (maintenant + 15min)
   const getMinDateTime = () => {
     const now = new Date();
     now.setMinutes(now.getMinutes() + 15);
-    return now.toISOString().slice(0, 16);
+
+    // Format YYYY-MM-DDThh:mm en conservant le fuseau horaire local
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  // Fonction pour obtenir la date/heure maximale (1 an à partir de maintenant)
+  // Même chose pour la date max
   const getMaxDateTime = () => {
     const now = new Date();
     now.setFullYear(now.getFullYear() + 1);
-    return now.toISOString().slice(0, 16);
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   // Validation de la date
@@ -59,11 +73,17 @@ export default function DateTimeInput({
     return true;
   };
 
-  // Pré-remplissage de la date du jour
   useEffect(() => {
     const now = new Date();
     now.setMinutes(now.getMinutes() + 15);
-    const defaultDateTime = now.toISOString().slice(0, 16);
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+
+    const defaultDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
     setReservationDate(defaultDateTime);
   }, []);
 

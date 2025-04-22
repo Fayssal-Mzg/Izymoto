@@ -1,19 +1,30 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useReservation } from "@/lib/hooks/useReservation";
 import { Phone, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+// Ajoute cette import
+
 const Header = () => {
   const { user, logOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { resetForm } = useReservation(); // Récupère la fonction resetForm
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Fonction qui réinitialise l'état avant la navigation
+  const handleNavigation = () => {
+    resetForm(); // Réinitialise le formulaire de réservation
+    if (isMenuOpen) {
+      toggleMenu(); // Ferme le menu si ouvert
+    }
+  };
   return (
     <header className="w-full z-50 bg-transparent">
       {/* Barre supérieure combinée */}
@@ -23,6 +34,7 @@ const Header = () => {
           <Link
             href="/"
             className="flex-shrink-0 transition-transform duration-300 hover:scale-105"
+            onClick={handleNavigation}
           >
             <Image
               src="/Izymoto1.svg"
@@ -40,6 +52,7 @@ const Header = () => {
                 <Link
                   href="/reserver"
                   className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  onClick={handleNavigation}
                 >
                   RÉSERVER UN TRAJET
                 </Link>
@@ -48,6 +61,7 @@ const Header = () => {
                 <Link
                   href="/nos-tarifs"
                   className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  onClick={handleNavigation}
                 >
                   NOS TARIFS
                 </Link>
@@ -56,6 +70,7 @@ const Header = () => {
                 <Link
                   href="/aeroports"
                   className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  onClick={handleNavigation}
                 >
                   AÉROPORTS PARIS
                 </Link>
@@ -64,6 +79,7 @@ const Header = () => {
                 <Link
                   href="/about"
                   className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  onClick={handleNavigation}
                 >
                   À PROPOS DE IZYMOTO
                 </Link>
@@ -85,6 +101,7 @@ const Header = () => {
                 <Link
                   href="/profil"
                   className="text-sm font-medium  transition-colors duration-300"
+                  onClick={handleNavigation}
                 >
                   Mon Profil
                 </Link>
