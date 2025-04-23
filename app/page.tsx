@@ -83,7 +83,7 @@ export default function Home() {
         />
         <meta
           property="og:image"
-          content="https://izymoto.com/images/voiture-izymoto.jpg"
+          content="https://izymoto.com/images/voiture-izymoto.webp"
         />
         <meta property="og:url" content="https://izymoto.com" />
         <meta property="og:type" content="website" />
@@ -101,7 +101,7 @@ export default function Home() {
         />
         <meta
           name="twitter:image"
-          content="https://izymoto.com/images/voiture-izymoto.jpg"
+          content="https://izymoto.com/images/voiture-izymoto.webp"
         />
 
         {/* Structured Data - LocalBusiness Schema */}
@@ -111,7 +111,7 @@ export default function Home() {
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
               "name": "IZYMOTO",
-              "image": "https://izymoto.com/images/logo.jpg",
+              "image": "https://izymoto.com/images/logo.webp",
               "url": "https://izymoto.com",
               "telephone": "+33 652753521",
               "address": {
@@ -193,7 +193,7 @@ export default function Home() {
               </div>
               <div className="md:w-1/2">
                 <img
-                  src="/taxi-paris.jpg"
+                  src="/taxi-paris.webp"
                   alt="Voiture IZYMOTO de service VTC premium à Paris"
                   className="rounded-lg shadow-2xl"
                 />
@@ -548,7 +548,7 @@ export default function Home() {
             <div className="flex flex-col md:flex-row items-center gap-12">
               <div className="md:w-1/2">
                 <img
-                  src="/about-izymoto.jpg"
+                  src="/about-izymoto.webp"
                   alt="L'équipe de chauffeurs professionnels IZYMOTO"
                   className="rounded-lg shadow-xl"
                 />

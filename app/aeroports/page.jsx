@@ -11,7 +11,7 @@ export default function AeroportsPage() {
       <section className="relative min-h-screen flex items-center justify-center">
         <div className="absolute inset-0 opacity-50">
           <Image
-            src="/aeroport-banner.png"
+            src="/aeroport-banner.webp"
             alt="Taxi moto aéroports Paris"
             fill
             className="object-cover"
@@ -66,20 +66,20 @@ export default function AeroportsPage() {
                 description:
                   "Transfert direct et efficace entre Paris et l'aéroport CDG.",
                 price: "100€",
-                image: "/travel.png",
+                image: "/travel.webp",
               },
               {
                 name: "Orly (ORY)",
                 description: "Connexion rapide entre Paris et l'aéroport Orly.",
                 price: "80€",
-                image: "/travel2.png",
+                image: "/travel2.webp",
               },
               {
                 name: "Beauvais (BVA)",
                 description:
                   "Service de taxi moto premium vers l'aéroport de Beauvais.",
                 price: "150€",
-                image: "/travel4.png",
+                image: "/travel4.webp",
               },
             ].map((airport) => (
               <div
