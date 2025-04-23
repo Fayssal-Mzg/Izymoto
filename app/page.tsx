@@ -697,7 +697,9 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold mb-1">Adresse</h3>
-                  <p className="text-gray-700">1 Rue de Paris, 75001 Paris</p>
+                  <p className="text-gray-700">
+                    31 rue des Etudiants 92026, Courbevoie
+                  </p>
                 </div>
               </div>
             </div>
@@ -765,7 +767,7 @@ export default function Home() {
               {/* Logo and intro */}
               <div className="md:col-span-1">
                 <img
-                  src="/images/logo.png"
+                  src="/Izymoto1.svg"
                   alt="Logo IZYMOTO"
                   className="h-12 mb-4"
                 />
