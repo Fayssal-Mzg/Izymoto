@@ -65,10 +65,7 @@ export default function Home() {
         <title>
           IZYMOTO | Service de transport VTC et navette aéroports Paris
         </title>
-        <meta
-          name="google-site-verification"
-          content="sp7Ul11gpOzFh0MvFew7DMhjkIPzqBNeA8e1DdZL40s"
-        />
+
         <meta
           name="description"
           content="IZYMOTO vous propose des services de transport privé et professionnel à Paris. Réservez en ligne, tarifs compétitifs pour vos trajets aéroports et navettes personnalisées."
