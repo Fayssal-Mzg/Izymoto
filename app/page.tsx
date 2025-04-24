@@ -137,23 +137,6 @@ export default function Home() {
       </Head>
 
       <main className="bg-background overflow-x-hidden min-h-screen">
-        {/* Reservation Section */}
-        <section id="reservation" className="relative bg-white py-16">
-          <div className="container mx-auto px-4 md:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <h2 className="text-4xl md:text-5xl font-bebas mb-3">
-                Réservez votre trajet en quelques clics
-              </h2>
-              <p className="text-lg font-playfair text-gray-600 max-w-xl mx-auto">
-                Indiquez votre point de départ et d'arrivée pour obtenir un
-                tarif instantané
-              </p>
-            </div>
-            <ReservationProvider>
-              <HomeReservationSection />
-            </ReservationProvider>
-          </div>
-        </section>
         {/* Hero Section with intro text */}
         <section
           ref={heroRef}
@@ -199,6 +182,24 @@ export default function Home() {
                 />
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Reservation Section */}
+        <section id="reservation" className="relative bg-white py-16">
+          <div className="container mx-auto px-4 md:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl md:text-5xl font-bebas mb-3">
+                Réservez votre trajet en quelques clics
+              </h2>
+              <p className="text-lg font-playfair text-gray-600 max-w-xl mx-auto">
+                Indiquez votre point de départ et d'arrivée pour obtenir un
+                tarif instantané
+              </p>
+            </div>
+            <ReservationProvider>
+              <HomeReservationSection />
+            </ReservationProvider>
           </div>
         </section>
 
