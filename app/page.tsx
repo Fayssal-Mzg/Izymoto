@@ -63,7 +63,7 @@ export default function Home() {
       {/* SEO Metadata */}
       <Head>
         <title>
-          IZYMOTO | Service de transport VTC et navette aéroports Paris
+          IZYMOTO | Service de transport motorisé de passager et navette aéroports Paris
         </title>
 
         <meta
@@ -75,7 +75,8 @@ export default function Home() {
         {/* Open Graph Tags */}
         <meta
           property="og:title"
-          content="IZYMOTO | Service de transport VTC Paris"
+          content="IZYMOTO | Service de transport 
+          IZYMOTO | Service de transport motorisé Paris"
         />
         <meta
           property="og:description"
@@ -93,7 +94,8 @@ export default function Home() {
         <meta name="twitter:site" content="@IZYMOTO" />
         <meta
           name="twitter:title"
-          content="IZYMOTO | Service de transport VTC Paris"
+          content="IZYMOTO | Service de transport 
+          IZYMOTO | Service de transport motorisé Paris"
         />
         <meta
           name="twitter:description"
@@ -130,7 +132,8 @@ export default function Home() {
                 "closes": "23:59"
               },
               "priceRange": "€€",
-              "description": "Service de transport VTC à Paris et navettes aéroports"
+              "description": "Service de transport 
+          IZYMOTO | Service de transport motorisé à Paris et navettes aéroports"
             }
           `}
         </script>
@@ -150,12 +153,13 @@ export default function Home() {
             <div className="flex flex-col md:flex-row items-center">
               <div className="md:w-1/2 mb-10 md:mb-0">
                 <h1 className="text-5xl md:text-7xl font-bebas mb-4">
-                  <span className="text-gold-400">Transport VTC</span> de
+                  <span className="text-gold-400">Transport 
+           motorisé de passager</span> de
                   qualité à Paris
                 </h1>
                 <p className="text-xl font-playfair text-gray-300 max-w-lg mb-8">
                   Déplacez-vous rapidement et confortablement dans Paris avec
-                  notre service de VTC premium. Navettes aéroports, déplacements
+                  notre service IZYMOTO premium. Navettes aéroports, déplacements
                   professionnels ou sorties nocturnes.
                 </p>
                 <div className="flex flex-wrap gap-4">
@@ -177,7 +181,7 @@ export default function Home() {
               <div className="md:w-1/2">
                 <img
                   src="/taxi-paris.jpg"
-                  alt="Voiture IZYMOTO de service VTC premium à Paris"
+                  alt="Voiture IZYMOTO de service de transport premium à Paris"
                   className="rounded-lg shadow-2xl"
                 />
               </div>
@@ -564,7 +568,7 @@ export default function Home() {
                   transport haut de gamme, fiable et accessible à Paris. Fondée
                   par des passionnés d'automobile et d'excellence du service,
                   notre entreprise s'est rapidement fait un nom dans le secteur
-                  exigeant du VTC parisien.
+                  exigeant transport de passager parisien.
                 </p>
                 <p className="text-lg text-gray-700 mb-6">
                   Notre flotte moderne de véhicules premium et nos chauffeurs
@@ -574,8 +578,7 @@ export default function Home() {
                 </p>
                 <p className="text-lg text-gray-700 mb-6">
                   La satisfaction de nos clients est notre priorité absolue,
-                  comme en témoignent nos excellentes évaluations et notre taux
-                  élevé de clients fidèles.
+                  comme en témoignent notre volonté d'obtenir une haute évaluation de nos clients fidèles.
                 </p>
                 <div className="flex items-center gap-4">
                   <Award className="h-10 w-10 text-gold-500" />
@@ -773,7 +776,7 @@ export default function Home() {
                   className="h-12 mb-4"
                 />
                 <p className="text-gray-400 mb-4">
-                  Service de transport VTC premium à Paris et en Île-de-France.
+                  Service de transport premium à Paris et en Île-de-France.
                   Navettes aéroports, trajets professionnels et sorties.
                 </p>
               </div>
