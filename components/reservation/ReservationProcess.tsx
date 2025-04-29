@@ -1,4 +1,3 @@
-// components/reservation/ReservationProcess.tsx
 "use client";
 
 import ConfirmationModal from "@/app/reserver/components/ConfirmationModal";
@@ -9,14 +8,18 @@ import { MapWrapper } from "@/app/reserver/components/MapWrapper";
 import PaymentModal from "@/app/reserver/components/PaymentModal";
 import ReservationModal from "@/app/reserver/components/ReservationModal";
 import SearchForm from "@/app/reserver/components/SearchForm";
-import ReservationForm from "@/components/reservation/ReservationForm";
 import { useReservation } from "@/lib/hooks/useReservation";
-import React from "react";
+import { ChevronUp } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
 export default function ReservationProcess({
   isStandalone = true,
   customContainerClass = "",
 }) {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [formExpanded, setFormExpanded] = useState(true);
+  const [currentLocation, setCurrentLocation] = useState(null);
+
   const {
     depart,
     setDepart,
@@ -29,6 +32,7 @@ export default function ReservationProcess({
     prioriteReservation,
     setPrioriteReservation,
     prixFinal,
+    setPrixFinal,
     reservationDate,
     setReservationDate,
     name,
@@ -48,52 +52,137 @@ export default function ReservationProcess({
     resetForm,
     calculateRoute,
     handleRequestDevis,
+    resetRouteData,
   } = useReservation();
+
+  // Surveillance du défilement pour montrer/cacher le bouton de retour en haut
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Fonction pour revenir en haut de la page
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  // Détection de la géolocalisation pour mobile
+  useEffect(() => {
+    if (isStandalone && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          /* Silencieusement échouer */
+        }
+      );
+    }
+  }, [isStandalone]);
 
   return (
     <MapWrapper>
       <main className={`bg-background min-h-screen ${customContainerClass}`}>
         {isStandalone ? (
-          // Affichage pour la page /reserver - Plein écran avec carte en fond
-          <section className="relative min-h-[calc(100vh-70px)] bg-white">
-            {/* Conteneur de la carte Google Maps */}
-            <div className="absolute inset-0">
+          // Affichage pour la page /reserver - Optimisé pour mobile
+          <section className="relative flex flex-col min-h-[calc(100vh-70px)]">
+            {/* Conteneur de la carte responsive - Plus grand sur mobile pour faciliter l'interaction */}
+            <div className="relative flex-grow h-[60vh] md:h-[50vh] lg:absolute lg:inset-0">
               <div className="h-full w-full">
-                {
-                  <div className="h-full w-full">
-                    <MapContainer directions={directions} />
-                  </div>
-                }
+                <MapContainer 
+                  directions={directions} 
+                  userLocation={currentLocation}
+                  showFullScreen={true}
+                />
               </div>
             </div>
 
-            {/* Formulaire de recherche superposé */}
-            <div className="absolute bottom-0 left-0 right-0 w-full bg-black/80 backdrop-blur-sm py-4 md:py-6 z-10">
-              <div className="container mx-auto px-4">
-                <div className="max-w-lg mx-auto md:max-w-none">
-                  <h1 className="text-xl md:text-2xl font-medium mb-4 text-white text-center md:text-left">
-                    Réserver un trajet
-                  </h1>
-                  <SearchForm
-                    depart={depart}
-                    setDepart={setDepart}
-                    arrivee={arrivee}
-                    setArrivee={setArrivee}
-                    prix={prix}
-                    distance={distance}
-                    duree={duree}
-                    calculateRoute={calculateRoute}
+            {/* Formulaire de recherche - Plein écran sur mobile, superposé sur desktop */}
+            <div className="relative lg:absolute bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md shadow-lg transition-all duration-300">
+              {/* Barre de titre avec bouton d'expansion/réduction sur mobile */}
+              <div 
+                className="px-4 py-3 flex items-center justify-between cursor-pointer lg:cursor-default"
+                onClick={() => setFormExpanded(!formExpanded)}
+              >
+                <h1 className="text-xl font-medium text-white">
+                  Réserver un trajet
+                </h1>
+                <button 
+                  className="lg:hidden rounded-full bg-white/10 p-1.5 transition-transform duration-300"
+                  aria-label={formExpanded ? "Réduire le formulaire" : "Développer le formulaire"}
+                >
+                  <ChevronUp 
+                    size={18} 
+                    className={`text-white transform transition-transform duration-300 ${formExpanded ? '' : 'rotate-180'}`} 
                   />
+                </button>
+              </div>
+
+              {/* Formulaire avec animation d'expansion/réduction */}
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out
+                ${formExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 lg:max-h-[1000px] lg:opacity-100'}
+              `}>
+                <div className="container mx-auto px-4 py-4">
+                  <div className="max-w-md mx-auto lg:max-w-none">
+                    <SearchForm
+                      depart={depart}
+                      setDepart={setDepart}
+                      arrivee={arrivee}
+                      setArrivee={setArrivee}
+                      prix={prix}
+                      distance={distance}
+                      duree={duree}
+                      calculateRoute={calculateRoute}
+                      resetRouteData={resetRouteData}
+                      onReserverClick={() => {
+                        if (prix !== null) {
+                          proceedToReservation();
+                        }
+                      }}
+                      customInputClass="bg-white/10 text-white placeholder-white/60 focus:bg-white/20"
+                      customButtonClass="bg-white text-black hover:bg-gray-100"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </section>
         ) : (
-          // Affichage simple pour la page d'accueil
-          <ReservationForm
-            isSimplified={true}
-            customContainerClass="container mx-auto px-4 py-8"
-          />
+          // Affichage simple pour la page d'accueil (inchangé)
+          <div className="container mx-auto px-4 py-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center">
+              Réservez votre trajet
+            </h2>
+            <p className="text-base text-gray-600 max-w-xl mx-auto text-center mb-8">
+              Indiquez votre point de départ et d'arrivée pour obtenir un tarif instantané
+            </p>
+            <SearchForm
+              depart={depart}
+              setDepart={setDepart}
+              arrivee={setArrivee}
+              setArrivee={setArrivee}
+              prix={prix}
+              distance={distance}
+              duree={duree}
+              calculateRoute={calculateRoute}
+              resetRouteData={resetRouteData}
+              onReserverClick={() => {
+                if (prix !== null) {
+                  proceedToReservation();
+                }
+              }}
+            />
+          </div>
         )}
 
         {/* Modals pour le processus de réservation */}
@@ -111,6 +200,16 @@ export default function ReservationProcess({
             onRequestDevis={handleRequestDevis}
             reservationDate={reservationDate}
             setReservationDate={setReservationDate}
+            setPrixFinal={setPrixFinal}
+          />
+        )}
+
+        {currentStep === "guest_info" && (
+          <GuestInformationModal
+            onSubmit={(guestData) => {
+              handleRequestDevis(guestData);
+            }}
+            onCancel={() => setCurrentStep("devis")}
           />
         )}
 
@@ -148,17 +247,16 @@ export default function ReservationProcess({
             onClose={resetForm}
           />
         )}
-        {currentStep === "guest_info" && (
-          <GuestInformationModal
-            onSubmit={(
-              guestData:
-                | { email?: string; phone?: string; name?: string }
-                | undefined
-            ) => {
-              handleRequestDevis(guestData);
-            }}
-            onCancel={() => setCurrentStep("devis")}
-          />
+
+        {/* Bouton pour remonter en haut - Visible après défilement sur mobile */}
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-5 right-5 z-30 bg-black text-white p-3 rounded-full shadow-lg hover:bg-gray-800 transition-colors"
+            aria-label="Retour en haut"
+          >
+            <ChevronUp size={20} />
+          </button>
         )}
       </main>
     </MapWrapper>

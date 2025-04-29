@@ -1,18 +1,18 @@
-// app/reserver/components/ReservationModal.jsx
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { useState, useEffect, useRef } from "react";
+import { Calendar, User, Phone, FileText, X, ArrowRight } from "lucide-react";
 
 export default function ReservationModal({
   reservationDate,
   setReservationDate,
   name,
   setName,
-  phone, // Gardé pour compatibilité mais non utilisé
-  setPhone, // Gardé pour compatibilité mais non utilisé
+  phone,
+  setPhone,
   notes,
   setNotes,
   onCancel,
@@ -20,8 +20,14 @@ export default function ReservationModal({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [animateIn, setAnimateIn] = useState(false);
   const { user } = useAuth();
   const dataFetchedRef = useRef(false);
+
+  // Animation d'entrée
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
 
   // Récupérer les données utilisateur depuis Firestore UNE SEULE FOIS
   useEffect(() => {
@@ -42,6 +48,11 @@ export default function ReservationModal({
           if (!name && (userData.displayName || user.displayName)) {
             setName(userData.displayName || user.displayName);
           }
+          
+          // Pré-remplir le téléphone s'il est disponible
+          if (!phone && userData.phoneNumber) {
+            setPhone(userData.phoneNumber);
+          }
         } else if (user.displayName && !name) {
           // Fallback to Auth user data if Firestore doc doesn't exist
           setName(user.displayName);
@@ -60,7 +71,7 @@ export default function ReservationModal({
     };
 
     fetchUserData();
-  }, [user]); // Ne dépendez que de user, pas de name
+  }, [user, name, phone, setName, setPhone]);
 
   // Validation du formulaire
   const handleProceed = () => {
@@ -69,6 +80,11 @@ export default function ReservationModal({
     // Vérification des champs obligatoires
     if (!name || !name.trim()) {
       setError("Le nom complet est obligatoire");
+      return;
+    }
+
+    if (!phone || !phone.trim()) {
+      setError("Le numéro de téléphone est obligatoire");
       return;
     }
 
@@ -98,98 +114,124 @@ export default function ReservationModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-lg w-full h-full sm:h-auto sm:w-full sm:max-w-md mx-auto flex flex-col sm:max-h-[90vh]">
-        <div className="bg-[#ffc107] p-4 rounded-t-lg flex-shrink-0">
-          <h3 className="text-xl font-bold text-black">
-            Finaliser votre réservation
-          </h3>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div 
+        className={`bg-white rounded-xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-300 ${
+          animateIn ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        }`}
+        style={{ maxHeight: '90vh' }}
+      >
+        {/* Header avec bouton de fermeture */}
+        <div className="relative p-6 border-b border-gray-100">
+          <h3 className="text-xl font-bold text-gray-900">Finaliser votre réservation</h3>
+          <button 
+            onClick={onCancel}
+            className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+            aria-label="Fermer"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        {/* Conteneur avec scrolling */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
+        {/* Conteneur scrollable */}
+        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 78px)' }}>
+          <p className="text-gray-600 mb-6">
+            Veuillez compléter les informations pour finaliser votre réservation.
+          </p>
+
           {error && (
-            <div className="p-3 bg-red-100 text-red-700 rounded-md mb-4 text-sm">
+            <div className="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 rounded mb-6">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="flex items-center justify-center py-4">
-              <svg
-                className="animate-spin h-6 w-6 text-gray-500"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin h-8 w-8 border-3 border-black border-t-transparent rounded-full"></div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div>
+            <div className="space-y-6">
+              <div className="space-y-2">
                 <label
                   htmlFor="date"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Date et heure*
+                  Date et heure <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="datetime-local"
-                  id="date"
-                  value={reservationDate}
-                  onChange={(e) => setReservationDate(e.target.value)}
-                  className="block w-full p-2 border border-gray-300 rounded-md text-base"
-                  min={getMinDateTime()}
-                  required
-                />
+                <div className="relative">
+                  <Calendar size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="datetime-local"
+                    id="date"
+                    value={reservationDate}
+                    onChange={(e) => setReservationDate(e.target.value)}
+                    className="pl-10 block w-full p-3 border border-gray-300 rounded-lg focus:ring-black focus:border-black bg-white transition-all"
+                    min={getMinDateTime()}
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Nom complet*
+                  Nom complet <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="block w-full p-2 border border-gray-300 rounded-md text-base"
-                  placeholder="Votre nom"
-                  required
-                />
+                <div className="relative">
+                  <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10 block w-full p-3 border border-gray-300 rounded-lg focus:ring-black focus:border-black bg-white transition-all"
+                    placeholder="Votre nom et prénom"
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
+              <div className="space-y-2">
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Téléphone <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="pl-10 block w-full p-3 border border-gray-300 rounded-lg focus:ring-black focus:border-black bg-white transition-all"
+                    placeholder="06 xx xx xx xx"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <label
                   htmlFor="notes"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Instructions particulières
                 </label>
-                <textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="block w-full p-2 border border-gray-300 rounded-md text-base"
-                  rows={3}
-                  placeholder="Instructions pour le chauffeur..."
-                />
+                <div className="relative">
+                  <FileText size={18} className="absolute left-3 top-3 text-gray-500" />
+                  <textarea
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="pl-10 block w-full p-3 border border-gray-300 rounded-lg focus:ring-black focus:border-black bg-white transition-all"
+                    rows={3}
+                    placeholder="Instructions pour le chauffeur..."
+                  />
+                </div>
               </div>
 
               <div className="pt-2">
@@ -197,20 +239,21 @@ export default function ReservationModal({
                   * Champs obligatoires
                 </p>
 
-                <div className="flex space-x-3">
+                <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
                   <button
                     type="button"
                     onClick={onCancel}
-                    className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition text-sm"
+                    className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 text-center"
                   >
                     Retour
                   </button>
                   <button
                     type="button"
                     onClick={handleProceed}
-                    className="flex-1 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition text-sm"
+                    className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 text-center flex items-center justify-center space-x-2 group"
                   >
-                    Continuer
+                    <span>Continuer</span>
+                    <ArrowRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
               </div>

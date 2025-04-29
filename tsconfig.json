@@ -32,6 +32,6 @@
     "components/maps/GoogleMapsProvider.tsx",
     "app/reserver/components/GuestInformationModal.jsx",
     "app/reserver/components/GuestInformationModal.jsx"
-  ],
+, "components/PerformanceMonitor.jsx"  ],
   "exclude": ["node_modules"]
 }

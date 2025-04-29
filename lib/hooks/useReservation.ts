@@ -216,6 +216,7 @@ export function useReservation() {
     setCalculCompleted(false);
     setCurrentStep("form");
   };
+  
 
   // Handler pour la page d'accueil - réservation simple
   const handleReservation = () => {
@@ -451,5 +452,9 @@ export function useReservation() {
     handleRequestDevis,
     resetForm,
     saveCurrentDetails,
+    setPrixFinal, 
+
   };
 }
+
+

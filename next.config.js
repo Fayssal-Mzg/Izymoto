@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-
 const nextConfig = {
   // Mode strict de React pour détecter les problèmes potentiels
   reactStrictMode: true,
@@ -7,8 +6,9 @@ const nextConfig = {
   // Configuration des images
   images: {
     domains: ["firebasestorage.googleapis.com"],
-    // Retirer unoptimized si vous voulez les optimisations d'images de Next.js
-    // unoptimized: true,
+    formats: ['image/webp'], // Ajouter le support pour WebP
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920], // Tailles d'appareils pour lesquelles optimiser
+    minimumCacheTTL: 60, // Cache minimum en secondes
   },
 
   // Configurations de sécurité et de performance
@@ -50,9 +50,41 @@ const nextConfig = {
     ];
   },
 
-  // Configuration webpack si nécessaire (optionnel)
+  // Configuration webpack pour optimiser les bundles JS - INTÉGRÉ CORRECTEMENT
   webpack: (config, { isServer }) => {
-    // Optimisations personnalisées si besoin
+    // Configuration de splitChunks pour optimiser les bundles
+    config.optimization.splitChunks = {
+      chunks: 'all',
+      maxInitialRequests: 6,
+      maxAsyncRequests: 6,
+      minSize: 20000,
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          priority: 10,
+          name(module) {
+            // Extraire le nom du paquet 
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+            return `npm.${packageName.replace('@', '')}`;
+          },
+        },
+        // Ajouter un groupe spécifique pour React et ses dépendances
+        react: {
+          test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+          name: 'npm.react',
+          priority: 20, // Priorité plus élevée que vendor
+        },
+        // Groupe pour les composants lucide-react
+        lucide: {
+          test: /[\\/]node_modules[\\/](lucide-react)[\\/]/,
+          name: 'npm.icons',
+          priority: 15,
+        },
+      },
+    };
+
+    // Ajouter ici d'autres optimisations webpack si nécessaire
+    
     return config;
   },
 };

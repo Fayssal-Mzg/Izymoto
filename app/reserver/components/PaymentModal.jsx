@@ -1,9 +1,7 @@
-// app/reserver/components/PaymentModal.jsx
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { handleSuccessfulPayment } from "@/lib/services/paymentService";
-// Service de paiement
 import { getStripe } from "@/lib/stripe";
 import {
   Elements,
@@ -11,21 +9,31 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import { doc, setDoc, getDoc, getFirestore } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { 
+  LockKeyhole, 
+  ChevronRight, 
+  Phone, 
+  User, 
+  X, 
+  CreditCard, 
+  Check,
+  ArrowRight,
+  LogIn
+} from "lucide-react";
 
-// Stripe initialization
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
-);
-
-// Composant de connexion nécessaire
+// Composant de connexion redesigné
 function LoginRedirect({ bookingData }) {
   const router = useRouter();
   const { setReservationDetails } = useAuth();
+  const [animateIn, setAnimateIn] = useState(false);
+
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
 
   const handleSaveAndRedirect = () => {
     // Sauvegarder les détails dans le contexte d'authentification
@@ -44,47 +52,43 @@ function LoginRedirect({ bookingData }) {
   };
 
   return (
-    <div className="space-y-6 text-center p-4">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-16 w-16 text-blue-500 mx-auto"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-        />
-      </svg>
-
-      <h3 className="text-xl font-bold">Connexion requise</h3>
-
-      <p className="text-gray-600">
-        Vous devez être connecté pour finaliser votre réservation. Vos
-        informations de trajet seront sauvegardées.
-      </p>
-
-      <div className="flex space-x-3 pt-4">
-        <button
-          onClick={handleSaveAndRedirect}
-          className="flex-1 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-        >
-          Se connecter
-        </button>
+    <div className={`space-y-6 p-6 text-center transition-all duration-300 ${
+      animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+    }`}>
+      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+        <LockKeyhole className="h-8 w-8 text-gray-600" />
       </div>
+
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Connexion requise</h3>
+        <p className="text-gray-600">
+          Vous devez être connecté pour finaliser votre réservation. Vos
+          informations de trajet seront sauvegardées.
+        </p>
+      </div>
+
+      <button
+        onClick={handleSaveAndRedirect}
+        className="w-full py-3 px-4 bg-black text-white rounded-lg font-medium transition-all duration-300 hover:bg-gray-800 flex items-center justify-center"
+      >
+        <LogIn className="mr-2 h-5 w-5" />
+        <span>Se connecter</span>
+      </button>
     </div>
   );
 }
 
-// Composant de vérification du numéro de téléphone
+// Composant de vérification du numéro de téléphone redesigné
 function PhoneVerification({ onVerified, onCancel, initialPhone }) {
   const [phoneNumber, setPhoneNumber] = useState(initialPhone || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const { user } = useAuth();
+  const [animateIn, setAnimateIn] = useState(false);
+
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
 
   const handleVerifyPhone = async (e) => {
     e.preventDefault();
@@ -140,53 +144,65 @@ function PhoneVerification({ onVerified, onCancel, initialPhone }) {
   };
 
   return (
-    <div className="space-y-4 p-4">
-      <h3 className="text-lg font-medium">Numéro de téléphone</h3>
-
-      <p className="text-gray-600 text-sm">
-        Veuillez fournir votre numéro de téléphone pour permettre au chauffeur
-        de vous contacter.
-      </p>
+    <div className={`p-6 space-y-6 transition-all duration-300 ${
+      animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+    }`}>
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">Numéro de téléphone</h3>
+        <p className="text-gray-600 text-sm">
+          Veuillez fournir votre numéro de téléphone pour permettre au chauffeur de vous contacter.
+        </p>
+      </div>
 
       {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+        <div className="p-3 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md text-sm">
           {error}
         </div>
       )}
 
       <form onSubmit={handleVerifyPhone} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Numéro de téléphone*
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Numéro de téléphone <span className="text-red-500">*</span>
           </label>
-          <input
-            type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="+33 6 12 34 56 78"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-base"
-            required
-          />
-          <p className="text-xs text-gray-500 mt-1">
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+33 6 12 34 56 78"
+              className="w-full p-3 pl-10 border border-gray-300 rounded-lg text-base focus:ring-black focus:border-black transition-all"
+              required
+            />
+          </div>
+          <p className="text-xs text-gray-500">
             Format: +33612345678 ou 0612345678
           </p>
         </div>
 
-        <div className="flex space-x-3">
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-2">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition text-sm"
+            className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 text-center"
             disabled={isLoading}
           >
             Retour
           </button>
           <button
             type="submit"
-            className="flex-1 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
+            className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 text-center flex items-center justify-center space-x-2 group"
             disabled={isLoading}
           >
-            {isLoading ? "Traitement..." : "Continuer"}
+            {isLoading ? (
+              <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+            ) : (
+              <>
+                <span>Continuer</span>
+                <ArrowRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
           </button>
         </div>
       </form>
@@ -194,7 +210,7 @@ function PhoneVerification({ onVerified, onCancel, initialPhone }) {
   );
 }
 
-// Composant de formulaire Stripe
+// Formulaire de paiement redesigné
 function CheckoutForm({
   clientSecret,
   prixFinal,
@@ -208,6 +224,11 @@ function CheckoutForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
+  const [animateIn, setAnimateIn] = useState(false);
+
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -220,7 +241,6 @@ function CheckoutForm({
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          // Ne pas utiliser return_url ici pour gérer la redirection manuellement
           payment_method_data: {
             billing_details: {
               phone: phoneNumber,
@@ -233,7 +253,6 @@ function CheckoutForm({
 
       if (error) {
         setError(error.message);
-        // Rediriger vers la page d'annulation si c'est une erreur d'abandon de paiement
         if (
           error.type === "card_error" &&
           error.code === "payment_intent_canceled"
@@ -242,8 +261,7 @@ function CheckoutForm({
         }
       } else if (paymentIntent && paymentIntent.status === "succeeded") {
         console.log("💳 Paiement confirmé avec ID:", paymentIntent.id);
-        console.log("☎️ Numéro de téléphone utilisé:", phoneNumber);
-
+        
         // Traiter le succès du paiement
         await onSuccess(paymentIntent.id);
 
@@ -259,47 +277,38 @@ function CheckoutForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4">
-      <div className="bg-green-50 p-3 rounded-md border border-green-200 mb-4">
-        <div className="flex items-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-green-500 mr-2"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-green-700 text-sm">
-            Numéro enregistré: {phoneNumber}
-          </span>
-        </div>
+    <form onSubmit={handleSubmit} className={`p-6 space-y-6 transition-all duration-300 ${
+      animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+    }`}>
+      <div className="flex items-center p-3 bg-green-50 border border-green-100 rounded-lg">
+        <Check className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+        <span className="text-green-700 text-sm">
+          Numéro enregistré: {phoneNumber}
+        </span>
       </div>
 
-      <PaymentElement />
+      <div className="bg-white p-3 rounded-lg border border-gray-200">
+        <PaymentElement />
+      </div>
 
       {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+        <div className="p-3 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md text-sm">
           {error}
         </div>
       )}
 
-      <div className="bg-gray-50 p-4 rounded-md">
-        <div className="flex justify-between font-bold">
-          <span>Montant total :</span>
-          <span>{Math.round(prixFinal)}€</span>
+      <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+        <div className="flex justify-between items-center">
+          <span className="font-medium text-gray-700">Montant total</span>
+          <span className="font-bold text-xl text-black">{Math.round(prixFinal)}€</span>
         </div>
       </div>
 
-      <div className="flex space-x-3">
+      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition text-sm"
+          className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 text-center"
           disabled={isLoading}
         >
           Retour
@@ -307,42 +316,21 @@ function CheckoutForm({
         <button
           type="submit"
           disabled={!stripe || !elements || isLoading}
-          className="flex-1 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex justify-center items-center text-sm"
+          className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 text-center flex items-center justify-center space-x-2"
         >
           {isLoading ? (
-            <span className="flex items-center">
-              <svg
-                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Traitement...
-            </span>
+            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
           ) : (
-            <span>Payer {Math.round(prixFinal)}€</span>
+            <CreditCard className="mr-2 h-5 w-5" />
           )}
+          <span>{isLoading ? "Traitement..." : `Payer ${Math.round(prixFinal)}€`}</span>
         </button>
       </div>
     </form>
   );
 }
 
-// Modal complet avec scrolling interne
+// Modal complet redesigné
 export default function PaymentModal({
   prixFinal,
   bookingData,
@@ -355,32 +343,30 @@ export default function PaymentModal({
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [name, setName] = useState("");
+  const [animateIn, setAnimateIn] = useState(false);
 
-  // Accéder à l'utilisateur connecté
   const { user } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
+
   // Vérifier si l'utilisateur a déjà un numéro de téléphone vérifié
   useEffect(() => {
-    if (!user) {
-      // Si l'utilisateur n'est pas connecté, ne pas continuer
-      return;
-    }
+    if (!user) return;
 
     const checkExistingPhoneNumber = async () => {
       try {
-        // Vérifier si l'utilisateur a déjà un numéro enregistré dans Firestore
         const db = getFirestore();
         const userDoc = await getDoc(doc(db, "users", user.uid));
 
         if (userDoc.exists()) {
-          // Récupérer le numéro de téléphone
           if (userDoc.data().phoneNumber) {
             setPhoneNumber(userDoc.data().phoneNumber);
             setPhoneVerified(true);
           }
 
-          // Récupérer le nom si disponible
           if (userDoc.data().displayName) {
             setName(userDoc.data().displayName);
           } else if (user.displayName) {
@@ -388,7 +374,6 @@ export default function PaymentModal({
           }
         }
 
-        // Utiliser des valeurs de bookingData si disponibles
         if (bookingData) {
           if (bookingData.phone && !phoneNumber) {
             setPhoneNumber(bookingData.phone);
@@ -407,7 +392,6 @@ export default function PaymentModal({
   }, [user, bookingData]);
 
   useEffect(() => {
-    // Ne créer l'intention de paiement que si l'utilisateur est connecté et a vérifié son téléphone
     if (user && phoneVerified) {
       createPaymentIntent();
     }
@@ -415,10 +399,6 @@ export default function PaymentModal({
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
-      console.log("🔄 handlePaymentSuccess - Début avec ID:", paymentIntentId);
-      console.log("📱 Données téléphone:", phoneNumber);
-
-      // Utiliser le service de paiement factorié
       await handleSuccessfulPayment({
         user,
         bookingData,
@@ -430,12 +410,10 @@ export default function PaymentModal({
         notes: bookingData.notes || "",
         prioriteReservation: bookingData.prioriteReservation || false,
         onSuccess: (savedBooking) => {
-          console.log("✅ Réservation confirmée avec succès:", savedBooking.id);
           onSuccess(savedBooking);
         },
       });
 
-      // Notifier l'utilisateur du succès
       toast.success("Réservation confirmée !");
     } catch (error) {
       console.error("Erreur lors de la finalisation de la réservation", error);
@@ -443,16 +421,12 @@ export default function PaymentModal({
     }
   };
 
-  // Créer l'intention de paiement
   const createPaymentIntent = async () => {
     try {
-      console.log("Tentative de création d'intention de paiement");
-
-      // Ajouter le numéro de téléphone aux métadonnées
       const bookingWithPhone = {
         ...bookingData,
-        phone: phoneNumber, // Remplacer par le numéro vérifié
-        name: name, // Ajouter le nom
+        phone: phoneNumber,
+        name: name,
       };
 
       const response = await fetch("/api/create-payment-intent", {
@@ -474,7 +448,6 @@ export default function PaymentModal({
       }
 
       const data = await response.json();
-      console.log("Intention de paiement créée avec succès");
       setClientSecret(data.clientSecret);
     } catch (error) {
       console.error("Erreur:", error);
@@ -490,44 +463,65 @@ export default function PaymentModal({
     setPhoneNumber(phone);
   };
 
+  // Choisir le titre en fonction de l'étape
+  const getModalTitle = () => {
+    if (!user) return "Connexion requise";
+    if (!phoneVerified) return "Information de contact";
+    return "Paiement sécurisé";
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-lg w-full h-full sm:h-auto sm:w-full sm:max-w-md mx-auto flex flex-col sm:max-h-[90vh]">
-        <div className="bg-[#ffc107] p-4 rounded-t-lg flex-shrink-0">
-          <h3 className="text-xl font-bold text-black">
-            {!user
-              ? "Connexion requise"
-              : !phoneVerified
-              ? "Information de contact"
-              : "Paiement sécurisé"}
-          </h3>
-          {phoneVerified && (
-            <p className="text-xs text-gray-800 mt-1">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className={`bg-white rounded-xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-300 ${
+        animateIn ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+      }`} style={{ maxHeight: '90vh' }}>
+        {/* Header avec bouton de fermeture */}
+        <div className="relative border-b border-gray-100 p-6">
+          <div className="flex items-center">
+            {!user ? (
+              <LogIn className="text-gray-800 mr-3 h-5 w-5" />
+            ) : !phoneVerified ? (
+              <Phone className="text-gray-800 mr-3 h-5 w-5" />
+            ) : (
+              <CreditCard className="text-gray-800 mr-3 h-5 w-5" />
+            )}
+            <h3 className="text-xl font-bold text-gray-900">
+              {getModalTitle()}
+            </h3>
+          </div>
+          
+          {phoneVerified && phoneNumber && (
+            <p className="text-sm text-gray-500 mt-1 ml-8">
               Téléphone: {phoneNumber}
             </p>
           )}
+          
+          <button 
+            onClick={onCancel}
+            className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+            aria-label="Fermer"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Conteneur avec scrolling */}
-        <div className="overflow-y-auto flex-grow">
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
           {error && (
-            <div className="p-3 bg-red-100 text-red-700 rounded-md m-4 text-sm">
+            <div className="mx-6 mt-6 p-3 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md text-sm">
               {error}
             </div>
           )}
 
           {!user ? (
-            // Si l'utilisateur n'est pas connecté
             <LoginRedirect bookingData={bookingData} />
           ) : !phoneVerified ? (
-            // Si l'utilisateur est connecté mais n'a pas encore vérifié son téléphone
             <PhoneVerification
               onVerified={handlePhoneVerified}
               onCancel={onCancel}
               initialPhone={phoneNumber}
             />
           ) : clientSecret ? (
-            // Si l'utilisateur est connecté, a vérifié son téléphone et l'intention de paiement est créée
             <Elements
               stripe={getStripe()}
               options={{
@@ -535,7 +529,8 @@ export default function PaymentModal({
                 appearance: {
                   theme: "stripe",
                   variables: {
-                    colorPrimary: "#ffc107",
+                    colorPrimary: "#000000",
+                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                   },
                 },
               }}
@@ -550,29 +545,10 @@ export default function PaymentModal({
               />
             </Elements>
           ) : (
-            <div className="flex flex-col items-center justify-center h-40">
-              <svg
-                className="animate-spin h-8 w-8 text-[#ffc107] mb-4"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-3 border-black border-t-transparent rounded-full mb-4"></div>
               <p className="text-gray-600">
-                Initialisation du paiement en mode test...
+                Initialisation du paiement...
               </p>
             </div>
           )}
