@@ -3,8 +3,7 @@
 import { LoadScript } from "@react-google-maps/api";
 import React from "react";
 
-// Définir les bibliothèques à charger une seule fois
-const libraries = ["places"];
+const libraries: string[] = ["places"];
 
 export function GoogleMapsProvider({
   children,
@@ -14,7 +13,7 @@ export function GoogleMapsProvider({
   return (
     <LoadScript
       googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}
-      libraries={libraries}
+      libraries={libraries as any}
       loadingElement={
         <div className="h-full w-full flex items-center justify-center">
           Chargement de Google Maps...
