@@ -789,30 +789,23 @@ function HomeReservationSection() {
     <>
       <ReservationForm customContainerClass="gap-6 md:gap-8 items-center" />
 
-      {/* Modals pour le processus de réservation */}
       {currentStep === "devis" && (
-        <DevisModal
-          depart={depart}
-          arrivee={arrivee}
-          distance={distance}
-          duree={duree}
-          prix={prix}
-          prioriteReservation={prioriteReservation}
-          setPrioriteReservation={setPrioriteReservation}
-          onCancel={() => {
-            console.log("Cancel clicked in DevisModal");
-            setCurrentStep("form");
-          }}
-          // Utilise directement la fonction proceedToReservation au lieu de redéfinir sa logique
-          onProceed={proceedToReservation} // ...mais tu ne l'utilises pas ici!
-          onRequestDevis={() => {
-            console.log("RequestDevis clicked in DevisModal");
-            handleRequestDevis();
-          }}
-          reservationDate={reservationDate}
-          setReservationDate={setReservationDate}
-        />
-      )}
+  <DevisModal
+    depart={depart}
+    arrivee={arrivee}
+    distance={distance}
+    duree={duree}
+    prix={prix}
+    prioriteReservation={prioriteReservation}
+    setPrioriteReservation={setPrioriteReservation}
+    onCancel={() => setCurrentStep("form")}
+    onProceed={proceedToReservation}
+    onRequestDevis={handleRequestDevis}
+    reservationDate={reservationDate}
+    setReservationDate={setReservationDate}
+    setPrixFinal={setPrixFinal}
+  />
+)}
 
       {currentStep === "guest_info" && (
         <GuestInformationModal
