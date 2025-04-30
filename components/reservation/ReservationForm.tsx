@@ -84,7 +84,7 @@ export default function ReservationForm({
         {isLoaded && (
           <div className="p-0 sm:p-4">
             <div className="h-[300px] sm:h-[400px] lg:h-[500px] w-full rounded-md overflow-hidden">
-              <MapContainer directions={directions} />
+<MapContainer directions={directions} userLocation={null} />
             </div>
           </div>
         )}
