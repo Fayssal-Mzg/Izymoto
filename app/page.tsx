@@ -816,7 +816,7 @@ function HomeReservationSection() {
 
       {currentStep === "guest_info" && (
         <GuestInformationModal
-          onSubmit={(guestData) => {
+          onSubmit={(guestData: { email?: string; phone?: string; name?: string; } | undefined) => {
             console.log("GuestInfo submitted", guestData);
             handleRequestDevis(guestData);
           }}
@@ -853,7 +853,7 @@ function HomeReservationSection() {
           prixFinal={prixFinal}
           bookingData={bookingData}
           reservationDate={reservationDate}
-          onSuccess={(paymentId) => {
+          onSuccess={(paymentId: string) => {
             console.log("Payment success", paymentId);
             handlePaymentSuccess(paymentId);
           }}
