@@ -12,13 +12,25 @@ import { useReservation } from "@/lib/hooks/useReservation";
 import { ChevronUp } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
+// Définir une interface pour l'objet de localisation
+interface LocationData {
+  lat: number;
+  lng: number;
+}
+
+// Définir l'interface des props du composant
+interface ReservationProcessProps {
+  isStandalone?: boolean;
+  customContainerClass?: string;
+}
+
 export default function ReservationProcess({
   isStandalone = true,
   customContainerClass = "",
-}) {
+}: ReservationProcessProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [formExpanded, setFormExpanded] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
 
   const {
     depart,
@@ -78,10 +90,13 @@ export default function ReservationProcess({
     if (isStandalone && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCurrentLocation({
+          // Créer un objet typé explicitement
+          const location: LocationData = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          });
+          };
+          // Puis mettre à jour l'état
+          setCurrentLocation(location);
         },
         () => {
           /* Silencieusement échouer */
@@ -169,7 +184,7 @@ export default function ReservationProcess({
             <SearchForm
               depart={depart}
               setDepart={setDepart}
-              arrivee={setArrivee}
+              arrivee={arrivee}
               setArrivee={setArrivee}
               prix={prix}
               distance={distance}
@@ -206,9 +221,7 @@ export default function ReservationProcess({
 
         {currentStep === "guest_info" && (
           <GuestInformationModal
-            onSubmit={(guestData) => {
-              handleRequestDevis(guestData);
-            }}
+            onSubmit={handleRequestDevis}
             onCancel={() => setCurrentStep("devis")}
           />
         )}

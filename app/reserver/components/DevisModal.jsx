@@ -19,6 +19,7 @@ export default function DevisModal({
   onCancel,
   onProceed,
   onRequestDevis,
+  setPrixFinal, // Added missing prop
 }) {
   // État pour gérer les erreurs de validation
   const [validationError, setValidationError] = useState("");
@@ -38,6 +39,17 @@ export default function DevisModal({
   useEffect(() => {
     setAnimateIn(true);
   }, []);
+
+  // Calculer le prix final en fonction des options
+  useEffect(() => {
+    // Calculate the final price based on prioriteReservation
+    const calculatedFinalPrice = prix ? Math.round(prix + (prioriteReservation ? 20 : 0)) : 0;
+    
+    // Update the final price using the setPrixFinal prop
+    if (typeof setPrixFinal === 'function') {
+      setPrixFinal(calculatedFinalPrice);
+    }
+  }, [prix, prioriteReservation, setPrixFinal]);
 
   // Validation avant de passer à onRequestDevis
   const validateAndRequestDevis = () => {

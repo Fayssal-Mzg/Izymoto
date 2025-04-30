@@ -4,6 +4,19 @@ import { useLoadScript, GoogleMap, DirectionsRenderer, Marker } from "@react-goo
 import { useState, useEffect, useCallback, useRef } from "react";
 import { MapPin, Maximize, Minimize, Navigation } from "lucide-react";
 
+// Définir l'interface pour les coordonnées géographiques
+interface LocationData {
+  lat: number;
+  lng: number;
+}
+
+// Définir l'interface des props du composant
+interface MapContainerProps {
+  directions: google.maps.DirectionsResult | null;
+  userLocation: LocationData | null;
+  showFullScreen?: boolean;
+}
+
 // Options par défaut de la carte
 const mapOptions = {
   disableDefaultUI: true,
@@ -52,18 +65,18 @@ const mapOptions = {
 };
 
 // Centre par défaut sur Paris
-const defaultCenter = { lat: 48.8566, lng: 2.3522 };
+const defaultCenter: LocationData = { lat: 48.8566, lng: 2.3522 };
 
 export default function MapContainer({ 
   directions, 
   userLocation = null,
   showFullScreen = false 
-}) {
+}: MapContainerProps) {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [mapCenter, setMapCenter] = useState(userLocation || defaultCenter);
-  const [activeMarker, setActiveMarker] = useState(null);
+  const [mapCenter, setMapCenter] = useState<LocationData>(userLocation || defaultCenter);
+  const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [zoom, setZoom] = useState(12);
-  const mapRef = useRef(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   // Chargement des scripts Google Maps
   const { isLoaded, loadError } = useLoadScript({
@@ -110,12 +123,12 @@ export default function MapContainer({
   }, [isFullScreen]);
 
   // Gestionnaires pour les markers
-  const handleMarkerClick = (marker) => {
+  const handleMarkerClick = (marker: string) => {
     setActiveMarker(marker);
   };
 
   // Fonction pour centrer la carte sur un point
-  const centerMapOnPoint = (point) => {
+  const centerMapOnPoint = (point: google.maps.LatLng) => {
     if (mapRef.current) {
       mapRef.current.panTo(point);
       setZoom(15);
