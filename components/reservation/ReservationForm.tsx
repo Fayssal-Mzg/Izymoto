@@ -34,24 +34,24 @@ export default function ReservationForm({
     distance,
     duree,
     calculCompleted,
-    handleReservation, // Utiliser le nom de fonction original de votre hook
+    handleReservation,
     calculateRoute,
   } = useReservation();
 
-  // Vérifier si les API Maps sont chargées (normalement depuis un hook parent)
+  // Vérifier si les API Maps sont chargées
   const isLoaded = typeof window !== "undefined" && !!window.google?.maps;
 
   return (
     <div
       className={cn(
-        "grid md:grid-cols-2 gap-8 items-start",
+        "grid grid-cols-1 lg:grid-cols-2 gap-8 items-start",
         customContainerClass
       )}
     >
       {/* Colonne de gauche - Formulaire */}
       <div className={cn("w-full flex flex-col", customFormClass)}>
         <div className="w-full max-w-md">
-          <h1 className="text-4xl font-bold mb-4 text-black">
+          <h1 className="text-2xl md:text-4xl font-bold mb-4 text-black">
             {isSimplified ? "Votre trajet" : "Où souhaitez-vous être déposé ?"}
           </h1>
 
@@ -64,67 +64,27 @@ export default function ReservationForm({
               prix={prix}
               distance={distance}
               duree={duree}
+              resetRouteData=""
               calculateRoute={calculateRoute}
               customInputClass="w-full bg-gray-100 border-none focus:ring-2 focus:ring-black py-3 px-4 rounded-lg"
-              customButtonClass="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors text-left pl-4"
+              customButtonClass="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors"
+              onReserverClick={handleReservation} // Passer handleReservation comme prop
             />
           </div>
-
-          {/* Affichage des détails du trajet */}
-          {showDetails && prix && distance && duree && (
-            <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Détails du trajet</h2>
-                {onDetailsClose && (
-                  <button
-                    onClick={onDetailsClose}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <span className="sr-only">Fermer</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-2 mt-2">
-                <p>Départ: {depart}</p>
-                <p>Arrivée: {arrivee}</p>
-                <p>Distance: {distance?.toFixed(2)} km</p>
-                <p>Durée estimée: {duree} minutes</p>
-                <p>Prix estimé: {prix.toFixed(2)} €</p>
-              </div>
-
-              {/* Bouton de réservation qui apparaît après le calcul */}
-              {calculCompleted && (
-                <button
-                  onClick={handleReservation}
-                  className="mt-4 w-full bg-primary text-white py-3 rounded-lg hover:bg-primary-dark transition-colors"
-                >
-                  Réserver cette course
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Colonne de droite - Carte */}
-      <div className={cn("w-full", customMapClass)}>
+      {/* Colonne de droite - Carte (visible uniquement sur grands écrans ou après calcul) */}
+      <div className={cn(
+        "w-full", 
+        customMapClass,
+        // Cacher la carte sur mobile sauf si un prix est calculé
+        !prix ? "hidden lg:block" : ""
+      )}>
         {isLoaded && (
-          <div className="p-4">
-            <div className="h-[500px] w-full rounded-md overflow-hidden">
-              <MapContainer directions={directions} />
+          <div className="p-0 sm:p-4">
+            <div className="h-[300px] sm:h-[400px] lg:h-[500px] w-full rounded-md overflow-hidden">
+<MapContainer directions={directions} userLocation={null} />
             </div>
           </div>
         )}

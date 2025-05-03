@@ -216,6 +216,7 @@ export function useReservation() {
     setCalculCompleted(false);
     setCurrentStep("form");
   };
+  
 
   // Handler pour la page d'accueil - réservation simple
   const handleReservation = () => {
@@ -396,6 +397,15 @@ export function useReservation() {
     setCurrentStep("form");
     clearReservationDetails();
   };
+  const resetRouteData = () => {
+    // Logique pour réinitialiser les données de route
+    setDepart('');
+    setArrivee('');
+    setDistance(null);
+    setDuree(null);
+    setPrix(null);
+    // Autres réinitialisations nécessaires
+  };
 
   // Préparation des données complètes de réservation
   const bookingData: BookingData = {
@@ -451,5 +461,9 @@ export function useReservation() {
     handleRequestDevis,
     resetForm,
     saveCurrentDetails,
+    setPrixFinal, 
+    resetRouteData,
   };
 }
+
+

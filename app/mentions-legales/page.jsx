@@ -1,169 +1,85 @@
-// app/mentions-legales/page.jsx
-
-export default function MentionsLegales() {
+export default function ConditionsGenerales() {
   return (
     <div className="bg-white py-12">
       <div className="container mx-auto px-4 max-w-4xl">
         <h1 className="text-3xl font-bold mb-8 text-center">
-          Mentions Légales
+          Conditions Générales d'Utilisation
         </h1>
 
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            1. Présentation du site
-          </h2>
           <p className="mb-4">
-            Conformément aux dispositions des articles 6-III et 19 de la Loi n°
-            2004-575 du 21 juin 2004 pour la Confiance dans l'économie
-            numérique, dite L.C.E.N., nous portons à la connaissance des
-            utilisateurs et visiteurs du site IzyMoto les informations suivantes
-            :
+            Toute commande de service implique le respect de ces règles :
           </p>
-
-          <div className="pl-4 border-l-4 border-gray-200 mb-4">
-            <p className="mb-2">
-              <strong>Informations légales :</strong>
-            </p>
-            <p className="mb-2">Statut juridique : Auto-entrepreneur</p>
-            <p className="mb-2">Nom du site : IzyMoto</p>
-            <p className="mb-2">Adresse : [Votre adresse professionnelle]</p>
-            <p className="mb-2">SIRET : [Votre numéro SIRET]</p>
-            <p className="mb-2">Téléphone : (+33)6 52 75 35 21</p>
-            <p className="mb-2">Email : [Votre email professionnel]</p>
-          </div>
-
-          <p>Le créateur et responsable de la publication est :</p>
-          <p className="font-semibold">Fayssal Merzougui</p>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            2. Conditions générales d'utilisation du site et des services
-            proposés
-          </h2>
           <p className="mb-4">
-            L'utilisation du site IzyMoto implique l'acceptation pleine et
-            entière des conditions générales d'utilisation décrites ci-après.
-            Ces conditions d'utilisation sont susceptibles d'être modifiées ou
-            complétées à tout moment, les utilisateurs du site IzyMoto sont donc
-            invités à les consulter de manière régulière.
+            Le client reconnaît avoir pris connaissance, au moment de l'inscription, des conditions générales de ventes énoncées dans ces présentes conditions générales.
+            Toute passation de commande vaut acceptation des présentes conditions générales sans aucune réserve.
           </p>
-
           <p className="mb-4">
-            Ce site est normalement accessible à tout moment aux utilisateurs.
-            Une interruption pour raison de maintenance technique peut être
-            toutefois décidée par le responsable, qui s'efforcera alors de
-            communiquer préalablement aux utilisateurs les dates et heures de
-            l'intervention.
+            IzyMoto propose aux particuliers comme aux entreprises son service de transport de personnes en deux roues motorisées.
           </p>
-
-          <p>
-            Le site IzyMoto est mis à jour régulièrement. De la même façon, les
-            mentions légales peuvent être modifiées à tout moment : elles
-            s'imposent néanmoins à l'utilisateur qui est invité à s'y référer le
-            plus souvent possible afin d'en prendre connaissance.
+          <p className="mb-4">
+            Les tarifs détaillés sont indiqués sur le site izymoto.fr à la page "Nos Tarifs".
+          </p>
+          <p className="mb-4">
+            Ces services ont pour but d'emmener les personnes à l'adresse communiquée lors de la commande.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            3. Description des services fournis
-          </h2>
+          <h2 className="text-xl font-semibold mb-4">Commandes et annulations</h2>
           <p className="mb-4">
-            Le site IzyMoto a pour objet de fournir une information concernant
-            l'ensemble des activités de la société et de permettre la
-            réservation de services de taxi moto.
+            La commande s'effectue par téléphone au 06 52 75 35 21
+            ou sur le site www.izymoto.fr et son espace de réservation.
           </p>
-
           <p className="mb-4">
-            Le responsable du site s'efforce de fournir sur le site IzyMoto des
-            informations aussi précises que possible. Toutefois, il ne pourra
-            être tenu responsable des omissions, des inexactitudes et des
-            carences dans la mise à jour, qu'elles soient de son fait ou du fait
-            des tiers partenaires qui lui fournissent ces informations.
+            Toute commande doit être validée par nos soins.
           </p>
+          <p className="mb-4">
+            Si le client n'est pas présent au rendez‐vous, le service sera facturé dans son intégralité, le retard est facturé de 15 euros par tranche de 15 minutes.
+          </p>
+          <p className="mb-4">
+            Il est expressément convenu que les retards sur les délais de transports dus à des difficultés imprévues de circulation n'ouvrent pas droit à des indemnités d'aucunes sortes (embouteillage, accidents, déviation, conditions météo, événements divers etc.).
+          </p>
+        </section>
 
-          <p>
-            Toutes les informations indiquées sur le site IzyMoto sont données à
-            titre indicatif, et sont susceptibles d'évoluer. Par ailleurs, les
-            renseignements figurant sur le site IzyMoto ne sont pas exhaustifs.
-            Ils sont donnés sous réserve de modifications ayant été apportées
-            depuis leur mise en ligne.
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Règlement des prestations</h2>
+          <p className="mb-4">
+            Vous ne réglez pas directement après la course au chauffeur; mais sur facture; que vous recevez par email et que vous payez en retour.
+          </p>
+          <p className="mb-4">
+            Paiement en ligne possible sur demande.
+          </p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Responsabilités et sécurité</h2>
+          <p className="mb-4">
+            IzyMoto a pour but de mener à bien et dans les meilleures conditions le service préalablement commandé dans les exigences de sécurité et le respect du code de la route.
+          </p>
+          <p className="mb-4">
+            La responsabilité d'IzyMoto couvre les dommages corporels de manière illimitée et les dommages matériels consécutifs dans un plafond de 100.000.000 €, depuis la montée sur le véhicule jusqu'à la descente, ces deux actions comprises, sauf les dommages causés par la faute du voyageur.
+          </p>
+          <p className="mb-4">
+            Pour des raisons de sécurité, il est interdit de fumer, de transporter des substances inflammables, explosives, corrosives ou toxiques. Le non respect de cette règle engage la responsabilité du passager. IzyMoto se réserve alors la possibilité d'engager tous recours éventuels.
+          </p>
+          <p className="mb-4">
+            IzyMoto se réserve le droit de débarquer, à tout moment et sans remboursement, son client du véhicule si celui‐ci ne respecte pas les consignes de sécurité présentées par IzyMoto dans ces conditions de services.
+          </p>
+          <p className="mb-4">
+            Les animaux ne sont pas admis sauf arrangement spécifique, en tout état de cause IzyMoto ne saurait voir engager sa responsabilité de ce fait.
+          </p>
+          <p className="mb-4">
+            IzyMoto se réserve le droit de ne pas réaliser ou proposer ses prestations pour quelque raison que ce soit.
+          </p>
+          <p className="mb-4">
+            IzyMoto se réserve le droit de changer ses tarifs sans préavis.
           </p>
         </section>
 
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">
-            4. Limitations contractuelles sur les données techniques
-          </h2>
-          <p className="mb-4">Le site utilise la technologie JavaScript.</p>
-
-          <p>
-            Le site Internet ne pourra être tenu responsable de dommages
-            matériels liés à l'utilisation du site. De plus, l'utilisateur du
-            site s'engage à accéder au site en utilisant un matériel récent, ne
-            contenant pas de virus et avec un navigateur de dernière génération
-            mis à jour.
-          </p>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            5. Propriété intellectuelle et contrefaçons
-          </h2>
-          <p className="mb-4">
-            Fayssal Merzougui est propriétaire des droits de propriété
-            intellectuelle ou détient les droits d'usage sur tous les éléments
-            accessibles sur le site, notamment les textes, images, graphismes,
-            logo, icônes, sons, logiciels.
-          </p>
-
-          <p className="mb-4">
-            Toute reproduction, représentation, modification, publication,
-            adaptation de tout ou partie des éléments du site, quel que soit le
-            moyen ou le procédé utilisé, est interdite, sauf autorisation écrite
-            préalable de Fayssal Merzougui.
-          </p>
-
-          <p>
-            Toute exploitation non autorisée du site ou de l'un quelconque des
-            éléments qu'il contient sera considérée comme constitutive d'une
-            contrefaçon et poursuivie conformément aux dispositions des articles
-            L.335-2 et suivants du Code de Propriété Intellectuelle.
-          </p>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            6. Limitations de responsabilité
-          </h2>
-          <p className="mb-4">
-            Fayssal Merzougui ne pourra être tenu responsable des dommages
-            directs et indirects causés au matériel de l'utilisateur, lors de
-            l'accès au site IzyMoto, et résultant soit de l'utilisation d'un
-            matériel ne répondant pas aux spécifications indiquées au point 4,
-            soit de l'apparition d'un bug ou d'une incompatibilité.
-          </p>
-
-          <p className="mb-4">
-            Fayssal Merzougui ne pourra également être tenu responsable des
-            dommages indirects (tels par exemple qu'une perte de marché ou perte
-            d'une chance) consécutifs à l'utilisation du site IzyMoto.
-          </p>
-
-          <p>
-            Des espaces interactifs (possibilité de poser des questions dans
-            l'espace contact) sont à la disposition des utilisateurs. Fayssal
-            Merzougui se réserve le droit de supprimer, sans mise en demeure
-            préalable, tout contenu déposé dans cet espace qui contreviendrait à
-            la législation applicable en France, en particulier aux dispositions
-            relatives à la protection des données.
-          </p>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            7. Gestion des données personnelles
+            Gestion des données personnelles
           </h2>
           <p className="mb-4">
             En France, les données personnelles sont notamment protégées par la
@@ -171,7 +87,6 @@ export default function MentionsLegales() {
             l'article L. 226-13 du Code pénal et le Règlement Européen sur la
             Protection des Données (RGPD).
           </p>
-
           <p className="mb-4">
             À l'occasion de l'utilisation du site IzyMoto, peuvent être
             recueillies : l'URL des liens par l'intermédiaire desquels
@@ -179,7 +94,19 @@ export default function MentionsLegales() {
             l'utilisateur, l'adresse de protocole Internet (IP) de
             l'utilisateur.
           </p>
-
+          <p className="mb-4">
+            Les données personnelles collectées sur les utilisateurs sont :
+          </p>
+          <ul className="list-disc pl-5 mb-4">
+            <li>Nom, prénom</li>
+            <li>Adresse de messagerie</li>
+            <li>Téléphone</li>
+            <li>Nom et prénom assistant(e) (le cas échéant)</li>
+            <li>Adresse de messagerie assistant(e) (le cas échéant)</li>
+            <li>Téléphone assistant(e) (le cas échéant)</li>
+            <li>Données professionnelles : coordonnées complètes de la société</li>
+            <li>Données transactionnelles : réservations (passées, présentes, à venir, annulées)</li>
+          </ul>
           <p className="mb-4">
             En tout état de cause, Fayssal Merzougui ne collecte des
             informations personnelles relatives à l'utilisateur que pour le
@@ -187,8 +114,7 @@ export default function MentionsLegales() {
             L'utilisateur fournit ces informations en toute connaissance de
             cause, notamment lorsqu'il procède par lui-même à leur saisie.
           </p>
-
-          <p>
+          <p className="mb-4">
             Conformément aux dispositions des articles 38 et suivants de la loi
             78-17 du 6 janvier 1978 relative à l'informatique, aux fichiers et
             aux libertés, tout utilisateur dispose d'un droit d'accès, de
@@ -202,17 +128,9 @@ export default function MentionsLegales() {
 
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">
-            8. Liens hypertextes et cookies
+            Cookies et mesures d'audience
           </h2>
           <p className="mb-4">
-            Le site IzyMoto contient un certain nombre de liens hypertextes vers
-            d'autres sites, mis en place avec l'autorisation de Fayssal
-            Merzougui. Cependant, Fayssal Merzougui n'a pas la possibilité de
-            vérifier le contenu des sites ainsi visités, et n'assumera en
-            conséquence aucune responsabilité de ce fait.
-          </p>
-
-          <p>
             La navigation sur le site IzyMoto est susceptible de provoquer
             l'installation de cookie(s) sur l'ordinateur de l'utilisateur. Un
             cookie est un fichier de petite taille, qui ne permet pas
@@ -222,11 +140,61 @@ export default function MentionsLegales() {
             ultérieure sur le site, et ont également vocation à permettre
             diverses mesures de fréquentation.
           </p>
+          <p className="mb-4">
+            Si vous avez un compte et que vous vous connectez sur ce site, un cookie temporaire sera créé afin de déterminer si votre navigateur accepte les cookies. Il ne contient pas de données personnelles et sera supprimé automatiquement à la fermeture de votre navigateur.
+          </p>
+          <p className="mb-4">
+            Lorsque vous vous connecterez, nous mettrons en place un certain nombre de cookies pour enregistrer vos informations de connexion et vos préférences d'écran. La durée de vie d'un cookie de connexion est de deux jours, celle d'un cookie d'option d'écran est d'un an. Si vous cochez « Se souvenir de moi », votre cookie de connexion sera conservé pendant deux semaines. Si vous vous déconnectez de votre compte, le cookie de connexion sera effacé.
+          </p>
+          <p className="mb-4">
+            Outils de statistiques utilisés : Google Analytics.
+          </p>
         </section>
 
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">
-            9. Droit applicable et attribution de juridiction
+            Informations légales
+          </h2>
+          <div className="pl-4 border-l-4 border-gray-200 mb-4">
+            <p className="mb-2">
+              <strong>Informations légales :</strong>
+            </p>
+            <p className="mb-2">Statut juridique : Auto-entrepreneur</p>
+            <p className="mb-2">Nom du site : IzyMoto</p>
+            <p className="mb-2">Téléphone : (+33)6 52 75 35 21</p>
+          </div>
+
+          <p>Le créateur et responsable de la publication est :</p>
+          <p className="font-semibold">Fayssal Merzougui</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Propriété intellectuelle et contrefaçons
+          </h2>
+          <p className="mb-4">
+            Fayssal Merzougui est propriétaire des droits de propriété
+            intellectuelle ou détient les droits d'usage sur tous les éléments
+            accessibles sur le site, notamment les textes, images, graphismes,
+            logo, icônes, sons, logiciels.
+          </p>
+          <p className="mb-4">
+            Toute reproduction, représentation, modification, publication,
+            adaptation de tout ou partie des éléments du site, quel que soit le
+            moyen ou le procédé utilisé, est interdite, sauf autorisation écrite
+            préalable de Fayssal Merzougui.
+          </p>
+          <p>
+            Toute exploitation non autorisée du site ou de l'un quelconque des
+            éléments qu'il contient sera considérée comme constitutive d'une
+            contrefaçon et poursuivie conformément aux dispositions des articles
+            L.335-2 et suivants du Code de Propriété Intellectuelle.
+          </p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Droit applicable et attribution de juridiction
           </h2>
           <p className="mb-4">
             Tout litige en relation avec l'utilisation du site IzyMoto est
@@ -237,7 +205,7 @@ export default function MentionsLegales() {
 
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">
-            10. Les principales lois concernées
+            Les principales lois concernées
           </h2>
           <p className="mb-4">
             Loi n° 78-17 du 6 janvier 1978, notamment modifiée par la loi n°
@@ -255,7 +223,7 @@ export default function MentionsLegales() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-4">11. Lexique</h2>
+          <h2 className="text-xl font-semibold mb-4">Lexique</h2>
           <p className="mb-4">
             <strong>Utilisateur :</strong> Internaute se connectant, utilisant
             le site susnommé.
@@ -266,6 +234,11 @@ export default function MentionsLegales() {
             l'identification des personnes physiques auxquelles elles
             s'appliquent » (article 4 de la loi n° 78-17 du 6 janvier 1978).
           </p>
+        </section>
+        
+        <section className="mt-8 pt-8 border-t border-gray-300 text-center text-sm text-gray-600">
+          <p className="mb-2">Tous nos chauffeurs sont certifiés par le décret n° 2010-1223 du 11 Octobre 2010 applicable au 1er Avril 2011.</p>
+          <p>Dernière mise à jour : 1er janvier 2024</p>
         </section>
       </div>
     </div>
