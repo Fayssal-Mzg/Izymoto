@@ -62,13 +62,7 @@ const nextConfig = {
         vendor: {
           test: /[\\/]node_modules[\\/]/,
           priority: 10,
-          name(module) {
-            // Extraire le nom du paquet
-            const packageName = module.context.match(
-              /[\\/]node_modules[\\/](.*?)([\\/]|$)/
-            )[1];
-            return `npm.${packageName.replace("@", "")}`;
-          },
+          name: "vendor",
         },
         // Ajouter un groupe spécifique pour React et ses dépendances
         react: {
@@ -84,8 +78,6 @@ const nextConfig = {
         },
       },
     };
-
-    // Ajouter ici d'autres optimisations webpack si nécessaire
 
     return config;
   },
