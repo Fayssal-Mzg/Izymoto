@@ -1,4 +1,3 @@
-// components/reservation/ReservationForm.tsx
 "use client";
 
 import MapContainer from "@/app/reserver/components/MapContainer";
@@ -51,8 +50,12 @@ export default function ReservationForm({
       {/* Colonne de gauche - Formulaire */}
       <div className={cn("w-full flex flex-col", customFormClass)}>
         <div className="w-full max-w-md">
-          <h1 className="text-2xl md:text-4xl font-bold mb-4 text-black">
-            {isSimplified ? "Votre trajet" : "Où souhaitez-vous être déposé ?"}
+          <h1 className="text-xl md:text-4xl font-bold mb-4 text-black">
+            {isSimplified ? (
+              "Votre trajet"
+            ) : (
+              <>Où souhaitez-vous être déposé&nbsp;?</>
+            )}
           </h1>
 
           <div className="space-y-4">
@@ -75,16 +78,18 @@ export default function ReservationForm({
       </div>
 
       {/* Colonne de droite - Carte (visible uniquement sur grands écrans ou après calcul) */}
-      <div className={cn(
-        "w-full", 
-        customMapClass,
-        // Cacher la carte sur mobile sauf si un prix est calculé
-        !prix ? "hidden lg:block" : ""
-      )}>
+      <div
+        className={cn(
+          "w-full",
+          customMapClass,
+          // Cacher la carte sur mobile sauf si un prix est calculé
+          !prix ? "hidden lg:block" : ""
+        )}
+      >
         {isLoaded && (
           <div className="p-0 sm:p-4">
             <div className="h-[300px] sm:h-[400px] lg:h-[500px] w-full rounded-md overflow-hidden">
-<MapContainer directions={directions} userLocation={null} />
+              <MapContainer directions={directions} userLocation={null} />
             </div>
           </div>
         )}
