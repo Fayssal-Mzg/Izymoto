@@ -1,6 +1,6 @@
 "use client";
 
-import { useLoadScript, GoogleMap, DirectionsRenderer, Marker } from "@react-google-maps/api";
+import { GoogleMap, DirectionsRenderer, Marker } from "@react-google-maps/api";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { MapPin, Maximize, Minimize, Navigation } from "lucide-react";
 
@@ -67,22 +67,21 @@ const mapOptions = {
 // Centre par défaut sur Paris
 const defaultCenter: LocationData = { lat: 48.8566, lng: 2.3522 };
 
-export default function MapContainer({ 
-  directions, 
+export default function MapContainer({
+  directions,
   userLocation = null,
-  showFullScreen = false 
+  showFullScreen = false,
 }: MapContainerProps) {
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [mapCenter, setMapCenter] = useState<LocationData>(userLocation || defaultCenter);
+  const [mapCenter, setMapCenter] = useState<LocationData>(
+    userLocation || defaultCenter
+  );
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
   const [zoom, setZoom] = useState(12);
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  // Chargement des scripts Google Maps
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: ["places"],
-  });
+  // Vérifier si Google Maps est chargé (via le GoogleMapsProvider)
+  const isLoaded = window.google && window.google.maps;
 
   // Mise à jour du centre de la carte si la localisation utilisateur change
   useEffect(() => {
@@ -94,23 +93,23 @@ export default function MapContainer({
 
   // Mise à jour de la carte lorsque les directions changent
   useEffect(() => {
-    if (directions && mapRef.current) {
+    if (directions && mapRef.current && window.google) {
       // Ajuster les limites de la carte pour afficher l'itinéraire complet
       const bounds = new window.google.maps.LatLngBounds();
-      
+
       // Récupérer la route et ses points
       const route = directions.routes[0];
       if (route && route.legs && route.legs.length > 0) {
         // Ajouter le point de départ
         bounds.extend(route.legs[0].start_location);
-        
+
         // Ajouter le point d'arrivée
         bounds.extend(route.legs[0].end_location);
-        
+
         // Ajouter tous les points intermédiaires
         const path = route.overview_path;
-        path.forEach(point => bounds.extend(point));
-        
+        path.forEach((point) => bounds.extend(point));
+
         // Appliquer les limites à la carte
         mapRef.current.fitBounds(bounds);
       }
@@ -135,18 +134,7 @@ export default function MapContainer({
     }
   };
 
-  // Si les scripts ne sont pas chargés ou en erreur
-  if (loadError) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-gray-200">
-        <div className="text-center p-4">
-          <p className="text-red-500">Erreur de chargement de Google Maps</p>
-          <p className="text-sm text-gray-600 mt-2">Veuillez vérifier votre connexion internet et réessayer</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Si Google Maps n'est pas encore chargé, afficher un loader
   if (!isLoaded) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-gray-100">
@@ -156,7 +144,9 @@ export default function MapContainer({
   }
 
   return (
-    <div className={`relative h-full w-full ${isFullScreen ? 'fixed inset-0 z-50' : ''}`}>
+    <div
+      className={`relative h-full w-full ${isFullScreen ? "fixed inset-0 z-50" : ""}`}
+    >
       <GoogleMap
         mapContainerClassName="h-full w-full rounded-none md:rounded-lg"
         options={mapOptions}
@@ -182,7 +172,7 @@ export default function MapContainer({
         )}
 
         {/* Afficher la position de l'utilisateur si disponible */}
-        {userLocation && !directions && (
+        {userLocation && !directions && window.google && (
           <Marker
             position={userLocation}
             icon={{
@@ -203,7 +193,9 @@ export default function MapContainer({
             <button
               onClick={toggleFullScreen}
               className="bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
-              aria-label={isFullScreen ? "Quitter le plein écran" : "Plein écran"}
+              aria-label={
+                isFullScreen ? "Quitter le plein écran" : "Plein écran"
+              }
             >
               {isFullScreen ? (
                 <Minimize size={20} className="text-gray-800" />

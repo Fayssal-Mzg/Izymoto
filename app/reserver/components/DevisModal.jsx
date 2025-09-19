@@ -2,9 +2,18 @@
 
 import DateTimeInput from "./DateTimeInput";
 import { useState, useEffect } from "react";
-import { formatDistance, format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { MapPin, Calendar, Clock, AlertCircle, Navigation, Euro, ArrowRight, X } from "lucide-react";
+import { formatDistance, format } from "date-fns";
+import { fr } from "date-fns/locale";
+import {
+  MapPin,
+  Calendar,
+  Clock,
+  AlertCircle,
+  Navigation,
+  Euro,
+  ArrowRight,
+  X,
+} from "lucide-react";
 
 export default function DevisModal({
   depart,
@@ -25,13 +34,13 @@ export default function DevisModal({
   const [validationError, setValidationError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [animateIn, setAnimateIn] = useState(false);
-  
+
   // Console log pour déboguer
   useEffect(() => {
-    console.log("DevisModal - Props disponibles:", { 
-      onCancel: !!onCancel, 
-      onProceed: !!onProceed, 
-      onRequestDevis: !!onRequestDevis 
+    console.log("DevisModal - Props disponibles:", {
+      onCancel: !!onCancel,
+      onProceed: !!onProceed,
+      onRequestDevis: !!onRequestDevis,
     });
   }, [onCancel, onProceed, onRequestDevis]);
 
@@ -43,10 +52,12 @@ export default function DevisModal({
   // Calculer le prix final en fonction des options
   useEffect(() => {
     // Calculate the final price based on prioriteReservation
-    const calculatedFinalPrice = prix ? Math.round(prix + (prioriteReservation ? 20 : 0)) : 0;
-    
+    const calculatedFinalPrice = prix
+      ? Math.round(prix + (prioriteReservation ? 20 : 0))
+      : 0;
+
     // Update the final price using the setPrixFinal prop
-    if (typeof setPrixFinal === 'function') {
+    if (typeof setPrixFinal === "function") {
       setPrixFinal(calculatedFinalPrice);
     }
   }, [prix, prioriteReservation, setPrixFinal]);
@@ -55,7 +66,9 @@ export default function DevisModal({
   const validateAndRequestDevis = () => {
     console.log("validateAndRequestDevis appelé");
     if (!reservationDate) {
-      setValidationError("Veuillez sélectionner une date et heure pour votre course");
+      setValidationError(
+        "Veuillez sélectionner une date et heure pour votre course"
+      );
       return;
     }
 
@@ -67,7 +80,9 @@ export default function DevisModal({
     // Vérification de la réservation dans l'heure
     const diffInHours = (selectedDate - now) / (1000 * 60 * 60);
     if (diffInHours < 1 && !prioriteReservation) {
-      setValidationError("Pour une réservation dans l'heure, l'option priorité est obligatoire");
+      setValidationError(
+        "Pour une réservation dans l'heure, l'option priorité est obligatoire"
+      );
       return;
     }
 
@@ -79,7 +94,7 @@ export default function DevisModal({
       // Simulation d'un temps de chargement avec un effet visuel
       setTimeout(() => {
         setIsLoading(false);
-        if (typeof onRequestDevis === 'function') {
+        if (typeof onRequestDevis === "function") {
           console.log("Appel de onRequestDevis");
           onRequestDevis();
         } else {
@@ -97,7 +112,9 @@ export default function DevisModal({
   const handleProceed = () => {
     console.log("handleProceed appelé");
     if (!reservationDate) {
-      setValidationError("Veuillez sélectionner une date et heure pour votre course");
+      setValidationError(
+        "Veuillez sélectionner une date et heure pour votre course"
+      );
       return;
     }
 
@@ -108,7 +125,9 @@ export default function DevisModal({
     // Vérification de la réservation dans l'heure
     const diffInHours = (selectedDate - now) / (1000 * 60 * 60);
     if (diffInHours < 1 && !prioriteReservation) {
-      setValidationError("Pour une réservation dans l'heure, l'option priorité est obligatoire");
+      setValidationError(
+        "Pour une réservation dans l'heure, l'option priorité est obligatoire"
+      );
       return;
     }
 
@@ -120,7 +139,7 @@ export default function DevisModal({
       // Simulation d'un temps de chargement avec un effet visuel
       setTimeout(() => {
         setIsLoading(false);
-        if (typeof onProceed === 'function') {
+        if (typeof onProceed === "function") {
           console.log("Appel de onProceed");
           onProceed();
         } else {
@@ -137,28 +156,30 @@ export default function DevisModal({
   // Formatage de la durée pour affichage
   const formattedDuration = () => {
     if (!duree) return "0 min";
-    
+
     if (duree < 60) {
       return `${duree} min`;
     } else {
       const hours = Math.floor(duree / 60);
       const minutes = duree % 60;
-      return `${hours}h${minutes > 0 ? ` ${minutes}min` : ''}`;
+      return `${hours}h${minutes > 0 ? ` ${minutes}min` : ""}`;
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div 
+      <div
         className={`bg-white rounded-xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-300 ${
-          animateIn ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
-        style={{ maxHeight: '90vh' }}
+        style={{ maxHeight: "90vh" }}
       >
         {/* Header avec bouton de fermeture */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-900">Détails de votre trajet</h3>
-          <button 
+          <h3 className="text-xl font-bold text-gray-900">
+            Détails de votre trajet
+          </h3>
+          <button
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
           >
@@ -167,7 +188,10 @@ export default function DevisModal({
         </div>
 
         {/* Conteneur scrollable */}
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 78px)' }}>
+        <div
+          className="p-6 overflow-y-auto"
+          style={{ maxHeight: "calc(90vh - 78px)" }}
+        >
           {/* Trajet avec icônes */}
           <div className="mb-6 relative">
             <div className="flex items-start space-x-3 mb-4">
@@ -179,10 +203,10 @@ export default function DevisModal({
                 <p className="text-gray-600 text-sm">{depart}</p>
               </div>
             </div>
-            
+
             {/* Ligne verticale reliant les points */}
             <div className="absolute left-4 top-8 w-0.5 h-10 bg-gray-200"></div>
-            
+
             <div className="flex items-start space-x-3">
               <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                 <Navigation size={16} />
@@ -199,22 +223,28 @@ export default function DevisModal({
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-1">
                 <Clock size={14} className="text-gray-500" />
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Durée</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider">
+                  Durée
+                </span>
               </div>
               <p className="text-gray-900 font-medium">{formattedDuration()}</p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center space-x-2 mb-1">
                 <Navigation size={14} className="text-gray-500" />
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Distance</span>
+                <span className="text-xs text-gray-500 uppercase tracking-wider">
+                  Distance
+                </span>
               </div>
-              <p className="text-gray-900 font-medium">{distance ? Math.round(distance * 10) / 10 : 0} km</p>
+              <p className="text-gray-900 font-medium">
+                {distance ? Math.round(distance * 10) / 10 : 0} km
+              </p>
             </div>
           </div>
 
           {/* Composant de gestion de date et heure */}
           <div className="mb-6">
-            {typeof DateTimeInput === 'function' ? (
+            {typeof DateTimeInput === "function" ? (
               <DateTimeInput
                 reservationDate={reservationDate}
                 setReservationDate={setReservationDate}
@@ -272,9 +302,11 @@ export default function DevisModal({
             <div className="p-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600 text-sm">Prix de base</span>
-                <span className="text-gray-900">{prix ? Math.round(prix) : 0}€</span>
+                <span className="text-gray-900">
+                  {prix ? Math.round(prix) : 0}€
+                </span>
               </div>
-              
+
               {prioriteReservation && (
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-gray-600 text-sm">Option priorité</span>
@@ -282,11 +314,14 @@ export default function DevisModal({
                 </div>
               )}
             </div>
-            
+
             <div className="bg-gray-50 p-4 border-t border-gray-200">
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total</span>
-                <span className="text-lg font-bold">{prix ? Math.round(prix + (prioriteReservation ? 20 : 0)) : 0}€</span>
+                <span className="text-lg font-bold">
+                  {prix ? Math.round(prix + (prioriteReservation ? 20 : 0)) : 0}
+                  €
+                </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 TVA incluse. Paiement sécurisé en ligne.
@@ -300,7 +335,7 @@ export default function DevisModal({
               onClick={handleProceed}
               disabled={isLoading}
               className={`py-3 px-4 bg-black text-white rounded-lg font-medium transition-all flex items-center justify-center space-x-2 ${
-                isLoading ? 'opacity-80' : 'hover:bg-gray-800'
+                isLoading ? "opacity-80" : "hover:bg-gray-800"
               }`}
               type="button"
             >
@@ -313,13 +348,13 @@ export default function DevisModal({
                 </>
               )}
             </button>
-            
+
             {onRequestDevis && (
               <button
                 onClick={validateAndRequestDevis}
                 disabled={isLoading}
                 className={`py-3 px-4 border border-gray-300 bg-white text-gray-800 rounded-lg font-medium transition-all flex items-center justify-center space-x-2 ${
-                  isLoading ? 'opacity-80' : 'hover:bg-gray-50'
+                  isLoading ? "opacity-80" : "hover:bg-gray-50"
                 }`}
                 type="button"
               >
@@ -330,7 +365,7 @@ export default function DevisModal({
                 )}
               </button>
             )}
-            
+
             <button
               onClick={onCancel}
               disabled={isLoading}

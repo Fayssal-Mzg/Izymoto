@@ -107,6 +107,42 @@ export function useReservation() {
     }
   }, [currentStep, user, router]);
 
+  // Fonction de navigation vers la section réservation
+  const navigateToReservation = (e?: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e) {
+      e.preventDefault();
+    }
+
+    // Réinitialiser le formulaire
+    resetForm();
+
+    // Vérifier si on est déjà sur la page d'accueil
+    const currentPath = window.location.pathname;
+
+    if (currentPath === "/") {
+      // Si on est déjà sur la page d'accueil, scroller directement
+      scrollToReservation();
+    } else {
+      // Si on est sur une autre page, naviguer d'abord vers l'accueil
+      router.push("/");
+      // Attendre que la navigation soit terminée puis scroller
+      setTimeout(() => {
+        scrollToReservation();
+      }, 100);
+    }
+  };
+
+  // Fonction pour scroller vers la section réservation
+  const scrollToReservation = () => {
+    const reservationSection = document.getElementById("reservation");
+    if (reservationSection) {
+      reservationSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   // Sauvegarde les détails actuels dans le contexte et localStorage
   const saveCurrentDetails = () => {
     if (depart && arrivee) {
@@ -151,7 +187,7 @@ export function useReservation() {
       {
         origin: depart,
         destination: arrivee,
-        travelMode: google.maps.TravelMode.DRIVING,
+        travelMode: "DRIVING", // ✅ Solution simple
       },
       (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
@@ -216,7 +252,6 @@ export function useReservation() {
     setCalculCompleted(false);
     setCurrentStep("form");
   };
-  
 
   // Handler pour la page d'accueil - réservation simple
   const handleReservation = () => {
@@ -250,6 +285,7 @@ export function useReservation() {
     phone?: string;
     name?: string;
   }) => {
+    console.log("📨 guestData reçu :", guestData);
     try {
       // Vérifier si une date de réservation a été sélectionnée
       if (!reservationDate) {
@@ -325,10 +361,9 @@ export function useReservation() {
         prioriteReservation,
         status: "devis",
         reservationId: randomId, // Utiliser l'ID généré
-        email: email || guestData?.email || "",
-        phone: userPhone || guestData?.phone || "",
-
-        name: name || guestData?.name || "Client",
+        email: guestData?.email || email || "",
+        phone: guestData?.phone || phone || "",
+        name: guestData?.name || name || "Client",
         notes: notes || "",
         reservationDate: reservationDate, // Ajouter la date de réservation
         dateFormatted: formattedDate,
@@ -341,6 +376,7 @@ export function useReservation() {
 
       // Tenter d'envoyer les emails, mais ne pas bloquer le processus en cas d'échec
       try {
+        console.log("📧 Email utilisé pour envoi du devis :", devisData.email);
         await sendDevisEmails(devisData);
       } catch (emailError) {
         console.warn(
@@ -397,10 +433,11 @@ export function useReservation() {
     setCurrentStep("form");
     clearReservationDetails();
   };
+
   const resetRouteData = () => {
     // Logique pour réinitialiser les données de route
-    setDepart('');
-    setArrivee('');
+    setDepart("");
+    setArrivee("");
     setDistance(null);
     setDuree(null);
     setPrix(null);
@@ -461,9 +498,8 @@ export function useReservation() {
     handleRequestDevis,
     resetForm,
     saveCurrentDetails,
-    setPrixFinal, 
+    setPrixFinal,
     resetRouteData,
+    navigateToReservation, // Nouvelle fonction ajoutée
   };
 }
-
-

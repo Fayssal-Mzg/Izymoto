@@ -1,5 +1,5 @@
 "use client";
-import Image from 'next/image';
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext"; // ou le chemin correct vers votre hook useAuth
 
 import ConfirmationModal from "@/app/reserver/components/ConfirmationModal";
@@ -29,7 +29,7 @@ import {
   Bike,
 } from "lucide-react";
 import Head from "next/head";
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { useInView } from "react-intersection-observer";
 
 export default function Home() {
@@ -37,21 +37,20 @@ export default function Home() {
   const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
-    const header = document.querySelector('header');
+    const header = document.querySelector("header");
     if (header) {
       setHeaderHeight(header.offsetHeight);
-      
+
       const updateHeaderHeight = () => {
         setHeaderHeight(header.offsetHeight);
       };
-      
-      window.addEventListener('resize', updateHeaderHeight);
+
+      window.addEventListener("resize", updateHeaderHeight);
       return () => {
-        window.removeEventListener('resize', updateHeaderHeight);
+        window.removeEventListener("resize", updateHeaderHeight);
       };
     }
   }, []);
-
 
   // Sections animation references
   const { ref: heroRef, inView: heroInView } = useInView({
@@ -78,33 +77,42 @@ export default function Home() {
     triggerOnce: true,
     threshold: 0.1,
   });
-  
 
   return (
     <MapWrapper>
       <main className="bg-background overflow-x-hidden min-h-screen">
         {/* Hero Section - Mobile Optimized */}
-    <section
+        <section
           ref={heroRef}
           className={cn(
             "relative bg-slate-900 text-white py-6 md:py-0", // Réduit les padding verticaux
             heroInView ? "opacity-100" : "opacity-0",
             "transition-opacity duration-1000"
           )}
-          style={{ 
+          style={{
             minHeight: `calc(100vh - ${headerHeight}px)`,
             display: "flex",
-            alignItems: "center"
+            alignItems: "center",
           }}
         >
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start md:mt-8"> {/* Remonte le contenu sur desktop */}
-              <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pt-10"> {/* Ajout de padding top pour remonter le texte */}
-                <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight"> {/* Réduit légèrement la taille du titre */}
-                  <span className="text-gold-400">Transport motorisé de passager</span>{" "}
+            <div className="flex flex-col md:flex-row items-center md:items-start md:mt-8">
+              {" "}
+              {/* Remonte le contenu sur desktop */}
+              <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pt-10">
+                {" "}
+                {/* Ajout de padding top pour remonter le texte */}
+                <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
+                  {" "}
+                  {/* Réduit légèrement la taille du titre */}
+                  <span className="text-gold-400">
+                    Transport motorisé de passager
+                  </span>{" "}
                   de qualité à Paris et en France
                 </h1>
-                <p className="text-base md:text-lg text-gray-300 max-w-lg mb-6"> {/* Réduit légèrement la taille du texte */}
+                <p className="text-base md:text-lg text-gray-300 max-w-lg mb-6">
+                  {" "}
+                  {/* Réduit légèrement la taille du texte */}
                   Déplacez-vous rapidement et confortablement dans Paris avec
                   notre service IZYMOTO premium.
                 </p>
@@ -124,13 +132,17 @@ export default function Home() {
                   </a>
                 </div>
               </div>
-              <div className="w-full md:w-1/2 md:pl-8"> {/* Ajout de padding left pour mieux espacer */}
-                <div className="relative md:max-w-md md:mx-auto"> {/* Limite la largeur de l'image sur desktop */}
+              <div className="w-full md:w-1/2 md:pl-8">
+                {" "}
+                {/* Ajout de padding left pour mieux espacer */}
+                <div className="relative md:max-w-md md:mx-auto">
+                  {" "}
+                  {/* Limite la largeur de l'image sur desktop */}
                   <Image
                     src="/taxi-paris.jpg"
                     alt="Moto-taxi IZYMOTO de service de transport premium à Paris"
                     className="rounded-lg shadow-2xl w-full h-auto"
-                    width={700} 
+                    width={700}
                     height={450}
                     priority
                     style={{ maxHeight: "60vh" }} // Limite la hauteur de l'image
@@ -223,9 +235,9 @@ export default function Home() {
                   <div>
                     <h3 className="text-xl font-bold mb-2">CONFORT</h3>
                     <p className="text-gray-700">
-                      Équipement premium et pilotes expérimentés pour votre sécurité
-                      et confort pendant tout le trajet. Nos véhicules sont récents,
-                      spacieux et toujours impeccables.
+                      Équipement premium et pilotes expérimentés pour votre
+                      sécurité et confort pendant tout le trajet. Nos véhicules
+                      sont récents, spacieux et toujours impeccables.
                     </p>
                   </div>
                 </div>
@@ -240,8 +252,8 @@ export default function Home() {
                     <h3 className="text-xl font-bold mb-2">FIABILITÉ</h3>
                     <p className="text-gray-700">
                       Service ponctuel et professionnel, disponible 7j/7. Nos
-                      chauffeurs sont formés pour vous offrir une expérience sans
-                      faille. Réservez en toute confiance pour vos trajets
+                      chauffeurs sont formés pour vous offrir une expérience
+                      sans faille. Réservez en toute confiance pour vos trajets
                       importants.
                     </p>
                   </div>
@@ -349,12 +361,10 @@ export default function Home() {
                   </div>
                   <div className="w-12 h-1 bg-white"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-white">
-                  30€
-                </div>
+                <div className="text-3xl font-bold mb-4 text-white">30€</div>
                 <p className="text-gray-300 mb-6 flex-grow">
-                  Déplacements depuis Paris dans toute la France. Tarif de base pour
-                  des trajets jusqu'à 10km.
+                  Déplacements depuis Paris dans toute la France. Tarif de base
+                  pour des trajets jusqu'à 10km.
                 </p>
                 <ul className="mb-6 space-y-2">
                   <li className="flex items-center">
@@ -423,9 +433,7 @@ export default function Home() {
                   </div>
                   <div className="w-12 h-1 bg-black"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-black">
-                  75€/h
-                </div>
+                <div className="text-3xl font-bold mb-4 text-black">75€/h</div>
                 <p className="text-gray-600 mb-6 flex-grow">
                   Chauffeur à votre disposition pour plusieurs heures ou toute
                   la journée. Idéal pour les visites ou événements.
@@ -525,9 +533,9 @@ export default function Home() {
                 <p className="text-gray-700 mb-4">
                   IZYMOTO est né d'une vision simple : offrir un service de
                   transport haut de gamme, fiable et accessible à Paris. Fondée
-                  par des passionnés d'excellence du service,
-                  notre entreprise s'est rapidement fait un nom dans le secteur
-                  exigeant du transport de passager parisien.
+                  par des passionnés d'excellence du service, notre entreprise
+                  s'est rapidement fait un nom dans le secteur exigeant du
+                  transport de passager parisien.
                 </p>
                 <p className="text-gray-700 mb-4">
                   Notre flotte moderne de véhicules premium et nos chauffeurs
@@ -541,7 +549,8 @@ export default function Home() {
                 <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
                   <Award className="h-8 w-8 text-black" />
                   <p className="text-gray-700">
-                    Service certifié par le décret n°2010-1223 du 11 Octobre 2010
+                    Service certifié par le décret n°2010-1223 du 11 Octobre
+                    2010
                   </p>
                 </div>
               </div>
@@ -577,21 +586,15 @@ export default function Home() {
 
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
               <div className="flex flex-col items-center p-4 bg-white/10 rounded-lg">
-                <div className="text-3xl font-bold text-white mb-2">
-                  7J/7
-                </div>
+                <div className="text-3xl font-bold text-white mb-2">7J/7</div>
                 <p className="text-white/70">Disponibilité</p>
               </div>
               <div className="flex flex-col items-center p-4 bg-white/10 rounded-lg">
-                <div className="text-3xl font-bold text-white mb-2">
-                  15 MIN
-                </div>
+                <div className="text-3xl font-bold text-white mb-2">15 MIN</div>
                 <p className="text-white/70">Délai moyen</p>
               </div>
               <div className="flex flex-col items-center p-4 bg-white/10 rounded-lg">
-                <div className="text-3xl font-bold text-white mb-2">
-                  100%
-                </div>
+                <div className="text-3xl font-bold text-white mb-2">100%</div>
                 <p className="text-white/70">Satisfaction</p>
               </div>
             </div>
@@ -602,7 +605,9 @@ export default function Home() {
         <section id="contact" className="py-12 md:py-16 bg-white">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-3">Contactez-nous</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-3">
+                Contactez-nous
+              </h2>
               <div className="w-16 h-1 bg-black mx-auto mb-4"></div>
               <p className="text-base text-gray-600 max-w-xl mx-auto">
                 Une question ou besoin d'assistance ? Notre équipe est à votre
@@ -621,7 +626,10 @@ export default function Home() {
                     <p className="text-gray-700">+33 6 52 75 35 21</p>
                   </div>
                 </div>
-                <a href="tel:+33652753521" className="text-sm text-black hover:underline mt-2 inline-block">
+                <a
+                  href="tel:+33652753521"
+                  className="text-sm text-black hover:underline mt-2 inline-block"
+                >
                   Appeler maintenant
                 </a>
               </div>
@@ -648,7 +656,10 @@ export default function Home() {
                     <p className="text-gray-700">contact@izymoto.com</p>
                   </div>
                 </div>
-                <a href="mailto:contact@izymoto.com" className="text-sm text-black hover:underline mt-2 inline-block">
+                <a
+                  href="mailto:contact@izymoto.com"
+                  className="text-sm text-black hover:underline mt-2 inline-block"
+                >
                   Envoyer un email
                 </a>
               </div>
@@ -665,7 +676,12 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-sm text-black hover:underline mt-2 inline-block">
+                <a
+                  href="https://maps.google.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-black hover:underline mt-2 inline-block"
+                >
                   Voir sur la carte
                 </a>
               </div>
@@ -722,16 +738,30 @@ export default function Home() {
         </section>
         {/* Performance Monitor Integration */}
         {showPerformanceMonitor && <PerformanceMonitor />}
-        
+
         {/* Performance Monitor Button - Only visible in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <button 
+        {process.env.NODE_ENV === "development" && (
+          <button
             onClick={() => setShowPerformanceMonitor(!showPerformanceMonitor)}
             className="fixed bottom-20 right-4 z-50 bg-black text-white p-2 rounded-full shadow-lg hover:bg-gray-800 transition-colors"
-            title={showPerformanceMonitor ? "Masquer le moniteur" : "Afficher le moniteur de performance"}
+            title={
+              showPerformanceMonitor
+                ? "Masquer le moniteur"
+                : "Afficher le moniteur de performance"
+            }
             aria-label="Toggle Performance Monitor"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
             </svg>
           </button>
@@ -790,26 +820,30 @@ function HomeReservationSection() {
       <ReservationForm customContainerClass="gap-6 md:gap-8 items-center" />
 
       {currentStep === "devis" && (
-  <DevisModal
-    depart={depart}
-    arrivee={arrivee}
-    distance={distance}
-    duree={duree}
-    prix={prix}
-    prioriteReservation={prioriteReservation}
-    setPrioriteReservation={setPrioriteReservation}
-    onCancel={() => setCurrentStep("form")}
-    onProceed={proceedToReservation}
-    onRequestDevis={handleRequestDevis}
-    reservationDate={reservationDate}
-    setReservationDate={setReservationDate}
-    setPrixFinal={setPrixFinal}
-  />
-)}
+        <DevisModal
+          depart={depart}
+          arrivee={arrivee}
+          distance={distance}
+          duree={duree}
+          prix={prix}
+          prioriteReservation={prioriteReservation}
+          setPrioriteReservation={setPrioriteReservation}
+          onCancel={() => setCurrentStep("form")}
+          onProceed={proceedToReservation}
+          onRequestDevis={handleRequestDevis}
+          reservationDate={reservationDate}
+          setReservationDate={setReservationDate}
+          setPrixFinal={setPrixFinal}
+        />
+      )}
 
       {currentStep === "guest_info" && (
         <GuestInformationModal
-          onSubmit={(guestData: { email?: string; phone?: string; name?: string; } | undefined) => {
+          onSubmit={(
+            guestData:
+              | { email?: string; phone?: string; name?: string }
+              | undefined
+          ) => {
             console.log("GuestInfo submitted", guestData);
             handleRequestDevis(guestData);
           }}
@@ -828,6 +862,8 @@ function HomeReservationSection() {
           setName={setName}
           phone={phone}
           setPhone={setPhone}
+          email={email} // ✅ ajouté
+          setEmail={setEmail}
           notes={notes}
           setNotes={setNotes}
           onCancel={() => {

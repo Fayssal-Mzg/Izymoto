@@ -1,10 +1,12 @@
-// app/aeroports/page.jsx
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
+import { useReservation } from "@/lib/hooks/useReservation";
 
 export default function AeroportsPage() {
+  const { navigateToReservation } = useReservation();
+
   return (
     <div className="bg-black text-white">
       {/* Hero Section */}
@@ -21,17 +23,19 @@ export default function AeroportsPage() {
 
         <div className="relative z-10 text-center px-4 max-w-4xl">
           <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-            Taxi Moto Vers les Aéroports de Paris et en destination de toute la France.
+            Taxi Moto Vers les Aéroports de Paris et en destination de toute la
+            France.
           </h1>
           <p className="text-xl md:text-2xl mb-10 text-gray-300">
             Transport rapide et professionnel directement vers votre
             destination. Évitez les embouteillages, arrivez sereinement.
           </p>
-          <Link
-            href="/reserver"
+          <a
+            href="#reservation"
+            onClick={navigateToReservation}
             className="bg-white text-black px-10 py-4 rounded-full text-lg font-semibold 
             hover:bg-gray-200 transition-colors duration-300 
-            inline-flex items-center gap-2 group"
+            inline-flex items-center gap-2 group cursor-pointer"
           >
             Réservez maintenant
             <svg
@@ -48,7 +52,7 @@ export default function AeroportsPage() {
                 d="M14 5l7 7m0 0l-7 7m7-7H3"
               />
             </svg>
-          </Link>
+          </a>
         </div>
       </section>
 
@@ -103,13 +107,14 @@ export default function AeroportsPage() {
                     <span className="text-3xl font-bold text-white">
                       À partir de {airport.price}
                     </span>
-                    <Link
-                      href="/reserver"
+                    <a
+                      href="#reservation"
+                      onClick={navigateToReservation}
                       className="bg-white text-black px-6 py-2 rounded-full 
-                      hover:bg-gray-200 transition-colors"
+                      hover:bg-gray-200 transition-colors cursor-pointer"
                     >
                       Réserver
-                    </Link>
+                    </a>
                   </div>
                 </div>
               </div>

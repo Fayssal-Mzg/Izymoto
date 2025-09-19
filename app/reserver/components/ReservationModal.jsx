@@ -4,7 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { useState, useEffect, useRef } from "react";
-import { Calendar, User, Phone, FileText, X, ArrowRight } from "lucide-react";
+import {
+  Calendar,
+  User,
+  Phone,
+  FileText,
+  Mail,
+  X,
+  ArrowRight,
+} from "lucide-react";
 
 export default function ReservationModal({
   reservationDate,
@@ -13,6 +21,8 @@ export default function ReservationModal({
   setName,
   phone,
   setPhone,
+  email,
+  setEmail,
   notes,
   setNotes,
   onCancel,
@@ -24,19 +34,16 @@ export default function ReservationModal({
   const { user } = useAuth();
   const dataFetchedRef = useRef(false);
 
-  // Animation d'entrée
   useEffect(() => {
     setAnimateIn(true);
   }, []);
 
-  // Récupérer les données utilisateur depuis Firestore UNE SEULE FOIS
+  // Récupération des données Firestore (nom, tel, email)
   useEffect(() => {
-    // Vérifier si les données ont déjà été récupérées
     if (dataFetchedRef.current) return;
+    if (!user) return;
 
     const fetchUserData = async () => {
-      if (!user) return;
-
       try {
         setLoading(true);
         const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -44,21 +51,20 @@ export default function ReservationModal({
         if (userDoc.exists()) {
           const userData = userDoc.data();
 
-          // Pré-remplir le nom s'il est disponible et non déjà défini
           if (!name && (userData.displayName || user.displayName)) {
             setName(userData.displayName || user.displayName);
           }
-          
-          // Pré-remplir le téléphone s'il est disponible
           if (!phone && userData.phoneNumber) {
             setPhone(userData.phoneNumber);
           }
-        } else if (user.displayName && !name) {
-          // Fallback to Auth user data if Firestore doc doesn't exist
-          setName(user.displayName);
+          if (!email && userData.email) {
+            setEmail(userData.email);
+          }
+        } else {
+          if (user.displayName && !name) setName(user.displayName);
+          if (user.email && !email) setEmail(user.email);
         }
 
-        // Marquer que les données ont été récupérées
         dataFetchedRef.current = true;
       } catch (err) {
         console.error(
@@ -71,42 +77,39 @@ export default function ReservationModal({
     };
 
     fetchUserData();
-  }, [user, name, phone, setName, setPhone]);
+  }, [user, name, phone, email, setName, setPhone, setEmail]);
 
-  // Validation du formulaire
+  // Validation
   const handleProceed = () => {
     setError("");
 
-    // Vérification des champs obligatoires
     if (!name || !name.trim()) {
       setError("Le nom complet est obligatoire");
       return;
     }
-
     if (!phone || !phone.trim()) {
       setError("Le numéro de téléphone est obligatoire");
       return;
     }
-
+    if (!email || !email.trim()) {
+      setError("L'adresse email est obligatoire");
+      return;
+    }
     if (!reservationDate) {
       setError("La date et l'heure sont obligatoires");
       return;
     }
 
-    // Vérifier que la date est dans le futur
     const selectedDate = new Date(reservationDate);
     const currentDate = new Date();
-
     if (selectedDate <= currentDate) {
       setError("La date de réservation doit être dans le futur");
       return;
     }
 
-    // Si tout est valide, procéder au paiement
     onProceed();
   };
 
-  // Obtenir la date/heure minimale (maintenant + 15min)
   const getMinDateTime = () => {
     const now = new Date();
     now.setMinutes(now.getMinutes() + 15);
@@ -115,16 +118,18 @@ export default function ReservationModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div 
+      <div
         className={`bg-white rounded-xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-300 ${
-          animateIn ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
-        style={{ maxHeight: '90vh' }}
+        style={{ maxHeight: "90vh" }}
       >
-        {/* Header avec bouton de fermeture */}
+        {/* Header */}
         <div className="relative p-6 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900">Finaliser votre réservation</h3>
-          <button 
+          <h3 className="text-xl font-bold text-gray-900">
+            Finaliser votre réservation
+          </h3>
+          <button
             onClick={onCancel}
             className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
             aria-label="Fermer"
@@ -133,10 +138,14 @@ export default function ReservationModal({
           </button>
         </div>
 
-        {/* Conteneur scrollable */}
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 78px)' }}>
+        {/* Contenu */}
+        <div
+          className="p-6 overflow-y-auto"
+          style={{ maxHeight: "calc(90vh - 78px)" }}
+        >
           <p className="text-gray-600 mb-6">
-            Veuillez compléter les informations pour finaliser votre réservation.
+            Veuillez compléter les informations pour finaliser votre
+            réservation.
           </p>
 
           {error && (
@@ -151,6 +160,7 @@ export default function ReservationModal({
             </div>
           ) : (
             <div className="space-y-6">
+              {/* Date */}
               <div className="space-y-2">
                 <label
                   htmlFor="date"
@@ -159,7 +169,10 @@ export default function ReservationModal({
                   Date et heure <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <Calendar size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <Calendar
+                    size={18}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  />
                   <input
                     type="datetime-local"
                     id="date"
@@ -172,6 +185,7 @@ export default function ReservationModal({
                 </div>
               </div>
 
+              {/* Nom */}
               <div className="space-y-2">
                 <label
                   htmlFor="name"
@@ -180,7 +194,10 @@ export default function ReservationModal({
                   Nom complet <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <User size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <User
+                    size={18}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  />
                   <input
                     type="text"
                     id="name"
@@ -193,6 +210,7 @@ export default function ReservationModal({
                 </div>
               </div>
 
+              {/* Téléphone */}
               <div className="space-y-2">
                 <label
                   htmlFor="phone"
@@ -201,7 +219,10 @@ export default function ReservationModal({
                   Téléphone <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <Phone size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                  <Phone
+                    size={18}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  />
                   <input
                     type="tel"
                     id="phone"
@@ -214,6 +235,32 @@ export default function ReservationModal({
                 </div>
               </div>
 
+              {/* Email */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail
+                    size={18}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                  />
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 block w-full p-3 border border-gray-300 rounded-lg focus:ring-black focus:border-black bg-white transition-all"
+                    placeholder="Votre adresse email"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
               <div className="space-y-2">
                 <label
                   htmlFor="notes"
@@ -222,7 +269,10 @@ export default function ReservationModal({
                   Instructions particulières
                 </label>
                 <div className="relative">
-                  <FileText size={18} className="absolute left-3 top-3 text-gray-500" />
+                  <FileText
+                    size={18}
+                    className="absolute left-3 top-3 text-gray-500"
+                  />
                   <textarea
                     id="notes"
                     value={notes}
@@ -234,11 +284,11 @@ export default function ReservationModal({
                 </div>
               </div>
 
+              {/* Boutons */}
               <div className="pt-2">
                 <p className="text-xs text-gray-500 mb-4">
                   * Champs obligatoires
                 </p>
-
                 <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
                   <button
                     type="button"
@@ -253,7 +303,10 @@ export default function ReservationModal({
                     className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 text-center flex items-center justify-center space-x-2 group"
                   >
                     <span>Continuer</span>
-                    <ArrowRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight
+                      size={16}
+                      className="transform group-hover:translate-x-1 transition-transform"
+                    />
                   </button>
                 </div>
               </div>

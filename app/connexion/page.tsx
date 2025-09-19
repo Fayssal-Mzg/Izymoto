@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useReservation } from "@/lib/hooks/useReservation";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -12,6 +13,7 @@ export default function ConnexionPage() {
   const [password, setPassword] = useState("");
   const { logIn, signInWithGoogle, reservationDetails, setReservationDetails } =
     useAuth();
+  const { navigateToReservation } = useReservation();
   const router = useRouter();
 
   // Vérifier localStorage au chargement
@@ -30,6 +32,21 @@ export default function ConnexionPage() {
     }
   }, []);
 
+  // Fonction pour rediriger après connexion
+  const redirectAfterLogin = () => {
+    // Nettoyer localStorage
+    localStorage.removeItem("pendingReservation");
+
+    // Si des détails de réservation sont en attente, aller à la section réservation
+    if (reservationDetails) {
+      // Naviguer vers la page d'accueil puis scroller vers la section réservation
+      navigateToReservation();
+    } else {
+      // Sinon, rediriger vers la page d'accueil
+      router.push("/");
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -43,15 +60,8 @@ export default function ConnexionPage() {
       await logIn(email, password);
       toast.success("Connexion réussie!");
 
-      // Nettoyer localStorage
-      localStorage.removeItem("pendingReservation");
-
-      // Rediriger vers la page de réservation si des détails sont en attente
-      if (reservationDetails) {
-        router.push("/reserver");
-      } else {
-        router.push("/"); // Sinon, rediriger vers la page d&apos;accueil
-      }
+      // Rediriger avec la nouvelle logique
+      redirectAfterLogin();
     } catch (err) {
       toast.error("Échec de la connexion. Veuillez vérifier vos identifiants.");
       console.error(err);
@@ -63,22 +73,15 @@ export default function ConnexionPage() {
       await signInWithGoogle();
       toast.success("Connexion avec Google réussie!");
 
-      // Nettoyer localStorage
-      localStorage.removeItem("pendingReservation");
-
-      // Même logique pour la connexion Google
-      if (reservationDetails) {
-        router.push("/reserver");
-      } else {
-        router.push("/");
-      }
+      // Rediriger avec la nouvelle logique
+      redirectAfterLogin();
     } catch (err) {
       toast.error("Échec de la connexion avec Google.");
       console.error(err);
     }
   };
 
-  // Afficher un message si l&apos;utilisateur a une réservation en attente
+  // Afficher un message si l'utilisateur a une réservation en attente
   const reservationMessage = reservationDetails ? (
     <div className="mb-4 p-3 bg-blue-50 rounded-lg text-blue-700">
       <p>
@@ -96,7 +99,7 @@ export default function ConnexionPage() {
           <p className="mt-2 text-gray-600">Connectez-vous à votre compte</p>
         </div>
 
-        {/* Afficher le message de réservation en attente s&apos;il y en a un */}
+        {/* Afficher le message de réservation en attente s'il y en a un */}
         {reservationMessage}
 
         <form onSubmit={handleLogin} className="mt-8 space-y-6">
@@ -188,12 +191,12 @@ export default function ConnexionPage() {
 
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">
-            Vous n&apos;avez pas de compte ?{" "}
+            Vous n'avez pas de compte ?{" "}
             <Link
               href="/inscription"
               className="font-medium text-[#ffc107] hover:text-yellow-500"
             >
-              S&apos;inscrire
+              S'inscrire
             </Link>
           </p>
         </div>

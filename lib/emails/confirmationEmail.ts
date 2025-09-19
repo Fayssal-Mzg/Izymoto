@@ -24,6 +24,20 @@ function createResendInstance() {
 const resend = typeof window !== "undefined" ? createResendInstance() : null;
 
 function getEnvVar(key: string, defaultValue: string = ""): string {
+  // Test temporaire avec valeurs en dur - VERSION CORRIGÉE TYPESCRIPT
+  const hardcodedVars: Record<string, string> = {
+    NEXT_PUBLIC_EMAILJS_PUBLIC_KEY: "xRIZqWvmMaxkLXdi1",
+    NEXT_PUBLIC_EMAILJS_SERVICE_ID: "service_ycl34xv",
+    NEXT_PUBLIC_EMAILJS_CLIENT_TEMPLATE_ID: "template_47csinh",
+    NEXT_PUBLIC_EMAILJS_ADMIN_TEMPLATE_ID: "template_6uzak99",
+  };
+
+  if (hardcodedVars[key]) {
+    console.log(`Using hardcoded value for ${key}`);
+    return hardcodedVars[key];
+  }
+
+  // Reste de votre code...
   if (typeof process === "undefined" || typeof process.env === "undefined") {
     console.warn(`Process environment not available for: ${key}`);
     return defaultValue;
@@ -36,7 +50,6 @@ function getEnvVar(key: string, defaultValue: string = ""): string {
   }
   return value;
 }
-
 // Initialisation EmailJS avec gestion d'erreur
 if (typeof window !== "undefined") {
   try {

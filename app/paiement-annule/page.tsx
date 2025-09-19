@@ -1,13 +1,14 @@
-// app/paiement-annule/page.jsx
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
+import { useReservation } from "@/lib/hooks/useReservation";
 
 export default function PaiementAnnule() {
   const router = useRouter();
+  const { navigateToReservation } = useReservation();
 
   useEffect(() => {
     // Afficher un toast d'information
@@ -46,12 +47,13 @@ export default function PaiementAnnule() {
         </p>
 
         <div className="space-y-3">
-          <Link
-            href="/reserver"
-            className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition"
+          <a
+            href="#reservation"
+            onClick={navigateToReservation}
+            className="block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition cursor-pointer"
           >
             Réessayer la réservation
-          </Link>
+          </a>
           <Link
             href="/"
             className="block w-full py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md transition"

@@ -13,6 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { useInView } from "react-intersection-observer";
+import { useReservation } from "@/lib/hooks/useReservation";
 
 export default function AboutPage() {
   const { ref: missionRef, inView: missionInView } = useInView({
@@ -29,6 +30,8 @@ export default function AboutPage() {
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const { navigateToReservation } = useReservation();
 
   return (
     <div className="bg-white">
@@ -225,12 +228,13 @@ export default function AboutPage() {
             façon de vous déplacer dans Paris.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              href="/reserver"
-              className="bg-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-primary/90 transition-colors"
+            <a
+              href="#reservation"
+              onClick={navigateToReservation}
+              className="bg-primary text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-primary/90 transition-colors cursor-pointer"
             >
               Réserver maintenant
-            </Link>
+            </a>
             <Link
               href="/contact"
               className="bg-white text-primary border border-primary px-8 py-3 rounded-lg font-bold text-lg hover:bg-gray-50 transition-colors"

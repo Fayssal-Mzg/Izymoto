@@ -9,12 +9,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: "https://izymoto.com/reserver",
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
       url: "https://izymoto.com/nos-tarifs",
       lastModified: new Date(),
       changeFrequency: "weekly",

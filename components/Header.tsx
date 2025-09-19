@@ -5,14 +5,14 @@ import { useReservation } from "@/lib/hooks/useReservation";
 import { Phone, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-// Ajoute cette import
 
 const Header = () => {
   const { user, logOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { resetForm } = useReservation(); // Récupère la fonction resetForm
+  const { resetForm } = useReservation();
+  const router = useRouter();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -20,11 +20,51 @@ const Header = () => {
 
   // Fonction qui réinitialise l'état avant la navigation
   const handleNavigation = () => {
-    resetForm(); // Réinitialise le formulaire de réservation
+    resetForm();
     if (isMenuOpen) {
-      toggleMenu(); // Ferme le menu si ouvert
+      toggleMenu();
     }
   };
+
+  // Fonction pour gérer le scroll vers la section réservation
+  const handleReservationClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+
+    // Fermer le menu mobile si ouvert
+    if (isMenuOpen) {
+      toggleMenu();
+    }
+
+    // Réinitialiser le formulaire
+    resetForm();
+
+    // Vérifier si on est déjà sur la page d'accueil
+    const currentPath = window.location.pathname;
+
+    if (currentPath === "/") {
+      // Si on est déjà sur la page d'accueil, scroller directement
+      scrollToReservation();
+    } else {
+      // Si on est sur une autre page, naviguer d'abord vers l'accueil
+      router.push("/");
+      // Attendre que la navigation soit terminée puis scroller
+      setTimeout(() => {
+        scrollToReservation();
+      }, 100);
+    }
+  };
+
+  // Fonction pour scroller vers la section réservation
+  const scrollToReservation = () => {
+    const reservationSection = document.getElementById("reservation");
+    if (reservationSection) {
+      reservationSection.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   return (
     <header className="w-full z-50 bg-transparent">
       {/* Barre supérieure combinée */}
@@ -49,18 +89,18 @@ const Header = () => {
           <nav className="hidden md:block">
             <ul className="flex justify-center space-x-10">
               <li>
-                <Link
-                  href="/reserver"
-                  className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
-                  onClick={handleNavigation}
+                <a
+                  href="#reservation"
+                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
+                  onClick={handleReservationClick}
                 >
                   RÉSERVER UN TRAJET
-                </Link>
+                </a>
               </li>
               <li>
                 <Link
                   href="/nos-tarifs"
-                  className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
                   onClick={handleNavigation}
                 >
                   NOS TARIFS
@@ -69,7 +109,7 @@ const Header = () => {
               <li>
                 <Link
                   href="/aeroports"
-                  className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
                   onClick={handleNavigation}
                 >
                   AÉROPORTS PARIS
@@ -78,7 +118,7 @@ const Header = () => {
               <li>
                 <Link
                   href="/about"
-                  className="text-white text-sm tracking-wider  relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
                   onClick={handleNavigation}
                 >
                   À PROPOS DE IZYMOTO
@@ -90,8 +130,8 @@ const Header = () => {
           {/* Contact et authentification desktop */}
           <div className="hidden md:flex items-center space-x-6 text-white">
             <div className="flex items-center space-x-2 group">
-              <Phone className="h-4 w-4 group- transition-colors duration-300" />
-              <span className="text-sm group- transition-colors duration-300">
+              <Phone className="h-4 w-4 group-hover:text-gold-400 transition-colors duration-300" />
+              <span className="text-sm group-hover:text-gold-400 transition-colors duration-300">
                 (+33) 6 52 75 35 21
               </span>
             </div>
@@ -100,14 +140,14 @@ const Header = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   href="/profil"
-                  className="text-sm font-medium  transition-colors duration-300"
+                  className="text-sm font-medium hover:text-gold-400 transition-colors duration-300"
                   onClick={handleNavigation}
                 >
                   Mon Profil
                 </Link>
                 <button
                   onClick={() => logOut()}
-                  className="text-sm font-medium  transition-colors duration-300"
+                  className="text-sm font-medium hover:text-gold-400 transition-colors duration-300"
                 >
                   Déconnexion
                 </button>
@@ -116,6 +156,7 @@ const Header = () => {
               <Link
                 href="/connexion"
                 className="inline-block px-4 py-2 border border-white/40 text-white text-sm hover:bg-white hover:text-black transition-all duration-300 tracking-wider font-light"
+                onClick={handleNavigation}
               >
                 Connexion
               </Link>
@@ -136,6 +177,7 @@ const Header = () => {
           </button>
         </div>
       </div>
+
       {/* Menu mobile */}
       <div
         className={`fixed inset-0 bg-black/95 z-40 transform transition-transform duration-500 ease-in-out ${
@@ -146,39 +188,40 @@ const Header = () => {
           <nav className="flex flex-col space-y-8 text-center">
             <Link
               href="/"
-              className="text-white text-2xl uppercase tracking-widest  transition-colors duration-300"
-              onClick={toggleMenu}
+              className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
+              onClick={handleNavigation}
             >
               Accueil
             </Link>
-            <Link
-              href="/reserver"
-              className="text-white text-2xl uppercase tracking-widest  transition-colors duration-300"
-              onClick={toggleMenu}
+            <a
+              href="#reservation"
+              className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300 cursor-pointer"
+              onClick={handleReservationClick}
             >
               Réserver un trajet
-            </Link>
+            </a>
             <Link
               href="/nos-tarifs"
-              className="text-white text-2xl uppercase tracking-widest  transition-colors duration-300"
-              onClick={toggleMenu}
+              className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
+              onClick={handleNavigation}
             >
               Nos tarifs
             </Link>
             <Link
               href="/aeroports"
-              className="text-white text-2xl uppercase tracking-widest  transition-colors duration-300"
-              onClick={toggleMenu}
+              className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
+              onClick={handleNavigation}
             >
               Aéroports Paris
             </Link>
             <Link
               href="/about"
-              className="text-white text-2xl uppercase tracking-widest  transition-colors duration-300"
-              onClick={toggleMenu}
+              className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
+              onClick={handleNavigation}
             >
               À propos
             </Link>
+
             <div className="pt-8 flex flex-col items-center space-y-4">
               <div className="flex items-center space-x-2 text-white">
                 <Phone className="h-5 w-5" />
@@ -190,7 +233,7 @@ const Header = () => {
                   <Link
                     href="/profil"
                     className="inline-block px-6 py-2 border border-white/40 text-white hover:bg-white hover:text-black transition-all duration-300 tracking-wider"
-                    onClick={toggleMenu}
+                    onClick={handleNavigation}
                   >
                     MON PROFIL
                   </Link>
@@ -208,7 +251,7 @@ const Header = () => {
                 <Link
                   href="/connexion"
                   className="inline-block px-6 py-2 border border-white/40 text-white hover:bg-white hover:text-black transition-all duration-300 tracking-wider"
-                  onClick={toggleMenu}
+                  onClick={handleNavigation}
                 >
                   CONNEXION
                 </Link>

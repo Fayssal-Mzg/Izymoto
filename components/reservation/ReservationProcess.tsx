@@ -30,8 +30,10 @@ export default function ReservationProcess({
 }: ReservationProcessProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [formExpanded, setFormExpanded] = useState(true);
-  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
-
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(
+    null
+  );
+  const [email, setEmail] = useState("");
   const {
     depart,
     setDepart,
@@ -114,8 +116,8 @@ export default function ReservationProcess({
             {/* Conteneur de la carte responsive - Plus grand sur mobile pour faciliter l'interaction */}
             <div className="relative flex-grow h-[60vh] md:h-[50vh] lg:absolute lg:inset-0">
               <div className="h-full w-full">
-                <MapContainer 
-                  directions={directions} 
+                <MapContainer
+                  directions={directions}
                   userLocation={currentLocation}
                   showFullScreen={true}
                 />
@@ -125,28 +127,34 @@ export default function ReservationProcess({
             {/* Formulaire de recherche - Plein écran sur mobile, superposé sur desktop */}
             <div className="relative lg:absolute bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md shadow-lg transition-all duration-300">
               {/* Barre de titre avec bouton d'expansion/réduction sur mobile */}
-              <div 
+              <div
                 className="px-4 py-3 flex items-center justify-between cursor-pointer lg:cursor-default"
                 onClick={() => setFormExpanded(!formExpanded)}
               >
                 <h1 className="text-xl font-medium text-white">
                   Réserver un trajet
                 </h1>
-                <button 
+                <button
                   className="lg:hidden rounded-full bg-white/10 p-1.5 transition-transform duration-300"
-                  aria-label={formExpanded ? "Réduire le formulaire" : "Développer le formulaire"}
+                  aria-label={
+                    formExpanded
+                      ? "Réduire le formulaire"
+                      : "Développer le formulaire"
+                  }
                 >
-                  <ChevronUp 
-                    size={18} 
-                    className={`text-white transform transition-transform duration-300 ${formExpanded ? '' : 'rotate-180'}`} 
+                  <ChevronUp
+                    size={18}
+                    className={`text-white transform transition-transform duration-300 ${formExpanded ? "" : "rotate-180"}`}
                   />
                 </button>
               </div>
 
               {/* Formulaire avec animation d'expansion/réduction */}
-              <div className={`overflow-hidden transition-all duration-300 ease-in-out
-                ${formExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 lg:max-h-[1000px] lg:opacity-100'}
-              `}>
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out
+                ${formExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0 lg:max-h-[1000px] lg:opacity-100"}
+              `}
+              >
                 <div className="container mx-auto px-4 py-4">
                   <div className="max-w-md mx-auto lg:max-w-none">
                     <SearchForm
@@ -179,7 +187,8 @@ export default function ReservationProcess({
               Réservez votre trajet
             </h2>
             <p className="text-base text-gray-600 max-w-xl mx-auto text-center mb-8">
-              Indiquez votre point de départ et d'arrivée pour obtenir un tarif instantané
+              Indiquez votre point de départ et d'arrivée pour obtenir un tarif
+              instantané
             </p>
             <SearchForm
               depart={depart}
@@ -218,10 +227,16 @@ export default function ReservationProcess({
             setPrixFinal={setPrixFinal}
           />
         )}
-
         {currentStep === "guest_info" && (
           <GuestInformationModal
-            onSubmit={handleRequestDevis}
+            onSubmit={(
+              guestData:
+                | { email?: string; phone?: string; name?: string }
+                | undefined
+            ) => {
+              console.log("✅ Données invité reçues :", guestData);
+              handleRequestDevis(guestData); // ← transmet les infos à useReservation
+            }}
             onCancel={() => setCurrentStep("devis")}
           />
         )}
@@ -234,6 +249,8 @@ export default function ReservationProcess({
             setName={setName}
             phone={phone}
             setPhone={setPhone}
+            email={email} // 👈 ajouté
+            setEmail={setEmail}
             notes={notes}
             setNotes={setNotes}
             onCancel={() => setCurrentStep("devis")}
