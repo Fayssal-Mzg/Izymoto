@@ -187,7 +187,7 @@ export function useReservation() {
       {
         origin: depart,
         destination: arrivee,
-        travelMode: "DRIVING", // ✅ Solution simple
+        travelMode: google.maps.TravelMode.DRIVING,
       },
       (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
