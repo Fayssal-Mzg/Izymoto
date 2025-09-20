@@ -32,7 +32,11 @@
     "components/maps/GoogleMapsProvider.tsx",
     "app/reserver/components/GuestInformationModal.jsx",
     "app/reserver/components/GuestInformationModal.jsx",
-    "components/PerformanceMonitor.jsx"
+    "components/PerformanceMonitor.jsx",
+    "app/reserver/components/UnifiedUserModal.jsx",
+    "lib/hooks/useUserInformation.js",
+    "lib/hooks/useUserInformation.js",
+    "lib/hooks/useReservation.js"
   ],
   "exclude": ["node_modules"]
 }

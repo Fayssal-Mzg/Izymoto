@@ -1,13 +1,13 @@
 "use client";
 import Image from "next/image";
-import { useAuth } from "@/contexts/AuthContext"; // ou le chemin correct vers votre hook useAuth
+import { useAuth } from "@/contexts/AuthContext";
 
 import ConfirmationModal from "@/app/reserver/components/ConfirmationModal";
 import DevisModal from "@/app/reserver/components/DevisModal";
-import GuestInformationModal from "@/app/reserver/components/GuestInformationModal";
+import UnifiedUserModal from "@/app/reserver/components/UnifiedUserModal"; // NOUVEAU
+import DevisSentModal from "@/app/reserver/components/DevisSentModal"; // NOUVEAU
 import { MapWrapper } from "@/app/reserver/components/MapWrapper";
 import PaymentModal from "@/app/reserver/components/PaymentModal";
-import ReservationModal from "@/app/reserver/components/ReservationModal";
 import ReservationForm from "@/components/reservation/ReservationForm";
 import { ReservationProvider } from "@/contexts/ReservationContext";
 import { useReservation } from "@/lib/hooks/useReservation";
@@ -85,7 +85,7 @@ export default function Home() {
         <section
           ref={heroRef}
           className={cn(
-            "relative bg-slate-900 text-white py-6 md:py-0", // Réduit les padding verticaux
+            "relative bg-slate-900 text-white py-6 md:py-0",
             heroInView ? "opacity-100" : "opacity-0",
             "transition-opacity duration-1000"
           )}
@@ -97,22 +97,14 @@ export default function Home() {
         >
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row items-center md:items-start md:mt-8">
-              {" "}
-              {/* Remonte le contenu sur desktop */}
               <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pt-10">
-                {" "}
-                {/* Ajout de padding top pour remonter le texte */}
                 <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
-                  {" "}
-                  {/* Réduit légèrement la taille du titre */}
                   <span className="text-gold-400">
                     Transport motorisé de passager
                   </span>{" "}
                   de qualité à Paris et en France
                 </h1>
                 <p className="text-base md:text-lg text-gray-300 max-w-lg mb-6">
-                  {" "}
-                  {/* Réduit légèrement la taille du texte */}
                   Déplacez-vous rapidement et confortablement dans Paris avec
                   notre service IZYMOTO premium.
                 </p>
@@ -133,11 +125,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="w-full md:w-1/2 md:pl-8">
-                {" "}
-                {/* Ajout de padding left pour mieux espacer */}
                 <div className="relative md:max-w-md md:mx-auto">
-                  {" "}
-                  {/* Limite la largeur de l'image sur desktop */}
                   <Image
                     src="/taxi-paris.jpg"
                     alt="Moto-taxi IZYMOTO de service de transport premium à Paris"
@@ -145,7 +133,7 @@ export default function Home() {
                     width={700}
                     height={450}
                     priority
-                    style={{ maxHeight: "60vh" }} // Limite la hauteur de l'image
+                    style={{ maxHeight: "60vh" }}
                   />
                   <div className="absolute -bottom-4 -right-4 bg-black text-white py-2 px-4 rounded-lg shadow-lg text-sm hidden sm:block">
                     <div className="flex items-center gap-2">
@@ -158,6 +146,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+
         {/* Reservation Section - Mobile Optimized */}
         <section id="reservation" className="relative bg-white py-10 md:py-16">
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
@@ -647,7 +636,7 @@ export default function Home() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth="2"
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"
                       />
                     </svg>
                   </div>
@@ -736,6 +725,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+
         {/* Performance Monitor Integration */}
         {showPerformanceMonitor && <PerformanceMonitor />}
 
@@ -771,7 +761,7 @@ export default function Home() {
   );
 }
 
-// Composant HomeReservationSection mis à jour pour la page d'accueil - Mobile Optimized
+// FONCTION REFACTORISÉE : HomeReservationSection avec UnifiedUserModal
 function HomeReservationSection() {
   const {
     depart,
@@ -785,7 +775,7 @@ function HomeReservationSection() {
     prioriteReservation,
     setPrioriteReservation,
     prixFinal,
-    setPrixFinal, // Tu as besoin d'extraire cette fonction aussi
+    setPrixFinal,
     reservationDate,
     setReservationDate,
     name,
@@ -803,12 +793,15 @@ function HomeReservationSection() {
     bookingData,
     calculateRoute,
     handleReservation,
-    proceedToReservation, // Tu extrais cette fonction...
+    proceedToReservation,
     proceedToPayment,
     handlePaymentSuccess,
     handleRequestDevis,
     resetForm,
   } = useReservation();
+
+  // État local pour stocker les infos client pour le devis
+  const [clientInfo, setClientInfo] = useState(null);
 
   // Logs de débogage pour vérifier le flux de navigation
   useEffect(() => {
@@ -837,43 +830,71 @@ function HomeReservationSection() {
         />
       )}
 
+      {/* CORRIGÉ : UnifiedUserModal pour devis - Props simplifiées */}
       {currentStep === "guest_info" && (
-        <GuestInformationModal
-          onSubmit={(
-            guestData:
-              | { email?: string; phone?: string; name?: string }
-              | undefined
-          ) => {
-            console.log("GuestInfo submitted", guestData);
-            handleRequestDevis(guestData);
+        <UnifiedUserModal
+          type="devis"
+          onSubmit={(userData: React.SetStateAction<null>) => {
+            console.log("GuestInfo submitted", userData);
+            setClientInfo(userData);
+            handleRequestDevis(userData);
           }}
           onCancel={() => {
             console.log("Cancel clicked in GuestInfoModal");
             setCurrentStep("devis");
           }}
+          title={""}
+          subtitle={""}
+          submitButtonText={""}
+          reservationDate={""}
+          setReservationDate={undefined}
+          notes={""}
+          setNotes={undefined}
+          showDateField={false}
+          showNotesField={false}
+          additionalValidation={undefined}
+          customButtonClass={""}
+          disabled={false}
+          autoFocus={false}
         />
       )}
 
+      {/* CORRIGÉ : UnifiedUserModal pour réservation - Props complètes */}
       {currentStep === "reservation" && (
-        <ReservationModal
+        <UnifiedUserModal
+          type="reservation"
           reservationDate={reservationDate}
           setReservationDate={setReservationDate}
-          name={name}
-          setName={setName}
-          phone={phone}
-          setPhone={setPhone}
-          email={email} // ✅ ajouté
-          setEmail={setEmail}
           notes={notes}
           setNotes={setNotes}
+          onSubmit={(userData: {
+            name: React.SetStateAction<string>;
+            phone: React.SetStateAction<string>;
+            email: React.SetStateAction<string>;
+            notes: React.SetStateAction<string>;
+          }) => {
+            console.log("Proceed clicked in ReservationModal");
+            // Mettre à jour les états du hook avec les données du modal
+            setName(userData.name);
+            setPhone(userData.phone);
+            setEmail(userData.email);
+            if (userData.notes) setNotes(userData.notes);
+            // Procéder au paiement
+            proceedToPayment();
+          }}
           onCancel={() => {
             console.log("Cancel clicked in ReservationModal");
             setCurrentStep("devis");
           }}
-          onProceed={() => {
-            console.log("Proceed clicked in ReservationModal");
-            proceedToPayment();
-          }}
+          title={""}
+          subtitle={""}
+          submitButtonText={""}
+          showDateField={false}
+          showNotesField={false}
+          additionalValidation={undefined}
+          customButtonClass={""}
+          disabled={false}
+          autoFocus={false}
         />
       )}
 
@@ -882,7 +903,7 @@ function HomeReservationSection() {
           prixFinal={prixFinal}
           bookingData={bookingData}
           reservationDate={reservationDate}
-          onSuccess={(paymentId: string) => {
+          onSuccess={(paymentId: any) => {
             console.log("Payment success", paymentId);
             handlePaymentSuccess(paymentId);
           }}
@@ -901,6 +922,19 @@ function HomeReservationSection() {
           arrivee={arrivee}
           onClose={() => {
             console.log("Close clicked in ConfirmationModal");
+            resetForm();
+          }}
+        />
+      )}
+
+      {/* NOUVEAU : Modal de confirmation devis envoyé */}
+      {currentStep === "devis_sent" && clientInfo && (
+        <DevisSentModal
+          clientEmail={clientInfo.email}
+          depart={depart}
+          arrivee={arrivee}
+          onClose={() => {
+            console.log("Close clicked in DevisSentModal");
             resetForm();
           }}
         />
