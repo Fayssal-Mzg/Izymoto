@@ -2,11 +2,10 @@
 
 import ConfirmationModal from "@/app/reserver/components/ConfirmationModal";
 import DevisModal from "@/app/reserver/components/DevisModal";
-import GuestInformationModal from "@/app/reserver/components/GuestInformationModal";
+import UnifiedUserModal from "@/app/reserver/components/UnifiedUserModal"; // NOUVEAU - Remplace GuestInformationModal et ReservationModal
 import MapContainer from "@/app/reserver/components/MapContainer";
 import { MapWrapper } from "@/app/reserver/components/MapWrapper";
 import PaymentModal from "@/app/reserver/components/PaymentModal";
-import ReservationModal from "@/app/reserver/components/ReservationModal";
 import SearchForm from "@/app/reserver/components/SearchForm";
 import { useReservation } from "@/lib/hooks/useReservation";
 import { ChevronUp } from "lucide-react";
@@ -22,6 +21,15 @@ interface LocationData {
 interface ReservationProcessProps {
   isStandalone?: boolean;
   customContainerClass?: string;
+}
+
+// Interface pour les données utilisateur
+interface UserData {
+  name: string;
+  phone: string;
+  email: string;
+  reservationDate?: string;
+  notes?: string;
 }
 
 export default function ReservationProcess({
@@ -227,34 +235,38 @@ export default function ReservationProcess({
             setPrixFinal={setPrixFinal}
           />
         )}
+
+        {/* REMPLACÉ : UnifiedUserModal pour les informations d'invité (devis) */}
         {currentStep === "guest_info" && (
-          <GuestInformationModal
-            onSubmit={(
-              guestData:
-                | { email?: string; phone?: string; name?: string }
-                | undefined
-            ) => {
-              console.log("✅ Données invité reçues :", guestData);
-              handleRequestDevis(guestData); // ← transmet les infos à useReservation
+          <UnifiedUserModal
+            type="devis"
+            onSubmit={(userData: UserData) => {
+              console.log("✅ Données invité reçues :", userData);
+              handleRequestDevis(userData); // Transmet les infos à useReservation
             }}
             onCancel={() => setCurrentStep("devis")}
           />
         )}
 
+        {/* REMPLACÉ : UnifiedUserModal pour les réservations */}
         {currentStep === "reservation" && (
-          <ReservationModal
+          <UnifiedUserModal
+            type="reservation"
             reservationDate={reservationDate}
             setReservationDate={setReservationDate}
-            name={name}
-            setName={setName}
-            phone={phone}
-            setPhone={setPhone}
-            email={email} // 👈 ajouté
-            setEmail={setEmail}
             notes={notes}
             setNotes={setNotes}
+            onSubmit={(userData: UserData) => {
+              console.log("✅ Données de réservation reçues :", userData);
+              // Mettre à jour les états du hook avec les données du modal
+              setName(userData.name);
+              setPhone(userData.phone);
+              setEmail(userData.email);
+              if (userData.notes) setNotes(userData.notes);
+              // Procéder au paiement
+              proceedToPayment();
+            }}
             onCancel={() => setCurrentStep("devis")}
-            onProceed={proceedToPayment}
           />
         )}
 
