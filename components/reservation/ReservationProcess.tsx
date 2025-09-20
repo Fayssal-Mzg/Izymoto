@@ -245,6 +245,19 @@ export default function ReservationProcess({
               handleRequestDevis(userData); // Transmet les infos à useReservation
             }}
             onCancel={() => setCurrentStep("devis")}
+            title={""}
+            subtitle={""}
+            submitButtonText={""}
+            reservationDate={""}
+            setReservationDate={undefined}
+            notes={""}
+            setNotes={undefined}
+            showDateField={false}
+            showNotesField={false}
+            additionalValidation={undefined}
+            customButtonClass={""}
+            disabled={false}
+            autoFocus={false}
           />
         )}
 
@@ -267,6 +280,15 @@ export default function ReservationProcess({
               proceedToPayment();
             }}
             onCancel={() => setCurrentStep("devis")}
+            title={""}
+            subtitle={""}
+            submitButtonText={""}
+            showDateField={false}
+            showNotesField={false}
+            additionalValidation={undefined}
+            customButtonClass={""}
+            disabled={false}
+            autoFocus={false}
           />
         )}
 
