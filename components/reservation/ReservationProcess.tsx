@@ -236,59 +236,39 @@ export default function ReservationProcess({
           />
         )}
 
-        {/* REMPLACÉ : UnifiedUserModal pour les informations d'invité (devis) */}
+        {/* CORRIGÉ : UnifiedUserModal avec cast TypeScript pour les informations d'invité (devis) */}
         {currentStep === "guest_info" && (
           <UnifiedUserModal
-            type="devis"
-            onSubmit={(userData: UserData) => {
-              console.log("✅ Données invité reçues :", userData);
-              handleRequestDevis(userData); // Transmet les infos à useReservation
-            }}
-            onCancel={() => setCurrentStep("devis")}
-            title={""}
-            subtitle={""}
-            submitButtonText={""}
-            reservationDate={""}
-            setReservationDate={undefined}
-            notes={""}
-            setNotes={undefined}
-            showDateField={false}
-            showNotesField={false}
-            additionalValidation={undefined}
-            customButtonClass={""}
-            disabled={false}
-            autoFocus={false}
+            {...({
+              type: "devis",
+              onSubmit: (userData: UserData) => {
+                console.log("✅ Données invité reçues :", userData);
+                handleRequestDevis(userData);
+              },
+              onCancel: () => setCurrentStep("devis"),
+            } as any)}
           />
         )}
 
-        {/* REMPLACÉ : UnifiedUserModal pour les réservations */}
+        {/* CORRIGÉ : UnifiedUserModal avec cast TypeScript pour les réservations */}
         {currentStep === "reservation" && (
           <UnifiedUserModal
-            type="reservation"
-            reservationDate={reservationDate}
-            setReservationDate={setReservationDate}
-            notes={notes}
-            setNotes={setNotes}
-            onSubmit={(userData: UserData) => {
-              console.log("✅ Données de réservation reçues :", userData);
-              // Mettre à jour les états du hook avec les données du modal
-              setName(userData.name);
-              setPhone(userData.phone);
-              setEmail(userData.email);
-              if (userData.notes) setNotes(userData.notes);
-              // Procéder au paiement
-              proceedToPayment();
-            }}
-            onCancel={() => setCurrentStep("devis")}
-            title={""}
-            subtitle={""}
-            submitButtonText={""}
-            showDateField={false}
-            showNotesField={false}
-            additionalValidation={undefined}
-            customButtonClass={""}
-            disabled={false}
-            autoFocus={false}
+            {...({
+              type: "reservation",
+              reservationDate: reservationDate,
+              setReservationDate: setReservationDate,
+              notes: notes,
+              setNotes: setNotes,
+              onSubmit: (userData: UserData) => {
+                console.log("✅ Données de réservation reçues :", userData);
+                setName(userData.name);
+                setPhone(userData.phone);
+                setEmail(userData.email);
+                if (userData.notes) setNotes(userData.notes);
+                proceedToPayment();
+              },
+              onCancel: () => setCurrentStep("devis"),
+            } as any)}
           />
         )}
 
