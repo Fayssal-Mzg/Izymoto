@@ -612,11 +612,11 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold">Téléphone</h3>
-                    <p className="text-gray-700">+33 6 52 75 35 21</p>
+                    <p className="text-gray-700">+33 6 49 50 25 25</p>
                   </div>
                 </div>
                 <a
-                  href="tel:+33652753521"
+                  href="tel:+33649502525"
                   className="text-sm text-black hover:underline mt-2 inline-block"
                 >
                   Appeler maintenant
@@ -801,8 +801,7 @@ function HomeReservationSection() {
   } = useReservation();
 
   // État local pour stocker les infos client pour le devis
-  const [clientInfo, setClientInfo] = useState(null);
-
+  const [clientInfo, setClientInfo] = useState<any>(null);
   // Logs de débogage pour vérifier le flux de navigation
   useEffect(() => {
     console.log("Current step:", currentStep);
@@ -830,71 +829,45 @@ function HomeReservationSection() {
         />
       )}
 
-      {/* CORRIGÉ : UnifiedUserModal pour devis - Props simplifiées */}
       {currentStep === "guest_info" && (
         <UnifiedUserModal
-          type="devis"
-          onSubmit={(userData: React.SetStateAction<null>) => {
-            console.log("GuestInfo submitted", userData);
-            setClientInfo(userData);
-            handleRequestDevis(userData);
-          }}
-          onCancel={() => {
-            console.log("Cancel clicked in GuestInfoModal");
-            setCurrentStep("devis");
-          }}
-          title={""}
-          subtitle={""}
-          submitButtonText={""}
-          reservationDate={""}
-          setReservationDate={undefined}
-          notes={""}
-          setNotes={undefined}
-          showDateField={false}
-          showNotesField={false}
-          additionalValidation={undefined}
-          customButtonClass={""}
-          disabled={false}
-          autoFocus={false}
+          {...({
+            type: "devis",
+            onSubmit: (userData: any) => {
+              console.log("GuestInfo submitted", userData);
+              setClientInfo(userData);
+              handleRequestDevis(userData);
+            },
+            onCancel: () => {
+              console.log("Cancel clicked in GuestInfoModal");
+              setCurrentStep("devis");
+            },
+          } as any)}
         />
       )}
 
-      {/* CORRIGÉ : UnifiedUserModal pour réservation - Props complètes */}
+      {/* CORRIGÉ : UnifiedUserModal pour réservation avec cast TypeScript */}
       {currentStep === "reservation" && (
         <UnifiedUserModal
-          type="reservation"
-          reservationDate={reservationDate}
-          setReservationDate={setReservationDate}
-          notes={notes}
-          setNotes={setNotes}
-          onSubmit={(userData: {
-            name: React.SetStateAction<string>;
-            phone: React.SetStateAction<string>;
-            email: React.SetStateAction<string>;
-            notes: React.SetStateAction<string>;
-          }) => {
-            console.log("Proceed clicked in ReservationModal");
-            // Mettre à jour les états du hook avec les données du modal
-            setName(userData.name);
-            setPhone(userData.phone);
-            setEmail(userData.email);
-            if (userData.notes) setNotes(userData.notes);
-            // Procéder au paiement
-            proceedToPayment();
-          }}
-          onCancel={() => {
-            console.log("Cancel clicked in ReservationModal");
-            setCurrentStep("devis");
-          }}
-          title={""}
-          subtitle={""}
-          submitButtonText={""}
-          showDateField={false}
-          showNotesField={false}
-          additionalValidation={undefined}
-          customButtonClass={""}
-          disabled={false}
-          autoFocus={false}
+          {...({
+            type: "reservation",
+            reservationDate: reservationDate,
+            setReservationDate: setReservationDate,
+            notes: notes,
+            setNotes: setNotes,
+            onSubmit: (userData: any) => {
+              console.log("Proceed clicked in ReservationModal");
+              setName(userData.name);
+              setPhone(userData.phone);
+              setEmail(userData.email);
+              if (userData.notes) setNotes(userData.notes);
+              proceedToPayment();
+            },
+            onCancel: () => {
+              console.log("Cancel clicked in ReservationModal");
+              setCurrentStep("devis");
+            },
+          } as any)}
         />
       )}
 

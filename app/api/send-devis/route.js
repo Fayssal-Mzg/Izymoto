@@ -94,7 +94,7 @@ export async function POST(request) {
                 ${notes ? `<p><strong>Notes :</strong> ${notes}</p>` : ""}
               </div>
               
-              <p>Pour confirmer cette réservation ou pour toute question, contactez-nous au <strong>+33 6 52 75 35 21</strong></p>
+              <p>Pour confirmer cette réservation ou pour toute question, contactez-nous au <strong>+33 6 49 50 25 25</strong></p>
             </div>
             
             <div style="padding: 20px; background-color: #f7f7f7; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #eee;">

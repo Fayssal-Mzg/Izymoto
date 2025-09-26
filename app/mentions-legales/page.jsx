@@ -11,66 +11,97 @@ export default function ConditionsGenerales() {
             Toute commande de service implique le respect de ces règles :
           </p>
           <p className="mb-4">
-            Le client reconnaît avoir pris connaissance, au moment de l'inscription, des conditions générales de ventes énoncées dans ces présentes conditions générales.
-            Toute passation de commande vaut acceptation des présentes conditions générales sans aucune réserve.
+            Le client reconnaît avoir pris connaissance, au moment de
+            l'inscription, des conditions générales de ventes énoncées dans ces
+            présentes conditions générales. Toute passation de commande vaut
+            acceptation des présentes conditions générales sans aucune réserve.
           </p>
           <p className="mb-4">
-            IzyMoto propose aux particuliers comme aux entreprises son service de transport de personnes en deux roues motorisées.
+            IzyMoto propose aux particuliers comme aux entreprises son service
+            de transport de personnes en deux roues motorisées.
           </p>
           <p className="mb-4">
-            Les tarifs détaillés sont indiqués sur le site izymoto.fr à la page "Nos Tarifs".
+            Les tarifs détaillés sont indiqués sur le site izymoto.fr à la page
+            "Nos Tarifs".
           </p>
           <p className="mb-4">
-            Ces services ont pour but d'emmener les personnes à l'adresse communiquée lors de la commande.
+            Ces services ont pour but d'emmener les personnes à l'adresse
+            communiquée lors de la commande.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Commandes et annulations</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Commandes et annulations
+          </h2>
           <p className="mb-4">
-            La commande s'effectue par téléphone au 06 52 75 35 21
-            ou sur le site www.izymoto.fr et son espace de réservation.
+            La commande s'effectue par téléphone au (+33) 6 49 50 25 25 ou sur
+            le site www.izymoto.fr et son espace de réservation.
           </p>
           <p className="mb-4">
             Toute commande doit être validée par nos soins.
           </p>
           <p className="mb-4">
-            Si le client n'est pas présent au rendez‐vous, le service sera facturé dans son intégralité, le retard est facturé de 15 euros par tranche de 15 minutes.
+            Si le client n'est pas présent au rendez‐vous, le service sera
+            facturé dans son intégralité, le retard est facturé de 15 euros par
+            tranche de 15 minutes.
           </p>
           <p className="mb-4">
-            Il est expressément convenu que les retards sur les délais de transports dus à des difficultés imprévues de circulation n'ouvrent pas droit à des indemnités d'aucunes sortes (embouteillage, accidents, déviation, conditions météo, événements divers etc.).
-          </p>
-        </section>
-
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Règlement des prestations</h2>
-          <p className="mb-4">
-            Vous ne réglez pas directement après la course au chauffeur; mais sur facture; que vous recevez par email et que vous payez en retour.
-          </p>
-          <p className="mb-4">
-            Paiement en ligne possible sur demande.
+            Il est expressément convenu que les retards sur les délais de
+            transports dus à des difficultés imprévues de circulation n'ouvrent
+            pas droit à des indemnités d'aucunes sortes (embouteillage,
+            accidents, déviation, conditions météo, événements divers etc.).
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Responsabilités et sécurité</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Règlement des prestations
+          </h2>
           <p className="mb-4">
-            IzyMoto a pour but de mener à bien et dans les meilleures conditions le service préalablement commandé dans les exigences de sécurité et le respect du code de la route.
+            Vous ne réglez pas directement après la course au chauffeur; mais
+            sur facture; que vous recevez par email et que vous payez en retour.
+          </p>
+          <p className="mb-4">Paiement en ligne possible sur demande.</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Responsabilités et sécurité
+          </h2>
+          <p className="mb-4">
+            IzyMoto a pour but de mener à bien et dans les meilleures conditions
+            le service préalablement commandé dans les exigences de sécurité et
+            le respect du code de la route.
           </p>
           <p className="mb-4">
-            La responsabilité d'IzyMoto couvre les dommages corporels de manière illimitée et les dommages matériels consécutifs dans un plafond de 100.000.000 €, depuis la montée sur le véhicule jusqu'à la descente, ces deux actions comprises, sauf les dommages causés par la faute du voyageur.
+            La responsabilité d'IzyMoto couvre les dommages corporels de manière
+            illimitée et les dommages matériels consécutifs dans un plafond de
+            100.000.000 €, depuis la montée sur le véhicule jusqu'à la descente,
+            ces deux actions comprises, sauf les dommages causés par la faute du
+            voyageur.
           </p>
           <p className="mb-4">
-            Pour des raisons de sécurité, il est interdit de fumer, de transporter des substances inflammables, explosives, corrosives ou toxiques. Le non respect de cette règle engage la responsabilité du passager. IzyMoto se réserve alors la possibilité d'engager tous recours éventuels.
+            Pour des raisons de sécurité, il est interdit de fumer, de
+            transporter des substances inflammables, explosives, corrosives ou
+            toxiques. Le non respect de cette règle engage la responsabilité du
+            passager. IzyMoto se réserve alors la possibilité d'engager tous
+            recours éventuels.
           </p>
           <p className="mb-4">
-            IzyMoto se réserve le droit de débarquer, à tout moment et sans remboursement, son client du véhicule si celui‐ci ne respecte pas les consignes de sécurité présentées par IzyMoto dans ces conditions de services.
+            IzyMoto se réserve le droit de débarquer, à tout moment et sans
+            remboursement, son client du véhicule si celui‐ci ne respecte pas
+            les consignes de sécurité présentées par IzyMoto dans ces conditions
+            de services.
           </p>
           <p className="mb-4">
-            Les animaux ne sont pas admis sauf arrangement spécifique, en tout état de cause IzyMoto ne saurait voir engager sa responsabilité de ce fait.
+            Les animaux ne sont pas admis sauf arrangement spécifique, en tout
+            état de cause IzyMoto ne saurait voir engager sa responsabilité de
+            ce fait.
           </p>
           <p className="mb-4">
-            IzyMoto se réserve le droit de ne pas réaliser ou proposer ses prestations pour quelque raison que ce soit.
+            IzyMoto se réserve le droit de ne pas réaliser ou proposer ses
+            prestations pour quelque raison que ce soit.
           </p>
           <p className="mb-4">
             IzyMoto se réserve le droit de changer ses tarifs sans préavis.
@@ -104,8 +135,13 @@ export default function ConditionsGenerales() {
             <li>Nom et prénom assistant(e) (le cas échéant)</li>
             <li>Adresse de messagerie assistant(e) (le cas échéant)</li>
             <li>Téléphone assistant(e) (le cas échéant)</li>
-            <li>Données professionnelles : coordonnées complètes de la société</li>
-            <li>Données transactionnelles : réservations (passées, présentes, à venir, annulées)</li>
+            <li>
+              Données professionnelles : coordonnées complètes de la société
+            </li>
+            <li>
+              Données transactionnelles : réservations (passées, présentes, à
+              venir, annulées)
+            </li>
           </ul>
           <p className="mb-4">
             En tout état de cause, Fayssal Merzougui ne collecte des
@@ -141,10 +177,19 @@ export default function ConditionsGenerales() {
             diverses mesures de fréquentation.
           </p>
           <p className="mb-4">
-            Si vous avez un compte et que vous vous connectez sur ce site, un cookie temporaire sera créé afin de déterminer si votre navigateur accepte les cookies. Il ne contient pas de données personnelles et sera supprimé automatiquement à la fermeture de votre navigateur.
+            Si vous avez un compte et que vous vous connectez sur ce site, un
+            cookie temporaire sera créé afin de déterminer si votre navigateur
+            accepte les cookies. Il ne contient pas de données personnelles et
+            sera supprimé automatiquement à la fermeture de votre navigateur.
           </p>
           <p className="mb-4">
-            Lorsque vous vous connecterez, nous mettrons en place un certain nombre de cookies pour enregistrer vos informations de connexion et vos préférences d'écran. La durée de vie d'un cookie de connexion est de deux jours, celle d'un cookie d'option d'écran est d'un an. Si vous cochez « Se souvenir de moi », votre cookie de connexion sera conservé pendant deux semaines. Si vous vous déconnectez de votre compte, le cookie de connexion sera effacé.
+            Lorsque vous vous connecterez, nous mettrons en place un certain
+            nombre de cookies pour enregistrer vos informations de connexion et
+            vos préférences d'écran. La durée de vie d'un cookie de connexion
+            est de deux jours, celle d'un cookie d'option d'écran est d'un an.
+            Si vous cochez « Se souvenir de moi », votre cookie de connexion
+            sera conservé pendant deux semaines. Si vous vous déconnectez de
+            votre compte, le cookie de connexion sera effacé.
           </p>
           <p className="mb-4">
             Outils de statistiques utilisés : Google Analytics.
@@ -152,16 +197,14 @@ export default function ConditionsGenerales() {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">
-            Informations légales
-          </h2>
+          <h2 className="text-xl font-semibold mb-4">Informations légales</h2>
           <div className="pl-4 border-l-4 border-gray-200 mb-4">
             <p className="mb-2">
               <strong>Informations légales :</strong>
             </p>
             <p className="mb-2">Statut juridique : Auto-entrepreneur</p>
             <p className="mb-2">Nom du site : IzyMoto</p>
-            <p className="mb-2">Téléphone : (+33)6 52 75 35 21</p>
+            <p className="mb-2">Téléphone : (+33)6 49 50 25 25</p>
           </div>
 
           <p>Le créateur et responsable de la publication est :</p>
@@ -235,9 +278,12 @@ export default function ConditionsGenerales() {
             s'appliquent » (article 4 de la loi n° 78-17 du 6 janvier 1978).
           </p>
         </section>
-        
+
         <section className="mt-8 pt-8 border-t border-gray-300 text-center text-sm text-gray-600">
-          <p className="mb-2">Tous nos chauffeurs sont certifiés par le décret n° 2010-1223 du 11 Octobre 2010 applicable au 1er Avril 2011.</p>
+          <p className="mb-2">
+            Tous nos chauffeurs sont certifiés par le décret n° 2010-1223 du 11
+            Octobre 2010 applicable au 1er Avril 2011.
+          </p>
           <p>Dernière mise à jour : 1er janvier 2024</p>
         </section>
       </div>

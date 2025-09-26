@@ -17,8 +17,8 @@ export function Footer() {
               loading="lazy"
             />
             <p className="text-gray-400 mb-4 text-sm">
-              Service de transport premium à Paris et en Île-de-France.
-              Navettes aéroports, trajets professionnels et sorties.
+              Service de transport premium à Paris et en Île-de-France. Navettes
+              aéroports, trajets professionnels et sorties.
             </p>
           </div>
 
@@ -27,32 +27,48 @@ export function Footer() {
             <h3 className="text-lg font-bold mb-4">Liens rapides</h3>
             <ul className="grid grid-cols-2 sm:grid-cols-1 gap-y-3 gap-x-4">
               <li>
-                <Link href="#reservation" scroll={false} className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">
-                  
-                    Réserver
-                  
+                <Link
+                  href="#reservation"
+                  scroll={false}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  Réserver
                 </Link>
               </li>
               <li>
-                <Link href="#tarifs" scroll={false} className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">
-    
-                    Nos tarifs
-           
+                <Link
+                  href="#tarifs"
+                  scroll={false}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  Nos tarifs
                 </Link>
               </li>
               <li>
-                <Link href="#services" scroll={false} className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">
-                    Services
+                <Link
+                  href="#services"
+                  scroll={false}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  Services
                 </Link>
               </li>
               <li>
-                <Link href="#about" scroll={false} className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">
-                    À propos
+                <Link
+                  href="#about"
+                  scroll={false}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  À propos
                 </Link>
               </li>
               <li>
-                <Link href="#contact" scroll={false } className="text-gray-400 hover:text-white transition-colors duration-300 text-sm">
-                    Contact
+                <Link
+                  href="#contact"
+                  scroll={false}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  Contact
                 </Link>
               </li>
             </ul>
@@ -65,10 +81,10 @@ export function Footer() {
               <li className="flex items-start">
                 <Phone className="h-5 w-5 text-white mt-0.5 mr-3 flex-shrink-0" />
                 <a
-                  href="tel:+33652753521"
+                  href="tel:+33649502525"
                   className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
                 >
-                  +33 6 52 75 35 21
+                  +33 6 49 50 25 25
                 </a>
               </li>
               <li className="flex items-start">
@@ -108,7 +124,10 @@ export function Footer() {
             <p className="text-gray-400 mb-4 text-sm">
               Inscrivez-vous pour recevoir nos offres spéciales
             </p>
-            <form className="flex flex-col space-y-3" onSubmit={(e) => e.preventDefault()}>
+            <form
+              className="flex flex-col space-y-3"
+              onSubmit={(e) => e.preventDefault()}
+            >
               <input
                 type="email"
                 placeholder="Votre email"
@@ -131,14 +150,23 @@ export function Footer() {
             © {new Date().getFullYear()} IZYMOTO. Tous droits réservés.
           </p>
           <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-            <Link href="/mentions-legales" className="text-gray-500 hover:text-white text-xs transition-colors duration-300">
-                Mentions légales
+            <Link
+              href="/mentions-legales"
+              className="text-gray-500 hover:text-white text-xs transition-colors duration-300"
+            >
+              Mentions légales
             </Link>
-            <Link href="/politique-de-confidentialite" className="text-gray-500 hover:text-white text-xs transition-colors duration-300">
-                Politique de confidentialité
+            <Link
+              href="/politique-de-confidentialite"
+              className="text-gray-500 hover:text-white text-xs transition-colors duration-300"
+            >
+              Politique de confidentialité
             </Link>
-            <Link href="/conditions-generales" className="text-gray-500 hover:text-white text-xs transition-colors duration-300">
-                CGU
+            <Link
+              href="/conditions-generales"
+              className="text-gray-500 hover:text-white text-xs transition-colors duration-300"
+            >
+              CGU
             </Link>
           </div>
         </div>

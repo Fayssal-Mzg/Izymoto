@@ -132,7 +132,7 @@ const Header = () => {
             <div className="flex items-center space-x-2 group">
               <Phone className="h-4 w-4 group-hover:text-gold-400 transition-colors duration-300" />
               <span className="text-sm group-hover:text-gold-400 transition-colors duration-300">
-                (+33) 6 52 75 35 21
+                (+33) 6 49 50 25 25
               </span>
             </div>
 
@@ -225,7 +225,7 @@ const Header = () => {
             <div className="pt-8 flex flex-col items-center space-y-4">
               <div className="flex items-center space-x-2 text-white">
                 <Phone className="h-5 w-5" />
-                <span>(+33) 6 52 75 35 21</span>
+                <span>(+33) 6 49 50 25 25</span>
               </div>
 
               {user ? (

@@ -198,7 +198,7 @@ export default function PolitiqueDeConfidentialite() {
           </p>
 
           <div className="pl-4 border-l-4 border-gray-200 mb-4">
-            <p className="mb-2">Téléphone : (+33)6 52 75 35 21</p>
+            <p className="mb-2">Téléphone : (+33)6 49 50 25 25</p>
             <p className="mb-2">Email : contact@izymoto.com</p>
             <p className="mb-2">
               Adresse postale : 31 rue des Etudiants, Courbevoie
