@@ -4,7 +4,19 @@ import { aeroports, gares } from "../utils/constants";
 import AirportButton from "@/components/AirportButton";
 import TrainStationButton from "@/components/TrainStationButton";
 import { Autocomplete } from "@react-google-maps/api";
-import { MapPin, Locate, Euro, Navigation, ArrowRight, Clock, Route, ChevronDown, RotateCcw, ChevronUp, RefreshCw } from "lucide-react";
+import {
+  MapPin,
+  Locate,
+  Euro,
+  Navigation,
+  ArrowRight,
+  Clock,
+  Route,
+  ChevronDown,
+  RotateCcw,
+  ChevronUp,
+  RefreshCw,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 export default function SearchForm({
@@ -30,19 +42,15 @@ export default function SearchForm({
 
   const autocompleteRefDepart = useRef(null);
   const autocompleteRefArrivee = useRef(null);
-  
-  // Référence aux champs d'entrée pour le reset
   const inputDepartRef = useRef(null);
   const inputArriveeRef = useRef(null);
 
-  // Utiliser une version locale du prix pour contrôler l'affichage
   useEffect(() => {
     if (prix !== null) {
       setLocalPrix(prix);
     }
   }, [prix]);
 
-  // 1. Vérifier si les deux champs sont remplis
   useEffect(() => {
     if (depart && arrivee) {
       setInputsReady(true);
@@ -51,42 +59,34 @@ export default function SearchForm({
     }
   }, [depart, arrivee]);
 
-  // 2. Calculer automatiquement la route quand les deux champs sont remplis
   useEffect(() => {
-    if (depart && arrivee && window.google) {
-      handleCalculateRoute();
-    }
-  }, [depart, arrivee]);
-
-  // 3. Révéler les détails du trajet quand prix est disponible
-  useEffect(() => {
-    if (prix !== null) {
+    if (prix !== null && distance !== null) {
       setShowDetails(true);
       setDetailsExpanded(true);
       setLocalPrix(prix);
     }
-  }, [prix]);
+  }, [prix, distance]);
 
-  // Géolocalisation
   const getMyLocation = () => {
     if (navigator.geolocation) {
       const options = {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 0,
       };
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          
-          // Convertir les coordonnées en adresse
           const geocoder = new google.maps.Geocoder();
           geocoder.geocode(
             { location: { lat: latitude, lng: longitude } },
             (results, status) => {
               if (status === "OK" && results[0]) {
                 setDepart(results[0].formatted_address);
+                if (arrivee && arrivee.length > 5) {
+                  setTimeout(() => handleCalculateRoute(), 100);
+                }
               } else {
                 alert("Impossible de déterminer votre adresse actuelle.");
               }
@@ -94,98 +94,157 @@ export default function SearchForm({
           );
         },
         (error) => {
-          console.error("Erreur de géolocalisation:", error.code, error.message);
-          alert("Impossible d'obtenir votre position. Veuillez vérifier les permissions.");
+          console.error(
+            "Erreur de géolocalisation:",
+            error.code,
+            error.message
+          );
+          alert(
+            "Impossible d'obtenir votre position. Veuillez vérifier les permissions."
+          );
         },
         options
       );
     } else {
-      alert("La géolocalisation n'est pas prise en charge par votre navigateur.");
+      alert(
+        "La géolocalisation n'est pas prise en charge par votre navigateur."
+      );
     }
   };
-  
-  // Fonction pour sélectionner un aéroport
+
   const handleAirportSelect = (address, type) => {
     if (type === "depart") {
       setDepart(address);
+      if (arrivee && arrivee.length > 5) {
+        setTimeout(() => handleCalculateRoute(), 100);
+      }
     } else {
       setArrivee(address);
+      if (depart && depart.length > 5) {
+        setTimeout(() => handleCalculateRoute(), 100);
+      }
     }
   };
 
-  // Fonction pour sélectionner une gare
   const handleStationSelect = (address, type) => {
     if (type === "depart") {
       setDepart(address);
+      if (arrivee && arrivee.length > 5) {
+        setTimeout(() => handleCalculateRoute(), 100);
+      }
     } else {
       setArrivee(address);
+      if (depart && depart.length > 5) {
+        setTimeout(() => handleCalculateRoute(), 100);
+      }
     }
   };
 
-  // Fonction de calcul d'itinéraire
   const handleCalculateRoute = () => {
     if (!depart || !arrivee) {
       return;
     }
 
+    // Validation des adresses avant calcul
+    if (depart.length < 5 || arrivee.length < 5) {
+      console.warn("Adresses trop courtes");
+      return;
+    }
+
     setIsCalculating(true);
-    
-    // Appel à la fonction de calcul
     calculateRoute();
-    
-    // Simuler un temps de calcul minimum pour une meilleure UX
+
     setTimeout(() => {
       setIsCalculating(false);
     }, 800);
   };
 
-  // Fonction améliorée pour réinitialiser complètement le formulaire
   const handleReset = () => {
-    // Indiquer visuellement que le reset est en cours
     setIsResetting(true);
-    
-    // 1. Masquer immédiatement les détails
     setShowDetails(false);
     setDetailsExpanded(false);
-    setLocalPrix(null);  // Important: réinitialiser le prix local immédiatement
-    
-    // 2. Retarder légèrement le nettoyage des champs pour l'animation
+    setLocalPrix(null);
+
     setTimeout(() => {
-      // 3. Réinitialiser les champs
       setDepart("");
       setArrivee("");
-      
-      // 4. Appeler la fonction de reset externe
-      if (typeof resetRouteData === 'function') {
+
+      if (typeof resetRouteData === "function") {
         resetRouteData();
       }
-      
-      // 5. Focus sur le premier champ pour une meilleure UX
+
       setTimeout(() => {
-        if (inputDepartRef.current && inputDepartRef.current.querySelector('input')) {
-          inputDepartRef.current.querySelector('input').focus();
+        if (
+          inputDepartRef.current &&
+          inputDepartRef.current.querySelector("input")
+        ) {
+          inputDepartRef.current.querySelector("input").focus();
         }
-        
-        // 6. Terminer l'état de réinitialisation
         setIsResetting(false);
       }, 100);
     }, 200);
   };
 
-  // Formatage de la durée pour affichage
   const formatDuration = () => {
     if (!duree) return "0min";
-    
     const hours = Math.floor(duree / 60);
     const minutes = duree % 60;
-    
     if (hours === 0) return `${minutes}min`;
     return `${hours}h${minutes > 0 ? ` ${minutes}min` : ""}`;
   };
 
-  // Toggle pour les détails
   const toggleDetails = () => {
     setDetailsExpanded(!detailsExpanded);
+  };
+
+  const onPlaceChangedDepart = () => {
+    if (autocompleteRefDepart.current) {
+      const place = autocompleteRefDepart.current.getPlace();
+
+      // Validation stricte avec geometry pour s'assurer que c'est une vraie sélection
+      if (
+        place &&
+        place.formatted_address &&
+        place.geometry &&
+        place.geometry.location &&
+        place.formatted_address.length > 5
+      ) {
+        console.log("Départ sélectionné:", place.formatted_address);
+        setDepart(place.formatted_address);
+
+        // Calculer seulement si arrivée est valide
+        if (arrivee && arrivee.length > 5 && arrivee.includes(",")) {
+          setTimeout(() => handleCalculateRoute(), 150);
+        }
+      } else {
+        console.warn("Sélection de départ invalide, ignorée");
+      }
+    }
+  };
+
+  const onPlaceChangedArrivee = () => {
+    if (autocompleteRefArrivee.current) {
+      const place = autocompleteRefArrivee.current.getPlace();
+
+      // Validation stricte avec geometry pour s'assurer que c'est une vraie sélection
+      if (
+        place &&
+        place.formatted_address &&
+        place.geometry &&
+        place.geometry.location &&
+        place.formatted_address.length > 5
+      ) {
+        console.log("Arrivée sélectionnée:", place.formatted_address);
+        setArrivee(place.formatted_address);
+
+        // Calculer seulement si départ est valide
+        if (depart && depart.length > 5 && depart.includes(",")) {
+          setTimeout(() => handleCalculateRoute(), 150);
+        }
+      } else {
+        console.warn("Sélection d'arrivée invalide, ignorée");
+      }
+    }
   };
 
   return (
@@ -197,14 +256,7 @@ export default function SearchForm({
             onLoad={(autocomplete) => {
               autocompleteRefDepart.current = autocomplete;
             }}
-            onPlaceChanged={() => {
-              if (autocompleteRefDepart.current) {
-                const place = autocompleteRefDepart.current.getPlace();
-                if (place && place.formatted_address) {
-                  setDepart(place.formatted_address);
-                }
-              }
-            }}
+            onPlaceChanged={onPlaceChangedDepart}
             options={{
               componentRestrictions: { country: "fr" },
               types: ["address"],
@@ -253,14 +305,7 @@ export default function SearchForm({
             onLoad={(autocomplete) => {
               autocompleteRefArrivee.current = autocomplete;
             }}
-            onPlaceChanged={() => {
-              if (autocompleteRefArrivee.current) {
-                const place = autocompleteRefArrivee.current.getPlace();
-                if (place && place.formatted_address) {
-                  setArrivee(place.formatted_address);
-                }
-              }
-            }}
+            onPlaceChanged={onPlaceChangedArrivee}
             options={{
               componentRestrictions: { country: "fr" },
               types: ["address"],
@@ -303,74 +348,94 @@ export default function SearchForm({
           </div>
         )}
 
-        {/* Résumé rapide des détails - IMPORTANT: utilise localPrix pour le contrôle de l'affichage */}
-        {localPrix !== null && !isCalculating && !isResetting && (
-          <div className="bg-gray-50 p-4 rounded-lg shadow-sm mt-4 transition-all duration-300">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="text-gray-700 font-medium">
-                  <span className="font-bold text-xl">{Math.round(prix)}€</span>
-                  <span className="mx-2 text-gray-500">•</span>
-                  <span>{distance.toFixed(1)} km</span>
-                  <span className="mx-2 text-gray-500">•</span>
-                  <span>{formatDuration()}</span>
+        {/* Résumé rapide des détails - Protection contre null */}
+        {localPrix !== null &&
+          distance !== null &&
+          !isCalculating &&
+          !isResetting && (
+            <div className="bg-gray-50 p-4 rounded-lg shadow-sm mt-4 transition-all duration-300">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-3">
+                  <div className="text-gray-700 font-medium">
+                    <span className="font-bold text-xl">
+                      {Math.round(prix)}€
+                    </span>
+                    <span className="mx-2 text-gray-500">•</span>
+                    <span>{distance.toFixed(1)} km</span>
+                    <span className="mx-2 text-gray-500">•</span>
+                    <span>{formatDuration()}</span>
+                  </div>
                 </div>
+                <button
+                  onClick={toggleDetails}
+                  className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-200 transition-colors"
+                  aria-label={
+                    detailsExpanded
+                      ? "Masquer les détails"
+                      : "Afficher les détails"
+                  }
+                  type="button"
+                >
+                  {detailsExpanded ? (
+                    <ChevronUp size={20} />
+                  ) : (
+                    <ChevronDown size={20} />
+                  )}
+                </button>
               </div>
-              <button
-                onClick={toggleDetails}
-                className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-200 transition-colors"
-                aria-label={detailsExpanded ? "Masquer les détails" : "Afficher les détails"}
-                type="button"
-              >
-                {detailsExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </button>
+
+              {/* Détails développés */}
+              {detailsExpanded && (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-200 pt-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
+                      <Navigation size={18} className="text-gray-700" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">
+                        Distance
+                      </p>
+                      <p className="font-semibold">{distance.toFixed(1)} km</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
+                      <Clock size={18} className="text-gray-700" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">
+                        Temps estimé
+                      </p>
+                      <p className="font-semibold">{formatDuration()}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
+                      <Euro size={18} className="text-gray-700" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">
+                        Prix
+                      </p>
+                      <p className="font-bold text-xl">{Math.round(prix)}€</p>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-3 text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
+                    <p>
+                      Le prix affiché est indicatif et peut être soumis à des
+                      majorations selon les horaires et jours.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            
-            {/* Détails développés - s'affiche/masque sans déplacer le reste */}
-            {detailsExpanded && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-gray-200 pt-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
-                    <Navigation size={18} className="text-gray-700" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Distance</p>
-                    <p className="font-semibold">{distance.toFixed(1)} km</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
-                    <Clock size={18} className="text-gray-700" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Temps estimé</p>
-                    <p className="font-semibold">{formatDuration()}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
-                    <Euro size={18} className="text-gray-700" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Prix</p>
-                    <p className="font-bold text-xl">{Math.round(prix)}€</p>
-                  </div>
-                </div>
-                
-                {/* Information additionnelle */}
-                <div className="md:col-span-3 text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
-                  <p>Le prix affiché est indicatif et peut être soumis à des majorations selon les horaires et jours.</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
         {/* Boutons d'action */}
         <div className="flex justify-center mt-4 space-x-3">
-          {/* Bouton de réinitialisation amélioré */}
           {localPrix !== null && !isResetting && (
             <button
               onClick={handleReset}
@@ -382,8 +447,7 @@ export default function SearchForm({
               <span className="sm:hidden">Effacer</span>
             </button>
           )}
-          
-          {/* État de réinitialisation - visible quand le reset est en cours */}
+
           {isResetting && (
             <button
               className="py-3 px-4 bg-gray-300 text-gray-500 rounded-lg shadow-sm flex items-center opacity-70 cursor-not-allowed"
@@ -394,8 +458,7 @@ export default function SearchForm({
               <span>Réinitialisation...</span>
             </button>
           )}
-          
-          {/* Bouton principal - Calculer ou Réserver */}
+
           {inputsReady && !isResetting && (
             <button
               onClick={localPrix ? onReserverClick : handleCalculateRoute}

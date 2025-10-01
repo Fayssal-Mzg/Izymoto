@@ -271,11 +271,15 @@ export default function Home() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Bike size={20} className="text-black" />
-                    <h3 className="text-xl font-bold">NAVETTE AÉROPORT</h3>
+                    <h3 className="text-xl font-bold">
+                      TRANSFERT AÉROPORT EN MOTO
+                    </h3>
                   </div>
                   <div className="w-12 h-1 bg-black"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-black">65€</div>
+                <div className="text-3xl font-bold mb-4 text-black">
+                  A PARTIR DE 80€
+                </div>
                 <p className="text-gray-600 mb-6 flex-grow">
                   Transport depuis ou vers les aéroports de Paris (Orly, CDG).
                   Tarif fixe sans surprises.
@@ -350,7 +354,10 @@ export default function Home() {
                   </div>
                   <div className="w-12 h-1 bg-white"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-white">30€</div>
+                <div className="text-3xl font-bold mb-4 text-white">
+                  {" "}
+                  A PARTIR DE 50€
+                </div>
                 <p className="text-gray-300 mb-6 flex-grow">
                   Déplacements depuis Paris dans toute la France. Tarif de base
                   pour des trajets jusqu'à 10km.
@@ -422,7 +429,7 @@ export default function Home() {
                   </div>
                   <div className="w-12 h-1 bg-black"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-black">75€/h</div>
+                <div className="text-3xl font-bold mb-4 text-black">80€/h</div>
                 <p className="text-gray-600 mb-6 flex-grow">
                   Chauffeur à votre disposition pour plusieurs heures ou toute
                   la journée. Idéal pour les visites ou événements.
