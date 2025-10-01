@@ -700,7 +700,7 @@ export default function Home() {
 
             <div className="flex justify-center space-x-8 md:space-x-16">
               <a
-                href="https://facebook.com/izymoto"
+                href="https://www.facebook.com/zaouiazeddine"
                 className="social-icon group"
                 aria-label="Facebook"
               >
@@ -710,7 +710,7 @@ export default function Home() {
                 <span className="block mt-2 text-sm">Facebook</span>
               </a>
               <a
-                href="https://instagram.com/izymoto_paris"
+                href="https://www.instagram.com/izymoto_taxi/"
                 className="social-icon group"
                 aria-label="Instagram"
               >
@@ -720,7 +720,7 @@ export default function Home() {
                 <span className="block mt-2 text-sm">Instagram</span>
               </a>
               <a
-                href="https://linkedin.com/company/izymoto"
+                href="https://www.linkedin.com/in/azeddine-zaouia-a6640788/"
                 className="social-icon group"
                 aria-label="LinkedIn"
               >
