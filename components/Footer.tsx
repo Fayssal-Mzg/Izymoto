@@ -112,7 +112,7 @@ export function Footer() {
               <li className="flex items-start">
                 <MapPin className="h-5 w-5 text-white mt-0.5 mr-3 flex-shrink-0" />
                 <span className="text-gray-400 text-sm">
-                  23 rue des Etudiants, Courbevoie
+                  25 Rue de Ponthieu, Paris 8eme
                 </span>
               </li>
             </ul>

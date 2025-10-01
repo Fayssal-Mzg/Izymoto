@@ -668,7 +668,7 @@ export default function Home() {
                   <div>
                     <h3 className="text-lg font-bold">Adresse</h3>
                     <p className="text-gray-700">
-                      31 rue des Etudiants, Courbevoie
+                      25 Rue de Ponthieu, Paris 8eme
                     </p>
                   </div>
                 </div>
