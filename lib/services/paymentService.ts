@@ -68,6 +68,11 @@ export async function handleSuccessfulPayment({
     console.log("Profil utilisateur mis à jour avec phoneNumber:", phone);
 
     // Préparer les données de réservation
+    // En manual capture : le client a autorisé les fonds (hold actif), mais
+    // le débit ne se déclenchera qu'à la capture admin post-course.
+    // - status = "confirmed" : la course est planifiée
+    // - paymentStatus = "authorized" : fonds gelés, pas encore capturés
+    // Le webhook Stripe basculera paymentStatus → "captured" après capture.
     const fullBookingData = {
       userId: user.uid,
       depart: bookingData.depart,
@@ -75,6 +80,7 @@ export async function handleSuccessfulPayment({
       distance: bookingData.distance,
       duree: bookingData.duree,
       prix: prixFinal,
+      amountAuthorized: prixFinal,
       name,
       phone,
       notes: notes || "",
@@ -84,9 +90,10 @@ export async function handleSuccessfulPayment({
       reservationDate: date,
       dateFormatted: formattedDate,
       status: "confirmed",
+      paymentStatus: "authorized",
       createdAt: new Date(),
       email: user.email,
-      isPaid: true, // Important pour le template des emails
+      isPaid: false, // pas encore capturé — pour les templates emails
     };
     console.log("Données de réservation complètes préparées:", {
       depart: fullBookingData.depart,

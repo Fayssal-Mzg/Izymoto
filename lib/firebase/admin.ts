@@ -38,6 +38,12 @@ interface Booking {
   reservationDate: Date;
   createdAt: Date;
   status: "pending" | "confirmed" | "completed" | "cancelled";
+  paymentId?: string;
+  paymentStatus?: "authorized" | "captured" | "released" | "failed";
+  amountAuthorized?: number;
+  amountCaptured?: number;
+  paymentFailureMessage?: string;
+  paymentUpdatedAt?: Date;
   [key: string]: any;
 }
 
