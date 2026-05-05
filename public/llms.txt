@@ -1,0 +1,72 @@
+# IZYMOTO
+
+> Service de moto-taxi premium à Paris et en Île-de-France. Transferts aéroports (CDG, Orly, Beauvais, Le Bourget), trajets en ville, mise à disposition à l'heure. Disponible 7j/7, 24h/24. Chauffeurs professionnels certifiés.
+
+## Informations clés
+
+- **Nom commercial** : IZYMOTO
+- **Activité** : Transport motorisé de passagers (moto-taxi)
+- **Zone de service** : Paris, Île-de-France, France entière au départ de Paris
+- **Adresse** : 25 Rue de Ponthieu, 75008 Paris
+- **Téléphone** : +33 6 49 50 25 25
+- **Email** : contact@izymoto.com
+- **Disponibilité** : 24h/24, 7j/7
+- **Délai moyen de prise en charge** : 15 minutes
+- **Certification** : Service certifié par le décret n°2010-1223 du 11 octobre 2010
+
+## Tarifs (à partir de)
+
+- **Trajet en ville** : à partir de 50€ (jusqu'à 10 km dans Paris)
+- **Transfert aéroport (CDG / Orly)** : à partir de 80€
+- **Mise à disposition** : 80€ / heure
+- **Trajet Paris ↔ Paris** : 65€
+- Tarif fixe sans surprise, attente de 15 min incluse, aide aux bagages
+
+## Pages principales
+
+- [Accueil](https://izymoto.com/) : présentation, réservation instantanée, tarifs
+- [Réserver](https://izymoto.com/reserver) : devis et réservation en ligne
+- [Nos tarifs](https://izymoto.com/nos-tarifs) : grille tarifaire complète
+- [Aéroports](https://izymoto.com/aeroports) : transferts aéroports parisiens
+- [À propos](https://izymoto.com/about) : équipe et valeurs
+- [Contact](https://izymoto.com/contact) : nous joindre
+
+## Pages SEO ciblées
+
+- [Moto-taxi Paris](https://izymoto.com/moto-taxi-paris)
+- [Moto-taxi aéroport CDG / Roissy](https://izymoto.com/moto-taxi-aeroport-cdg)
+- [Moto-taxi aéroport Orly](https://izymoto.com/moto-taxi-aeroport-orly)
+- [Moto-taxi Gare du Nord](https://izymoto.com/moto-taxi-gare-du-nord)
+- [Moto-taxi Gare de Lyon](https://izymoto.com/moto-taxi-gare-de-lyon)
+- [Moto-taxi La Défense](https://izymoto.com/moto-taxi-la-defense)
+- [Moto-taxi Disneyland Paris](https://izymoto.com/moto-taxi-disneyland)
+
+## Avantages clés
+
+- Évite les embouteillages parisiens (gain de temps moyen 40-60% vs voiture)
+- Équipement de sécurité fourni (casque, gants, blouson, sur-pantalon)
+- Chauffeurs expérimentés et formés à la conduite défensive
+- Tarif fixe annoncé avant la course (pas de mauvaise surprise)
+- Réservation en ligne ou par téléphone
+- Paiement sécurisé en ligne ou sur place
+- Service entreprise / B2B avec facturation
+
+## Questions fréquentes
+
+**Q : Combien coûte un moto-taxi de Paris à Roissy CDG ?**
+R : À partir de 80€ en tarif fixe, attente 15 min incluse.
+
+**Q : Combien coûte un moto-taxi de Paris à Orly ?**
+R : À partir de 80€ en tarif fixe.
+
+**Q : Quel est le délai pour avoir un moto-taxi à Paris ?**
+R : 15 minutes en moyenne, 24h/24, 7j/7.
+
+**Q : Le casque et l'équipement sont-ils fournis ?**
+R : Oui, casque, gants, blouson et sur-pantalon sont fournis et désinfectés entre chaque course.
+
+**Q : Comment réserver un moto-taxi Izymoto ?**
+R : En ligne sur izymoto.com, par téléphone au +33 6 49 50 25 25, ou par email à contact@izymoto.com.
+
+**Q : Izymoto fait-il les transferts gare ?**
+R : Oui, toutes les gares parisiennes : Gare du Nord, Gare de Lyon, Gare Montparnasse, Gare Saint-Lazare, Gare de l'Est, Gare d'Austerlitz.
