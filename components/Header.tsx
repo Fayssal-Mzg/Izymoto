@@ -81,7 +81,8 @@ const Header = () => {
               alt="Izymoto"
               width={120}
               height={40}
-              className="object-contain"
+              className="object-contain h-auto w-auto"
+              priority
             />
           </Link>
 
