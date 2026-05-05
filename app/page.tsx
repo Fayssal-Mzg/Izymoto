@@ -811,10 +811,6 @@ function HomeReservationSection() {
 
   // État local pour stocker les infos client pour le devis
   const [clientInfo, setClientInfo] = useState<any>(null);
-  // Logs de débogage pour vérifier le flux de navigation
-  useEffect(() => {
-    console.log("Current step:", currentStep);
-  }, [currentStep]);
 
   return (
     <>
