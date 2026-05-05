@@ -1,3 +1,4 @@
+import Script from "next/script";
 import { Footer } from "@/components/Footer";
 import Header from "@/components/Header";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
@@ -19,6 +20,11 @@ export default function RootLayout({
             <Footer />
           </GoogleMapsProvider>
         </AuthProvider>
+        <Script
+          src="https://limova-web-sltj.onrender.com/scripts/chatbot-loader.js"
+          data-connection-id="0ac42bfe-b334-4a78-a15a-2004ae8005e9"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
