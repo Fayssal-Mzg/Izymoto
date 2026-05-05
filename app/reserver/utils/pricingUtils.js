@@ -1,177 +1,120 @@
 import { zones, tarifs, majorations, parametresTarifs } from "./constants";
 
-// Fonction pour identifier la zone d'une adresse
+// Extrait un code postal français (5 chiffres) de l'adresse. Plus fiable
+// qu'une regex texte qui peut faussement matcher un numéro de rue.
+const extraireCodePostal = (adresse) => {
+  if (!adresse) return null;
+  const match = adresse.match(/\b(\d{5})\b/);
+  return match ? match[1] : null;
+};
+
+// Identifie la zone tarifaire d'une adresse.
+// Ordre : pôles spécifiques (aéroports, La Défense, Disneyland) → CP → mots-clés.
+// Les pôles sont prioritaires car ils peuvent être situés dans n'importe quel CP
+// (ex : CDG est dans le 95, Orly dans le 94 — sinon ils seraient classés couronne).
 export const identifierZone = (adresse) => {
   if (!adresse) return null;
-  
-  // Détection spécifique des aéroports en priorité
-  if (/roissy|charles de gaulle|cdg/i.test(adresse)) {
-    return "roissy";
-  }
-  if (/\borly\b/i.test(adresse)) {
-    return "orly";
-  }
-  if (/le bourget/i.test(adresse)) {
-    return "leBourget";
-  }
-  if (/beauvais/i.test(adresse)) {
-    return "beauvais";
-  }
-  if (/la défense/i.test(adresse)) {
-    return "laDefense";
-  }
 
-  // Vérifier toutes les autres zones
-  for (const [zoneKey, patterns] of Object.entries(zones)) {
-    for (const { pattern } of patterns) {
-      if (pattern.test(adresse)) {
+  // 1. Aéroports & pôles spécifiques (priorité absolue)
+  if (/(roissy|charles[- ]de[- ]gaulle|\bcdg\b)/i.test(adresse)) return "roissy";
+  if (/\borly\b|\bory\b/i.test(adresse)) return "orly";
+  if (/le bourget/i.test(adresse)) return "leBourget";
+  if (/beauvais/i.test(adresse)) return "beauvais";
+  if (/disneyland|marne[- ]la[- ]vall[ée]e|chessy/i.test(adresse)) return "disneyland";
+  if (/\bla d[ée]fense\b/i.test(adresse)) return "laDefense";
+
+  // 2. Détection par code postal
+  const cp = extraireCodePostal(adresse);
+  if (cp) {
+    for (const [zoneKey, def] of Object.entries(zones)) {
+      if (def.codePostalPrefixes?.some((p) => cp.startsWith(p))) {
         return zoneKey;
       }
     }
   }
-  
-  // Si aucune zone n'est identifiée, considérer comme trajet hors forfait
+
+  // 3. Fallback sur mots-clés ville
+  for (const [zoneKey, def] of Object.entries(zones)) {
+    if (def.keywords?.some((rx) => rx.test(adresse))) {
+      return zoneKey;
+    }
+  }
+
   return "hors_forfait";
 };
 
-// Fonction pour estimer le prix de base
-// Modification de la fonction estimerPrix pour s'assurer qu'elle retourne toujours une valeur numérique
-export const estimerPrix = (departZone, arriveeZone, distanceKm) => {
-  // Recherche dans la grille tarifaire
-  for (const tarif of tarifs) {
-    // Vérifier si les zones correspondent à un tarif forfaitaire (dans les deux sens)
-    const zonesMatch =
-      // Cas 1: Correspondance directe
-      (matchZone(tarif.depart, departZone) &&
-        matchZone(tarif.arrivee, arriveeZone)) ||
-      // Cas 2: Correspondance dans le sens inverse (pour assurer la symétrie des prix)
-      (matchZone(tarif.depart, arriveeZone) &&
-        matchZone(tarif.arrivee, departZone));
-
-    if (zonesMatch) {
-      return tarif.prix; // Retourne le prix du tarif trouvé
-    }
-  }
-
-  // Si aucun tarif forfaitaire n'est trouvé, appliquer le tarif hors forfait
-  const prixHorsForfait = 30 + distanceKm * 2.5; // 30€ de prise en charge + 2.50€/km
-  
-  // Assurez-vous de toujours retourner un nombre, même si c'est 0
-  return prixHorsForfait || 0;
+// Mapping zone tarif (libellé grille) → clé renvoyée par identifierZone.
+const ZONE_LABEL_TO_KEY = {
+  Paris: "paris",
+  "La Défense": "laDefense",
+  "Petite couronne": "petite_couronne",
+  "Grande couronne": "grande_couronne",
+  Orly: "orly",
+  Roissy: "roissy",
+  "Le Bourget": "leBourget",
+  Beauvais: "beauvais",
+  Disneyland: "disneyland",
 };
 
-// Fonction pour calculer les majorations
+const matchZone = (tarifZone, userZone) => ZONE_LABEL_TO_KEY[tarifZone] === userZone;
+
+// Estime le prix de base : forfait si match, sinon tarif km arrondi par paliers
+// (l'arrondi évite que le prix change visuellement à chaque recalcul Google Maps).
+export const estimerPrix = (departZone, arriveeZone, distanceKm) => {
+  for (const tarif of tarifs) {
+    const direct = matchZone(tarif.depart, departZone) && matchZone(tarif.arrivee, arriveeZone);
+    const inverse = matchZone(tarif.depart, arriveeZone) && matchZone(tarif.arrivee, departZone);
+    if (direct || inverse) return tarif.prix;
+  }
+
+  const { priseEnChargeHorsForfait, prixParKmHorsForfait, arrondiPalier } = parametresTarifs;
+  const brut = priseEnChargeHorsForfait + (distanceKm || 0) * prixParKmHorsForfait;
+  return Math.round(brut / arrondiPalier) * arrondiPalier;
+};
+
+// Calcule les majorations en montants FIXES (alignement motocab).
+// Les pourcentages introduisaient de la variabilité — ici tout est additif et déterministe.
 export const calculerMajorations = (prixBase, dateReservation, reservationImmediateLate = false) => {
-  if (!dateReservation || !prixBase) return { prixFinal: prixBase, detailsMajorations: [] };
-  
+  if (!dateReservation || !prixBase) {
+    return { prixFinal: prixBase, detailsMajorations: [] };
+  }
+
   const date = new Date(dateReservation);
   const heures = date.getHours();
-  const minutes = date.getMinutes();
   const jour = date.getDay(); // 0 = dimanche, 6 = samedi
-  
+
   let prixFinal = prixBase;
-  const detailsMajorations = [];
-  
-  // Vérifier si c'est une réservation immédiate (moins de 2h)
-  if (reservationImmediateLate) {
-    const majorationImmediate = majorations.find(m => m.type === "Réservation à moins de 2h");
-    if (majorationImmediate) {
-      prixFinal += majorationImmediate.montant;
-      detailsMajorations.push({
-        type: majorationImmediate.type,
-        montant: majorationImmediate.montant
-      });
-    }
-  }
-  
-  // Vérifier si c'est le soir (20h à 21h)
-  if (heures >= 20 && heures < 21) {
-    const majorationSoir = majorations.find(m => m.type === "Soir de 20h à 21h");
-    if (majorationSoir) {
-      const montant = (prixBase * majorationSoir.pourcentage) / 100;
-      prixFinal += montant;
-      detailsMajorations.push({
-        type: majorationSoir.type,
-        montant,
-        pourcentage: majorationSoir.pourcentage
-      });
-    }
-  }
-  
-  // Vérifier si c'est la nuit (21h à 7h)
-  if (heures >= 21 || heures < 7) {
-    const majorationNuit = majorations.find(m => m.type === "Nuit de 21h à 7h");
-    if (majorationNuit) {
-      const montant = (prixBase * majorationNuit.pourcentage) / 100;
-      prixFinal += montant;
-      detailsMajorations.push({
-        type: majorationNuit.type,
-        montant,
-        pourcentage: majorationNuit.pourcentage
-      });
-    }
-  }
-  
-  // Vérifier si c'est un samedi
-  if (jour === 6) {
-    const majorationSamedi = majorations.find(m => m.type === "Samedi");
-    if (majorationSamedi) {
-      const montant = (prixBase * majorationSamedi.pourcentage) / 100;
-      prixFinal += montant;
-      detailsMajorations.push({
-        type: majorationSamedi.type,
-        montant,
-        pourcentage: majorationSamedi.pourcentage
-      });
-    }
-  }
-  
-  // Vérifier si c'est un dimanche ou jour férié
-  if (jour === 0) {
-    const majorationDimanche = majorations.find(m => m.type === "Dimanche et jours fériés");
-    if (majorationDimanche) {
-      const montant = (prixBase * majorationDimanche.pourcentage) / 100;
-      prixFinal += montant;
-      detailsMajorations.push({
-        type: majorationDimanche.type,
-        montant,
-        pourcentage: majorationDimanche.pourcentage
-      });
-    }
-  }
-  
-  return {
-    prixFinal: Math.round(prixFinal),
-    detailsMajorations
+  const details = [];
+
+  const ajouter = (type, montant) => {
+    prixFinal += montant;
+    details.push({ type, montant });
   };
+
+  if (reservationImmediateLate) {
+    ajouter("Réservation à moins de 2h", 20);
+  }
+
+  if (heures >= 23 || heures < 6) {
+    ajouter("Nuit (23h-6h)", 40);
+  } else if ((heures >= 20 && heures < 23) || (heures >= 6 && heures < 7)) {
+    ajouter("Soir / matin tôt", 20);
+  }
+
+  if (jour === 0 || jour === 6) {
+    ajouter("Week-end ou jour férié", 20);
+  }
+
+  return { prixFinal: Math.round(prixFinal), detailsMajorations: details };
 };
 
-// Fonction principale pour estimer le prix total
+// Pipeline complet : adresse → zone → prix de base → majorations → prix final.
+// (Auparavant cette fonction appelait estimerPrixBase, qui n'existait pas → ReferenceError.)
 export const estimerPrixTotal = (departAdresse, arriveeAdresse, distanceKm, dateReservation, reservationImmediateLate = false) => {
   const departZone = identifierZone(departAdresse);
   const arriveeZone = identifierZone(arriveeAdresse);
-  
-  const prixBase = estimerPrixBase(departZone, arriveeZone, distanceKm);
+  const prixBase = estimerPrix(departZone, arriveeZone, distanceKm);
   const { prixFinal, detailsMajorations } = calculerMajorations(prixBase, dateReservation, reservationImmediateLate);
-  
-  return {
-    prixBase,
-    prixFinal,
-    detailsMajorations,
-    departZone,
-    arriveeZone
-  };
-};
 
-// Fonction auxiliaire pour faciliter la correspondance des zones
-function matchZone(tarifZone, userZone) {
-  return (
-    (tarifZone === "Paris" && userZone === "paris") ||
-    (tarifZone === "La Défense" && userZone === "laDefense") ||
-    (tarifZone === "Petite couronne" && userZone === "petite_couronne") ||
-    (tarifZone === "Orly" && userZone === "orly") ||
-    (tarifZone === "Roissy" && userZone === "roissy") ||
-    (tarifZone === "Le Bourget" && userZone === "leBourget") ||
-    (tarifZone === "Beauvais" && userZone === "beauvais")
-  );
-}
+  return { prixBase, prixFinal, detailsMajorations, departZone, arriveeZone };
+};
