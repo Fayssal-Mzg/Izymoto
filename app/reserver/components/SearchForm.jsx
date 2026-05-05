@@ -252,7 +252,10 @@ export default function SearchForm({
               <div className="relative flex-grow">
                 <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                 <input
+                  id="reservation-depart"
+                  name="depart"
                   type="text"
+                  autoComplete="street-address"
                   placeholder="Adresse de départ"
                   value={depart}
                   onChange={(e) => setDepart(e.target.value)}
@@ -301,7 +304,10 @@ export default function SearchForm({
               <div className="relative flex-grow">
                 <Navigation className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                 <input
+                  id="reservation-arrivee"
+                  name="arrivee"
                   type="text"
+                  autoComplete="off"
                   placeholder="Adresse d'arrivée"
                   value={arrivee}
                   onChange={(e) => setArrivee(e.target.value)}

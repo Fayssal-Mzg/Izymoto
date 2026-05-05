@@ -161,13 +161,19 @@ function PhoneVerification({ onVerified, onCancel, initialPhone }) {
 
       <form onSubmit={handleVerifyPhone} className="space-y-4">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="payment-phone"
+            className="block text-sm font-medium text-gray-700"
+          >
             Numéro de téléphone <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
             <input
+              id="payment-phone"
+              name="phone"
               type="tel"
+              autoComplete="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+33 6 12 34 56 78"
