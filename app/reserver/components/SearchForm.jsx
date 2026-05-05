@@ -67,6 +67,31 @@ export default function SearchForm({
     }
   }, [prix, distance]);
 
+  // Auto-calcul debouncé quand depart ET arrivee changent.
+  // Remplace les setTimeout(..., 150) dans les autocompletes et boutons préset
+  // qui capturaient une closure obsolète de calculateRoute → prix/map en retard
+  // d'un cran à chaque modification d'adresse.
+  useEffect(() => {
+    if (isResetting) return;
+    if (!depart || !arrivee) return;
+    if (depart.length < 5 || arrivee.length < 5) return;
+    // Les adresses Google formatées contiennent toujours une virgule. Filtre
+    // les saisies en cours non finalisées.
+    if (!depart.includes(",") || !arrivee.includes(",")) return;
+
+    const handle = setTimeout(() => {
+      setIsCalculating(true);
+      calculateRoute();
+      setTimeout(() => setIsCalculating(false), 800);
+    }, 300);
+
+    return () => clearTimeout(handle);
+    // calculateRoute est volontairement omis : il est recréé à chaque render de
+    // useReservation et l'effet capture la dernière version au moment où il
+    // s'exécute (post-commit React), garantissant des closures fraîches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [depart, arrivee, isResetting]);
+
   const getMyLocation = () => {
     if (navigator.geolocation) {
       const options = {
@@ -84,9 +109,7 @@ export default function SearchForm({
             (results, status) => {
               if (status === "OK" && results[0]) {
                 setDepart(results[0].formatted_address);
-                if (arrivee && arrivee.length > 5) {
-                  setTimeout(() => handleCalculateRoute(), 100);
-                }
+                // Le useEffect debouncé déclenche calculateRoute automatiquement.
               } else {
                 alert("Impossible de déterminer votre adresse actuelle.");
               }
@@ -113,31 +136,14 @@ export default function SearchForm({
   };
 
   const handleAirportSelect = (address, type) => {
-    if (type === "depart") {
-      setDepart(address);
-      if (arrivee && arrivee.length > 5) {
-        setTimeout(() => handleCalculateRoute(), 100);
-      }
-    } else {
-      setArrivee(address);
-      if (depart && depart.length > 5) {
-        setTimeout(() => handleCalculateRoute(), 100);
-      }
-    }
+    if (type === "depart") setDepart(address);
+    else setArrivee(address);
+    // Le useEffect debouncé prend le relais.
   };
 
   const handleStationSelect = (address, type) => {
-    if (type === "depart") {
-      setDepart(address);
-      if (arrivee && arrivee.length > 5) {
-        setTimeout(() => handleCalculateRoute(), 100);
-      }
-    } else {
-      setArrivee(address);
-      if (depart && depart.length > 5) {
-        setTimeout(() => handleCalculateRoute(), 100);
-      }
-    }
+    if (type === "depart") setDepart(address);
+    else setArrivee(address);
   };
 
   const handleCalculateRoute = () => {
@@ -198,52 +204,31 @@ export default function SearchForm({
   };
 
   const onPlaceChangedDepart = () => {
-    if (autocompleteRefDepart.current) {
-      const place = autocompleteRefDepart.current.getPlace();
-
-      // Validation stricte avec geometry pour s'assurer que c'est une vraie sélection
-      if (
-        place &&
-        place.formatted_address &&
-        place.geometry &&
-        place.geometry.location &&
-        place.formatted_address.length > 5
-      ) {
-        console.log("Départ sélectionné:", place.formatted_address);
-        setDepart(place.formatted_address);
-
-        // Calculer seulement si arrivée est valide
-        if (arrivee && arrivee.length > 5 && arrivee.includes(",")) {
-          setTimeout(() => handleCalculateRoute(), 150);
-        }
-      } else {
-        console.warn("Sélection de départ invalide, ignorée");
-      }
+    if (!autocompleteRefDepart.current) return;
+    const place = autocompleteRefDepart.current.getPlace();
+    if (
+      place &&
+      place.formatted_address &&
+      place.geometry &&
+      place.geometry.location &&
+      place.formatted_address.length > 5
+    ) {
+      setDepart(place.formatted_address);
     }
+    // Le useEffect debouncé déclenche le calcul quand depart + arrivee sont valides.
   };
 
   const onPlaceChangedArrivee = () => {
-    if (autocompleteRefArrivee.current) {
-      const place = autocompleteRefArrivee.current.getPlace();
-
-      // Validation stricte avec geometry pour s'assurer que c'est une vraie sélection
-      if (
-        place &&
-        place.formatted_address &&
-        place.geometry &&
-        place.geometry.location &&
-        place.formatted_address.length > 5
-      ) {
-        console.log("Arrivée sélectionnée:", place.formatted_address);
-        setArrivee(place.formatted_address);
-
-        // Calculer seulement si départ est valide
-        if (depart && depart.length > 5 && depart.includes(",")) {
-          setTimeout(() => handleCalculateRoute(), 150);
-        }
-      } else {
-        console.warn("Sélection d'arrivée invalide, ignorée");
-      }
+    if (!autocompleteRefArrivee.current) return;
+    const place = autocompleteRefArrivee.current.getPlace();
+    if (
+      place &&
+      place.formatted_address &&
+      place.geometry &&
+      place.geometry.location &&
+      place.formatted_address.length > 5
+    ) {
+      setArrivee(place.formatted_address);
     }
   };
 
