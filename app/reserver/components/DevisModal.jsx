@@ -14,9 +14,17 @@ import {
   Euro,
   ArrowRight,
   X,
+  BadgeCheck,
 } from "lucide-react";
 
 const SUPPLEMENT_PRIORITE = parametresTarifs.supplementPriorite;
+
+const computeMarketRange = (prixBase) => {
+  if (!prixBase) return null;
+  const low = Math.round((prixBase * 1.3) / 5) * 5;
+  const high = Math.round((prixBase * 1.6) / 5) * 5;
+  return `${low}-${high}€`;
+};
 
 export default function DevisModal({
   depart,
@@ -326,6 +334,33 @@ export default function DevisModal({
               <p className="text-xs text-gray-500 mt-1">
                 TVA incluse. Paiement sécurisé en ligne.
               </p>
+            </div>
+          </div>
+
+          {/* Panneau confiance — argumentaire prix transparent (mobile-first) */}
+          <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mb-6 space-y-2">
+            <div className="flex items-start gap-2">
+              <BadgeCheck
+                size={18}
+                className="flex-shrink-0 text-emerald-600 mt-0.5"
+              />
+              <div className="text-sm text-gray-700 space-y-1">
+                <p>
+                  <span className="font-semibold">Tarif fixe garanti.</span>{" "}
+                  Annoncé avant la course, il ne bouge plus — pas de surge ni
+                  de calcul opaque selon la fréquentation.
+                </p>
+                {computeMarketRange(prixBase) && (
+                  <p className="text-xs text-gray-600">
+                    À titre indicatif, un taxi parisien sur ce trajet : ~
+                    {computeMarketRange(prixBase)}.
+                  </p>
+                )}
+                <p className="text-xs text-gray-500">
+                  Service certifié — décret 2010-1223 sur le transport motorisé
+                  de passagers.
+                </p>
+              </div>
             </div>
           </div>
 

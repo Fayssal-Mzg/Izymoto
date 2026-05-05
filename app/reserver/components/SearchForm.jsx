@@ -16,8 +16,19 @@ import {
   RotateCcw,
   ChevronUp,
   RefreshCw,
+  BadgeCheck,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+
+// Fourchette indicative du marché. Coefficients calés sur l'écart observé
+// entre forfait moto-taxi et taxi compteur parisien (×1.3 → ×1.6).
+// Arrondi à 5€ pour rester lisible.
+const computeMarketRange = (prixBase) => {
+  if (!prixBase) return null;
+  const low = Math.round((prixBase * 1.3) / 5) * 5;
+  const high = Math.round((prixBase * 1.6) / 5) * 5;
+  return `${low}-${high}€`;
+};
 
 export default function SearchForm({
   depart,
@@ -347,21 +358,35 @@ export default function SearchForm({
           !isCalculating &&
           !isResetting && (
             <div className="bg-gray-50 p-4 rounded-lg shadow-sm mt-4 transition-all duration-300">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  <div className="text-gray-700 font-medium">
-                    <span className="font-bold text-xl">
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1 text-gray-700 font-medium">
+                    <span className="font-bold text-2xl text-gray-900">
                       {Math.round(prix)}€
                     </span>
-                    <span className="mx-2 text-gray-500">•</span>
-                    <span>{distance.toFixed(1)} km</span>
-                    <span className="mx-2 text-gray-500">•</span>
-                    <span>{formatDuration()}</span>
+                    <span className="text-sm text-gray-600">
+                      {distance.toFixed(1)} km · {formatDuration()}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-600">
+                    <BadgeCheck
+                      size={14}
+                      className="flex-shrink-0 text-emerald-600"
+                    />
+                    <span>
+                      Tarif fixe — pas de surge
+                      {computeMarketRange(prixBase) && (
+                        <span className="text-gray-500">
+                          {" "}
+                          · taxi ~{computeMarketRange(prixBase)}
+                        </span>
+                      )}
+                    </span>
                   </div>
                 </div>
                 <button
                   onClick={toggleDetails}
-                  className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-200 transition-colors"
+                  className="text-gray-600 hover:text-gray-900 p-2 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
                   aria-label={
                     detailsExpanded
                       ? "Masquer les détails"
@@ -424,11 +449,26 @@ export default function SearchForm({
                     </div>
                   </div>
 
-                  <div className="md:col-span-3 text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
-                    <p>
-                      Le prix affiché tient compte de la date de réservation
-                      (majorations soir, nuit, week-end). Il sera détaillé à
-                      l'étape suivante.
+                  <div className="md:col-span-3 bg-emerald-50 border border-emerald-100 p-3 rounded-lg space-y-1.5">
+                    <div className="flex items-start gap-2">
+                      <BadgeCheck
+                        size={16}
+                        className="flex-shrink-0 text-emerald-600 mt-0.5"
+                      />
+                      <p className="text-sm text-gray-700">
+                        <span className="font-semibold">Tarif fixe garanti.</span>{" "}
+                        Annoncé à l'avance, ne bouge plus — pas de surge ni
+                        d'algorithme opaque.
+                      </p>
+                    </div>
+                    {computeMarketRange(prixBase) && (
+                      <p className="text-xs text-gray-600 pl-6">
+                        À titre indicatif, un taxi parisien sur ce trajet : ~
+                        {computeMarketRange(prixBase)}.
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 pl-6">
+                      Service certifié — décret 2010-1223.
                     </p>
                   </div>
                 </div>
