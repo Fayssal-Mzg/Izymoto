@@ -25,6 +25,8 @@ export default function SearchForm({
   arrivee,
   setArrivee,
   prix,
+  prixBase,
+  detailsMajorations = [],
   distance,
   duree,
   calculateRoute,
@@ -411,13 +413,22 @@ export default function SearchForm({
                         Prix
                       </p>
                       <p className="font-bold text-xl">{Math.round(prix)}€</p>
+                      {prixBase != null && Math.round(prix) !== Math.round(prixBase) && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Forfait {Math.round(prixBase)}€ +{" "}
+                          {detailsMajorations
+                            .map((m) => `${m.type} ${Math.round(m.montant)}€`)
+                            .join(", ")}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="md:col-span-3 text-sm text-gray-500 bg-gray-100 p-3 rounded-lg">
                     <p>
-                      Le prix affiché est indicatif et peut être soumis à des
-                      majorations selon les horaires et jours.
+                      Le prix affiché tient compte de la date de réservation
+                      (majorations soir, nuit, week-end). Il sera détaillé à
+                      l'étape suivante.
                     </p>
                   </div>
                 </div>

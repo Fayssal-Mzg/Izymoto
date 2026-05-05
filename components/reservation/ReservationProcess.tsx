@@ -173,6 +173,8 @@ export default function ReservationProcess({
                       arrivee={arrivee}
                       setArrivee={setArrivee}
                       prix={prix}
+                      prixBase={prixBase}
+                      detailsMajorations={detailsMajorations}
                       distance={distance}
                       duree={duree}
                       calculateRoute={calculateRoute}
@@ -206,6 +208,8 @@ export default function ReservationProcess({
               arrivee={arrivee}
               setArrivee={setArrivee}
               prix={prix}
+              prixBase={prixBase}
+              detailsMajorations={detailsMajorations}
               distance={distance}
               duree={duree}
               calculateRoute={calculateRoute}

@@ -30,6 +30,8 @@ export default function ReservationForm({
     setArrivee,
     directions,
     prix,
+    prixBase,
+    detailsMajorations,
     distance,
     duree,
     calculCompleted,
@@ -65,6 +67,8 @@ export default function ReservationForm({
               arrivee={arrivee}
               setArrivee={setArrivee}
               prix={prix}
+              prixBase={prixBase}
+              detailsMajorations={detailsMajorations}
               distance={distance}
               duree={duree}
               resetRouteData=""
