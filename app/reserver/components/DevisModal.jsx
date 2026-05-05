@@ -1,6 +1,7 @@
 "use client";
 
 import DateTimeInput from "./DateTimeInput";
+import { parametresTarifs } from "../utils/constants";
 import { useState, useEffect } from "react";
 import { formatDistance, format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -15,12 +16,17 @@ import {
   X,
 } from "lucide-react";
 
+const SUPPLEMENT_PRIORITE = parametresTarifs.supplementPriorite;
+
 export default function DevisModal({
   depart,
   arrivee,
   distance,
   duree,
+  prixBase,
   prix,
+  prixFinal,
+  detailsMajorations = [],
   prioriteReservation,
   setPrioriteReservation,
   reservationDate,
@@ -28,7 +34,6 @@ export default function DevisModal({
   onCancel,
   onProceed,
   onRequestDevis,
-  setPrixFinal, // Added missing prop
 }) {
   // État pour gérer les erreurs de validation
   const [validationError, setValidationError] = useState("");
@@ -48,19 +53,8 @@ export default function DevisModal({
   useEffect(() => {
     setAnimateIn(true);
   }, []);
-
-  // Calculer le prix final en fonction des options
-  useEffect(() => {
-    // Calculate the final price based on prioriteReservation
-    const calculatedFinalPrice = prix
-      ? Math.round(prix + (prioriteReservation ? 20 : 0))
-      : 0;
-
-    // Update the final price using the setPrixFinal prop
-    if (typeof setPrixFinal === "function") {
-      setPrixFinal(calculatedFinalPrice);
-    }
-  }, [prix, prioriteReservation, setPrixFinal]);
+  // (Le prixFinal est désormais maintenu par le hook useReservation —
+  // plus besoin de le recalculer ici, source unique de vérité.)
 
   // Validation avant de passer à onRequestDevis
   const validateAndRequestDevis = () => {
@@ -286,7 +280,7 @@ export default function DevisModal({
                   htmlFor="priority"
                   className="font-medium block mb-1 text-gray-900"
                 >
-                  Option priorité (+20€)
+                  Option priorité (+{SUPPLEMENT_PRIORITE}€)
                 </label>
                 <p className="text-gray-600 text-sm">
                   Service prioritaire : votre course sera traitée en priorité,
@@ -299,18 +293,25 @@ export default function DevisModal({
 
           {/* Récapitulatif des prix */}
           <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
-            <div className="p-4">
-              <div className="flex justify-between items-center mb-2">
+            <div className="p-4 space-y-2">
+              <div className="flex justify-between items-center">
                 <span className="text-gray-600 text-sm">Prix de base</span>
                 <span className="text-gray-900">
-                  {prix ? Math.round(prix) : 0}€
+                  {prixBase ? Math.round(prixBase) : 0}€
                 </span>
               </div>
 
+              {detailsMajorations.map((maj, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">{maj.type}</span>
+                  <span className="text-gray-900">+{Math.round(maj.montant)}€</span>
+                </div>
+              ))}
+
               {prioriteReservation && (
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-600 text-sm">Option priorité</span>
-                  <span className="text-gray-900">+20€</span>
+                  <span className="text-gray-900">+{SUPPLEMENT_PRIORITE}€</span>
                 </div>
               )}
             </div>
@@ -319,8 +320,7 @@ export default function DevisModal({
               <div className="flex justify-between items-center">
                 <span className="font-medium">Total</span>
                 <span className="text-lg font-bold">
-                  {prix ? Math.round(prix + (prioriteReservation ? 20 : 0)) : 0}
-                  €
+                  {prixFinal ? Math.round(prixFinal) : 0}€
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">

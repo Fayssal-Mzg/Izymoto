@@ -777,6 +777,8 @@ function HomeReservationSection() {
     setArrivee,
     directions,
     prix,
+    prixBase,
+    detailsMajorations,
     distance,
     duree,
     prioriteReservation,
@@ -824,7 +826,10 @@ function HomeReservationSection() {
           arrivee={arrivee}
           distance={distance}
           duree={duree}
+          prixBase={prixBase}
           prix={prix}
+          prixFinal={prixFinal}
+          detailsMajorations={detailsMajorations}
           prioriteReservation={prioriteReservation}
           setPrioriteReservation={setPrioriteReservation}
           onCancel={() => setCurrentStep("form")}
@@ -832,7 +837,6 @@ function HomeReservationSection() {
           onRequestDevis={handleRequestDevis}
           reservationDate={reservationDate}
           setReservationDate={setReservationDate}
-          setPrixFinal={setPrixFinal}
         />
       )}
 

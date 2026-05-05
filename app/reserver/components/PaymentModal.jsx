@@ -99,20 +99,19 @@ function PhoneVerification({ onVerified, onCancel, initialPhone }) {
       return;
     }
 
-    // Vérifier le format du numéro
-    const phoneRegex = /^(\+33|0)[1-9](\d{2}){4}$/;
-    const formattedPhone = phoneNumber.startsWith("+")
-      ? phoneNumber
-      : `+33${
-          phoneNumber.startsWith("0") ? phoneNumber.substring(1) : phoneNumber
-        }`;
+    // Regex unifiée avec UnifiedUserModal — accepte +33 / 0033 / 0 avec ou sans
+    // séparateurs (espaces, points, tirets).
+    const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
+    const cleaned = phoneNumber.replace(/\s/g, "");
+    const formattedPhone = cleaned.startsWith("+")
+      ? cleaned
+      : cleaned.startsWith("00")
+      ? `+${cleaned.substring(2)}`
+      : `+33${cleaned.startsWith("0") ? cleaned.substring(1) : cleaned}`;
 
-    if (
-      !phoneRegex.test(formattedPhone.replace(/\s/g, "")) &&
-      !phoneRegex.test(phoneNumber.replace(/\s/g, ""))
-    ) {
+    if (!phoneRegex.test(phoneNumber)) {
       setError(
-        "Format de numéro invalide. Exemple valide: 0612345678 ou +33612345678"
+        "Format de numéro invalide. Exemple valide: 06 12 34 56 78 ou +33 6 12 34 56 78"
       );
       return;
     }

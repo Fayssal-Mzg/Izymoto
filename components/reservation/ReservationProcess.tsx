@@ -49,6 +49,8 @@ export default function ReservationProcess({
     setArrivee,
     directions,
     prix,
+    prixBase,
+    detailsMajorations,
     distance,
     duree,
     prioriteReservation,
@@ -224,7 +226,10 @@ export default function ReservationProcess({
             arrivee={arrivee}
             distance={distance}
             duree={duree}
+            prixBase={prixBase}
             prix={prix}
+            prixFinal={prixFinal}
+            detailsMajorations={detailsMajorations}
             prioriteReservation={prioriteReservation}
             setPrioriteReservation={setPrioriteReservation}
             onCancel={() => setCurrentStep("form")}
@@ -232,7 +237,6 @@ export default function ReservationProcess({
             onRequestDevis={handleRequestDevis}
             reservationDate={reservationDate}
             setReservationDate={setReservationDate}
-            setPrixFinal={setPrixFinal}
           />
         )}
 
