@@ -1,4 +1,4 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp, type Transaction } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
 import { getTierById, type WalletTier } from "@/lib/wallet/tiers";
 
@@ -78,7 +78,7 @@ export async function creditWallet(
   const walletRef = db.collection(WALLETS).doc(userId);
   const txRef = db.collection(WALLET_TX).doc(stripeEventId);
 
-  return db.runTransaction(async (tx) => {
+  return db.runTransaction(async (tx: Transaction) => {
     const txSnap = await tx.get(txRef);
     if (txSnap.exists) {
       const existing = txSnap.data() as WalletTransactionDoc;
