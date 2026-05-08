@@ -80,7 +80,7 @@ export default function Home() {
 
   return (
     <MapWrapper>
-      <main className="bg-background overflow-x-hidden min-h-screen">
+      <div className="bg-background overflow-x-hidden min-h-screen">
         {/* Hero Section - Mobile Optimized */}
         <section
           ref={heroRef}
@@ -763,7 +763,7 @@ export default function Home() {
             </svg>
           </button>
         )}
-      </main>
+      </div>
     </MapWrapper>
   );
 }
