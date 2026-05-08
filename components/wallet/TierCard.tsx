@@ -1,15 +1,16 @@
 "use client";
 
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatEuro, type WalletTier } from "@/lib/wallet/tiers";
 
 interface TierCardProps {
   tier: WalletTier;
   onSelect?: (tier: WalletTier) => void;
+  loading?: boolean;
 }
 
-export default function TierCard({ tier, onSelect }: TierCardProps) {
+export default function TierCard({ tier, onSelect, loading }: TierCardProps) {
   const isPopular = tier.popular;
 
   return (
@@ -121,14 +122,23 @@ export default function TierCard({ tier, onSelect }: TierCardProps) {
       <button
         type="button"
         onClick={() => onSelect?.(tier)}
+        disabled={loading}
         className={cn(
-          "mt-auto w-full py-3 px-6 rounded-lg font-semibold text-sm tracking-wider transition-colors duration-200",
+          "mt-auto w-full py-3 px-6 rounded-lg font-semibold text-sm tracking-wider transition-colors duration-200 inline-flex items-center justify-center gap-2",
+          "disabled:opacity-60 disabled:cursor-not-allowed",
           isPopular
             ? "bg-amber-400 text-black hover:bg-amber-300"
             : "bg-black text-white hover:bg-gray-800"
         )}
       >
-        Choisir ce palier
+        {loading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Redirection...
+          </>
+        ) : (
+          "Choisir ce palier"
+        )}
       </button>
     </div>
   );

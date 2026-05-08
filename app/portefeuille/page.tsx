@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import WalletTiersSection from "@/components/wallet/WalletTiersSection";
+import WalletBalanceBanner from "@/components/wallet/WalletBalanceBanner";
 
 export const metadata: Metadata = {
   title: "Portefeuille Izymoto — Rechargez et profitez de bonus exclusifs",
@@ -97,6 +98,8 @@ export default function PortefeuillePage() {
           </div>
         </div>
       </section>
+
+      <WalletBalanceBanner />
 
       <WalletTiersSection />
 

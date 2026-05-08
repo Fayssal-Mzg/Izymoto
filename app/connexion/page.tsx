@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useReservation } from "@/lib/hooks/useReservation";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -15,6 +15,8 @@ export default function ConnexionPage() {
     useAuth();
   const { navigateToReservation } = useReservation();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams?.get("redirectTo") ?? null;
 
   // Vérifier localStorage au chargement
   useEffect(() => {
@@ -36,6 +38,13 @@ export default function ConnexionPage() {
   const redirectAfterLogin = () => {
     // Nettoyer localStorage
     localStorage.removeItem("pendingReservation");
+
+    // Si un redirectTo interne est passé en query param, on le privilégie.
+    // Validation : doit commencer par "/" pour éviter les open-redirects.
+    if (redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")) {
+      router.push(redirectTo);
+      return;
+    }
 
     // Si des détails de réservation sont en attente, aller à la section réservation
     if (reservationDetails) {

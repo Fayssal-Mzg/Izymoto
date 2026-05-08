@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import HeaderWalletBadge from "@/components/wallet/HeaderWalletBadge";
 
 const Header = () => {
   const { user, logOut } = useAuth();
@@ -138,8 +139,9 @@ const Header = () => {
           </nav>
 
           {/* Contact et authentification desktop */}
-          <div className="hidden md:flex items-center space-x-6 text-white">
-            <div className="flex items-center space-x-2 group">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6 text-white">
+            <HeaderWalletBadge />
+            <div className="hidden lg:flex items-center space-x-2 group">
               <Phone className="h-4 w-4 group-hover:text-gold-400 transition-colors duration-300" />
               <span className="text-sm group-hover:text-gold-400 transition-colors duration-300">
                 (+33) 6 49 50 25 25

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { User, Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { User, Building2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   getTiersByAudience,
   type WalletAudience,
@@ -10,23 +12,88 @@ import {
 } from "@/lib/wallet/tiers";
 import TierCard from "@/components/wallet/TierCard";
 
+const PENDING_TIER_KEY = "izymoto_pending_recharge_tier";
+
 export default function WalletTiersSection() {
   const [audience, setAudience] = useState<WalletAudience>("individual");
+  const [loadingTierId, setLoadingTierId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const tiers = getTiersByAudience(audience);
 
-  const handleSelect = (tier: WalletTier) => {
-    const target = document.getElementById("portefeuille-cta");
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    if (typeof window !== "undefined") {
-      try {
-        sessionStorage.setItem("izymoto_selected_tier", tier.id);
-      } catch {
-        // sessionStorage indisponible (navigation privée stricte) — silencieux
+  const startCheckout = async (tier: WalletTier) => {
+    if (!user) return;
+    setLoadingTierId(tier.id);
+    setError(null);
+    try {
+      const res = await fetch("/api/wallet/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tierId: tier.id,
+          userId: user.uid,
+          userEmail: user.email,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Création de la session impossible");
       }
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("[wallet] checkout error:", err);
+      setError(
+        err instanceof Error ? err.message : "Une erreur est survenue, réessayez."
+      );
+      setLoadingTierId(null);
     }
   };
+
+  const handleSelect = async (tier: WalletTier) => {
+    setError(null);
+    if (authLoading) return;
+
+    if (!user) {
+      try {
+        sessionStorage.setItem(PENDING_TIER_KEY, tier.id);
+      } catch {
+        /* navigation privée stricte */
+      }
+      router.push(
+        `/connexion?redirectTo=${encodeURIComponent("/portefeuille#paliers")}`
+      );
+      return;
+    }
+
+    await startCheckout(tier);
+  };
+
+  // Au retour d'un login (user vient d'être set), si on a un tier en attente
+  // dans sessionStorage, on relance automatiquement le checkout. Le user a
+  // l'impression d'une bascule fluide.
+  useEffect(() => {
+    if (!user || authLoading) return;
+    let pendingTierId: string | null = null;
+    try {
+      pendingTierId = sessionStorage.getItem(PENDING_TIER_KEY);
+    } catch {
+      return;
+    }
+    if (!pendingTierId) return;
+    const tier = [...getTiersByAudience("individual"), ...getTiersByAudience("business")].find(
+      (t) => t.id === pendingTierId
+    );
+    if (!tier) return;
+    try {
+      sessionStorage.removeItem(PENDING_TIER_KEY);
+    } catch {
+      /* noop */
+    }
+    setAudience(tier.audience);
+    void startCheckout(tier);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
 
   return (
     <section id="paliers" className="py-16 md:py-24 bg-white">
@@ -75,6 +142,13 @@ export default function WalletTiersSection() {
           </div>
         </div>
 
+        {error && (
+          <div className="max-w-2xl mx-auto mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-red-800">{error}</div>
+          </div>
+        )}
+
         <div
           className={cn(
             "grid gap-6 md:gap-8 max-w-7xl mx-auto",
@@ -84,14 +158,19 @@ export default function WalletTiersSection() {
           )}
         >
           {tiers.map((tier) => (
-            <TierCard key={tier.id} tier={tier} onSelect={handleSelect} />
+            <TierCard
+              key={tier.id}
+              tier={tier}
+              onSelect={handleSelect}
+              loading={loadingTierId === tier.id}
+            />
           ))}
         </div>
 
         <p className="text-center text-xs text-gray-500 mt-10 max-w-2xl mx-auto">
           Crédit valable 24 mois à compter de la recharge. Le bonus est offert
           sous forme de crédit, utilisable comme votre solde principal mais non
-          remboursable. Aucun frais caché, aucune commission.
+          remboursable. Paiement 100% sécurisé via Stripe. Aucun frais caché.
         </p>
       </div>
     </section>
