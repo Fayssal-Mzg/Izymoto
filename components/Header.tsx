@@ -109,6 +109,15 @@ const Header = () => {
               </li>
               <li>
                 <Link
+                  href="/portefeuille"
+                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
+                  onClick={handleNavigation}
+                >
+                  PORTEFEUILLE
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/aeroports"
                   className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
                   onClick={handleNavigation}
@@ -207,6 +216,13 @@ const Header = () => {
               onClick={handleNavigation}
             >
               Nos tarifs
+            </Link>
+            <Link
+              href="/portefeuille"
+              className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
+              onClick={handleNavigation}
+            >
+              Portefeuille
             </Link>
             <Link
               href="/aeroports"

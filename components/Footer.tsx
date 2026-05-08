@@ -46,6 +46,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/portefeuille"
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  Portefeuille
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="#services"
                   scroll={false}
                   className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
