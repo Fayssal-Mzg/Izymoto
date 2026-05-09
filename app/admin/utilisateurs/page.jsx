@@ -126,184 +126,146 @@ export default function UsersPage() {
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
           </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            Aucun utilisateur trouvé.
+          </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Utilisateur
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dernière Connexion
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Statut
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="5"
-                      className="px-6 py-4 text-center text-gray-500"
-                    >
-                      Aucun utilisateur trouvé
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr key={user.uid} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 relative">
-                            {/* Toujours afficher le cercle coloré avec les initiales, jamais l'image */}
-                            <div
-                              className="h-10 w-10 rounded-full flex items-center justify-center text-white font-medium"
-                              style={{
-                                backgroundColor: `#${user.uid
-                                  .substring(0, 6)
-                                  .replace(/[^0-9a-f]/gi, "6")}`,
-                              }}
-                            >
-                              {user.displayName ? (
-                                // Extraction des initiales
-                                (() => {
-                                  const nameParts = user.displayName.split(" ");
-                                  if (nameParts.length > 1) {
-                                    return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
-                                  } else if (nameParts[0]) {
-                                    return nameParts[0][0].toUpperCase();
-                                  } else {
-                                    return "?";
-                                  }
-                                })()
-                              ) : (
-                                <User size={20} />
-                              )}
-                            </div>
+          <ul className="space-y-3">
+            {filteredUsers.map((user) => {
+              const initials = user.displayName
+                ? (() => {
+                    const parts = user.displayName.split(" ");
+                    if (parts.length > 1)
+                      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+                    if (parts[0]) return parts[0][0].toUpperCase();
+                    return "?";
+                  })()
+                : null;
+              const lastLoginDate = user.lastLogin
+                ? new Date(user.lastLogin.seconds * 1000)
+                : user.lastSignInTime
+                ? new Date(user.lastSignInTime)
+                : null;
+              const avatarBg = `#${user.uid
+                .substring(0, 6)
+                .replace(/[^0-9a-f]/gi, "6")}`;
+              return (
+                <li
+                  key={user.uid}
+                  className="bg-white border border-gray-200 rounded-xl p-4 lg:p-5 hover:border-gray-400 hover:shadow-sm transition-all"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    {/* Bloc identité */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0 relative">
+                        <div
+                          className="h-11 w-11 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                          style={{ backgroundColor: avatarBg }}
+                        >
+                          {initials || <User size={20} />}
+                        </div>
+                        {user.isAdmin && (
+                          <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center">
+                            <Shield size={12} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
+                          {user.displayName || "Utilisateur sans nom"}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm text-gray-500 truncate">
+                          <Mail size={14} className="flex-shrink-0" />
+                          <span className="truncate">{user.email}</span>
+                        </div>
+                        <div className="text-xs text-gray-400 font-mono truncate mt-0.5">
+                          {user.uid.substring(0, 12)}…
+                        </div>
+                      </div>
+                    </div>
 
-                            {user.isAdmin && (
-                              <div className="absolute -top-1 -right-1 bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center">
-                                <Shield size={12} className="text-white" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {user.displayName || "Utilisateur sans nom"}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {user.uid.substring(0, 8)}...
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <Mail size={16} className="mr-2 text-gray-400" />
-                          <span className="text-sm text-gray-900">
-                            {user.email}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.lastLogin ? (
-                          <div>
+                    {/* Bloc statut + dernière connexion */}
+                    <div className="flex flex-row md:flex-col md:items-end items-baseline justify-between gap-2 md:gap-1 md:min-w-[160px]">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          user.isAdmin
+                            ? "bg-blue-50 text-blue-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {user.isAdmin ? (
+                          <>
+                            <Shield size={12} />
+                            Admin
+                          </>
+                        ) : (
+                          "Utilisateur"
+                        )}
+                      </span>
+                      <div className="text-xs text-gray-500 text-right">
+                        {lastLoginDate ? (
+                          <>
                             <div>
-                              {new Date(
-                                user.lastLogin.seconds * 1000
-                              ).toLocaleDateString("fr-FR")}
+                              {lastLoginDate.toLocaleDateString("fr-FR", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              })}
                             </div>
-                            <div className="text-xs text-gray-400">
-                              {new Date(
-                                user.lastLogin.seconds * 1000
-                              ).toLocaleTimeString("fr-FR", {
+                            <div className="text-gray-400">
+                              {lastLoginDate.toLocaleTimeString("fr-FR", {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
                             </div>
-                          </div>
-                        ) : user.lastSignInTime ? (
-                          <div>
-                            <div>
-                              {new Date(user.lastSignInTime).toLocaleDateString(
-                                "fr-FR"
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              {new Date(user.lastSignInTime).toLocaleTimeString(
-                                "fr-FR",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </div>
-                          </div>
+                          </>
                         ) : (
-                          "Jamais connecté"
+                          <span className="text-gray-400 italic">
+                            Jamais connecté
+                          </span>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.isAdmin
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {user.isAdmin ? "Administrateur" : "Utilisateur"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() =>
-                              handleAdminToggle(user.uid, user.isAdmin)
-                            }
-                            disabled={isProcessing}
-                            className={`p-2 rounded-full ${
-                              user.isAdmin
-                                ? "bg-yellow-100 hover:bg-yellow-200"
-                                : "bg-green-100 hover:bg-green-200"
-                            } transition-colors`}
-                            title={
-                              user.isAdmin
-                                ? "Retirer les droits d'administrateur"
-                                : "Attribuer les droits d'administrateur"
-                            }
-                          >
-                            {user.isAdmin ? (
-                              <ShieldOff size={18} />
-                            ) : (
-                              <Shield size={18} />
-                            )}
-                          </button>
+                      </div>
+                    </div>
 
-                          <button
-                            onClick={() => handleDeleteUser(user.uid)}
-                            disabled={isProcessing}
-                            className="p-2 bg-red-100 hover:bg-red-200 rounded-full transition-colors"
-                            title="Supprimer cet utilisateur"
-                          >
-                            <Trash2 size={18} className="text-red-600" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                    {/* Bloc actions */}
+                    <div className="flex gap-2 md:flex-shrink-0">
+                      <button
+                        onClick={() =>
+                          handleAdminToggle(user.uid, user.isAdmin)
+                        }
+                        disabled={isProcessing}
+                        className={`p-2.5 rounded-md transition-colors ${
+                          user.isAdmin
+                            ? "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                            : "bg-green-50 text-green-700 hover:bg-green-100"
+                        }`}
+                        title={
+                          user.isAdmin
+                            ? "Retirer les droits admin"
+                            : "Attribuer les droits admin"
+                        }
+                      >
+                        {user.isAdmin ? (
+                          <ShieldOff size={16} />
+                        ) : (
+                          <Shield size={16} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.uid)}
+                        disabled={isProcessing}
+                        className="p-2.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-md transition-colors"
+                        title="Supprimer cet utilisateur"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
     </AdminLayout>

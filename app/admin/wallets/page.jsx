@@ -127,77 +127,61 @@ export default function AdminWalletsPage() {
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Utilisateur
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Solde
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total rechargé
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Mise à jour
-                  </th>
-                  <th className="px-6 py-3" />
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-6 py-8 text-center text-gray-500"
-                    >
-                      Aucun portefeuille trouvé.
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((w) => (
-                    <tr key={w.uid} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {w.displayName || "Sans nom"}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          UID : {w.uid.substring(0, 10)}…
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {w.email || "—"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right tabular-nums">
-                        {formatEuro(w.balanceCents / 100)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right tabular-nums">
-                        {formatEuro(w.cumulativeRechargedCents / 100)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(w.updatedAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <Link
-                          href={`/admin/wallets/${w.uid}`}
-                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          Détail
-                          <ChevronRight size={16} />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+            Aucun portefeuille trouvé.
           </div>
+        ) : (
+          <ul className="space-y-3">
+            {filtered.map((w) => (
+              <li key={w.uid}>
+                <Link
+                  href={`/admin/wallets/${w.uid}`}
+                  className="block bg-white border border-gray-200 rounded-xl p-4 lg:p-5 hover:border-amber-400 hover:shadow-sm transition-all"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+                    {/* Bloc utilisateur */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {w.displayName || "Sans nom"}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate">
+                        {w.email || "—"}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-0.5 font-mono truncate">
+                        {w.uid}
+                      </div>
+                    </div>
+
+                    {/* Bloc montants + date — responsive */}
+                    <div className="flex flex-row md:flex-col md:items-end items-baseline justify-between gap-3 md:gap-1 md:min-w-[180px]">
+                      <div>
+                        <div className="text-xs uppercase tracking-wider text-gray-400">
+                          Solde
+                        </div>
+                        <div className="text-lg font-bold tabular-nums text-gray-900">
+                          {formatEuro(w.balanceCents / 100)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-500">
+                          Cumul :{" "}
+                          <span className="font-semibold tabular-nums">
+                            {formatEuro(w.cumulativeRechargedCents / 100)}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          MàJ {formatDate(w.updatedAt)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <ChevronRight className="hidden md:block h-5 w-5 text-gray-300 flex-shrink-0" />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </AdminLayout>
