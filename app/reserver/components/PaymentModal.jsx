@@ -1,7 +1,13 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useWallet } from "@/lib/hooks/useWallet";
+import { formatEuro } from "@/lib/wallet/tiers";
 import { handleSuccessfulPayment } from "@/lib/services/paymentService";
+import {
+  sendClientConfirmationEmail,
+  sendAdminNotificationEmail,
+} from "@/lib/emails/confirmationEmail";
 import { getStripe } from "@/lib/stripe";
 import {
   Elements,
@@ -10,19 +16,23 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { doc, setDoc, getDoc, getFirestore } from "firebase/firestore";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { 
-  LockKeyhole, 
-  ChevronRight, 
-  Phone, 
-  User, 
-  X, 
-  CreditCard, 
+import {
+  LockKeyhole,
+  ChevronRight,
+  Phone,
+  User,
+  X,
+  CreditCard,
   Check,
   ArrowRight,
-  LogIn
+  LogIn,
+  Wallet,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 
 // Composant de connexion redesigné
@@ -343,6 +353,331 @@ function CheckoutForm({
   );
 }
 
+// Écran de choix entre paiement portefeuille ou CB.
+// Affiché uniquement si l'user a un solde wallet > 0. Si solde >= prix, le
+// bouton wallet est actif. Sinon, il est désactivé avec un lien "Recharger".
+function PaymentMethodChoice({
+  prixFinal,
+  walletBalanceEur,
+  onChooseWallet,
+  onChooseCard,
+  onCancel,
+}) {
+  const [animateIn, setAnimateIn] = useState(false);
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
+
+  const balanceSuffisant = walletBalanceEur >= prixFinal;
+  const manque = Math.max(0, prixFinal - walletBalanceEur);
+
+  return (
+    <div
+      className={`p-6 space-y-4 transition-all duration-300 ${
+        animateIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
+    >
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-1">
+          Comment souhaitez-vous régler ?
+        </h3>
+        <p className="text-gray-600 text-sm">
+          Montant : <span className="font-semibold">{Math.round(prixFinal)}€</span>
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onChooseWallet}
+        disabled={!balanceSuffisant}
+        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+          balanceSuffisant
+            ? "border-amber-400 bg-amber-50 hover:bg-amber-100 cursor-pointer"
+            : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-70"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+              balanceSuffisant ? "bg-black" : "bg-gray-300"
+            }`}
+          >
+            <Wallet
+              className={`h-5 w-5 ${
+                balanceSuffisant ? "text-amber-400" : "text-white"
+              }`}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-gray-900">
+                Mon portefeuille
+              </span>
+              {balanceSuffisant && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                  <Sparkles className="h-3 w-3" />
+                  Aucun frais CB
+                </span>
+              )}
+            </div>
+            <div className="text-sm text-gray-600 mt-0.5">
+              Solde : {formatEuro(walletBalanceEur)}
+            </div>
+            {!balanceSuffisant && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-700">
+                <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>
+                  Solde insuffisant ({formatEuro(manque)} manquants).{" "}
+                  <Link
+                    href="/portefeuille#paliers"
+                    target="_blank"
+                    className="font-semibold underline"
+                  >
+                    Recharger
+                  </Link>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={onChooseCard}
+        className="w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-gray-400 transition-all"
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <CreditCard className="h-5 w-5 text-gray-700" />
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-gray-900">
+              Carte bancaire
+            </div>
+            <div className="text-sm text-gray-600 mt-0.5">
+              Visa, Mastercard, Amex
+            </div>
+          </div>
+          <ArrowRight className="h-5 w-5 text-gray-400 self-center" />
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={onCancel}
+        className="w-full py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+      >
+        Retour
+      </button>
+    </div>
+  );
+}
+
+// Formulaire de confirmation pour le paiement par portefeuille.
+// Pas de Stripe ici : on appelle /api/wallet/debit-for-booking qui débite
+// atomiquement le wallet et crée le booking dans la même transaction.
+function WalletPaymentForm({
+  prixFinal,
+  bookingData,
+  phoneNumber,
+  userName,
+  walletBalanceEur,
+  user,
+  reservationDate,
+  onSuccess,
+  onCancel,
+  onBack,
+}) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [animateIn, setAnimateIn] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
+
+  const balanceAfter = walletBalanceEur - prixFinal;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    const clientToken =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `wallet-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    try {
+      const date = new Date(reservationDate);
+      const formattedDate = `${date.toLocaleDateString()} à ${date.toLocaleTimeString()}`;
+
+      const fullBookingData = {
+        depart: bookingData.depart,
+        arrivee: bookingData.arrivee,
+        distance: bookingData.distance,
+        duree: bookingData.duree,
+        prix: prixFinal,
+        amountAuthorized: prixFinal,
+        amountCaptured: prixFinal,
+        name: userName || user.displayName || "",
+        phone: phoneNumber,
+        notes: bookingData.notes || "",
+        prioriteReservation: bookingData.prioriteReservation || false,
+        reservationDate: date,
+        dateFormatted: formattedDate,
+        email: user.email,
+      };
+
+      const response = await fetch("/api/wallet/debit-for-booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          amountCents: Math.round(prixFinal * 100),
+          bookingData: fullBookingData,
+          clientToken,
+          description: `Course du ${formattedDate} (${bookingData.depart} → ${bookingData.arrivee})`,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur lors du paiement par portefeuille");
+      }
+
+      // Met à jour les infos user (nom + téléphone) en parallèle, comme le
+      // fait le flux Stripe via paymentService.handleSuccessfulPayment.
+      try {
+        const db = getFirestore();
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            displayName: userName || user.displayName,
+            phoneNumber: phoneNumber,
+          },
+          { merge: true }
+        );
+      } catch (e) {
+        console.warn("Impossible de mettre à jour le profil utilisateur :", e);
+      }
+
+      const emailData = {
+        ...fullBookingData,
+        bookingId: data.bookingId,
+        reservationId: data.reservationId,
+        clientName: userName || user.displayName || user.email,
+        paymentMethod: "wallet",
+        paymentStatus: "paid_wallet",
+        isPaid: true,
+        status: "confirmed",
+      };
+
+      try {
+        await sendClientConfirmationEmail(emailData);
+      } catch (e) {
+        console.warn("Email client KO :", e);
+      }
+      try {
+        await sendAdminNotificationEmail(emailData);
+      } catch (e) {
+        console.warn("Email admin KO :", e);
+      }
+
+      toast.success("Réservation confirmée — paiement par portefeuille !");
+
+      onSuccess({
+        id: data.bookingId,
+        reservationId: data.reservationId,
+        ...fullBookingData,
+        paymentMethod: "wallet",
+      });
+      router.push("/paiement-reussi");
+    } catch (err) {
+      console.error("Erreur paiement wallet:", err);
+      setError(err.message || "Une erreur est survenue.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={`p-6 space-y-5 transition-all duration-300 ${
+        animateIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
+    >
+      <div className="flex items-center p-3 bg-green-50 border border-green-100 rounded-lg">
+        <Check className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+        <span className="text-green-700 text-sm">
+          Numéro enregistré : {phoneNumber}
+        </span>
+      </div>
+
+      <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-5">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-amber-800 font-semibold mb-3">
+          <Wallet className="h-4 w-4" />
+          Paiement par portefeuille
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-700">Solde actuel</span>
+            <span className="font-semibold tabular-nums">
+              {formatEuro(walletBalanceEur)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700">Montant de la course</span>
+            <span className="font-semibold tabular-nums text-red-700">
+              −{formatEuro(prixFinal)}
+            </span>
+          </div>
+          <div className="flex justify-between border-t border-amber-200 pt-2 mt-2">
+            <span className="font-bold text-gray-900">Solde restant</span>
+            <span className="font-bold text-lg tabular-nums">
+              {formatEuro(balanceAfter)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1"
+          disabled={isLoading}
+        >
+          Retour
+        </button>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="py-3 px-4 bg-amber-400 text-black rounded-lg font-bold hover:bg-amber-300 transition-colors flex-1 flex items-center justify-center gap-2 disabled:opacity-60"
+        >
+          {isLoading ? (
+            <div className="animate-spin h-5 w-5 border-2 border-black border-t-transparent rounded-full" />
+          ) : (
+            <Wallet className="h-5 w-5" />
+          )}
+          <span>
+            {isLoading ? "Traitement…" : `Payer ${Math.round(prixFinal)}€`}
+          </span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // Modal complet redesigné
 export default function PaymentModal({
   prixFinal,
@@ -357,8 +692,11 @@ export default function PaymentModal({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [name, setName] = useState("");
   const [animateIn, setAnimateIn] = useState(false);
+  // null tant que l'user n'a pas choisi (ou auto-décidé). "wallet" ou "card".
+  const [paymentMethod, setPaymentMethod] = useState(null);
 
   const { user } = useAuth();
+  const { balanceEur, loading: walletLoading } = useWallet();
   const router = useRouter();
 
   useEffect(() => {
@@ -404,11 +742,28 @@ export default function PaymentModal({
     checkExistingPhoneNumber();
   }, [user, bookingData]);
 
+  // Auto-sélectionne CB si pas de solde wallet ou solde insuffisant.
+  // Si solde >= prix, on laisse l'user choisir (paymentMethod reste null).
   useEffect(() => {
-    if (user && phoneVerified) {
+    if (!user || !phoneVerified) return;
+    if (walletLoading) return;
+    if (paymentMethod !== null) return;
+    if (balanceEur === null || balanceEur < prixFinal) {
+      setPaymentMethod("card");
+    }
+  }, [user, phoneVerified, walletLoading, balanceEur, prixFinal, paymentMethod]);
+
+  // Crée le PaymentIntent Stripe uniquement quand l'user choisit CB.
+  useEffect(() => {
+    if (
+      user &&
+      phoneVerified &&
+      paymentMethod === "card" &&
+      !clientSecret
+    ) {
       createPaymentIntent();
     }
-  }, [phoneVerified, prixFinal, user]);
+  }, [phoneVerified, prixFinal, user, paymentMethod, clientSecret]);
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
@@ -480,6 +835,8 @@ export default function PaymentModal({
   const getModalTitle = () => {
     if (!user) return "Connexion requise";
     if (!phoneVerified) return "Information de contact";
+    if (paymentMethod === null) return "Mode de paiement";
+    if (paymentMethod === "wallet") return "Paiement portefeuille";
     return "Paiement sécurisé";
   };
 
@@ -533,6 +890,34 @@ export default function PaymentModal({
               onVerified={handlePhoneVerified}
               onCancel={onCancel}
               initialPhone={phoneNumber}
+            />
+          ) : paymentMethod === null ? (
+            walletLoading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin h-8 w-8 border-3 border-black border-t-transparent rounded-full mb-4"></div>
+                <p className="text-gray-600">Vérification du portefeuille…</p>
+              </div>
+            ) : (
+              <PaymentMethodChoice
+                prixFinal={prixFinal}
+                walletBalanceEur={balanceEur ?? 0}
+                onChooseWallet={() => setPaymentMethod("wallet")}
+                onChooseCard={() => setPaymentMethod("card")}
+                onCancel={onCancel}
+              />
+            )
+          ) : paymentMethod === "wallet" ? (
+            <WalletPaymentForm
+              prixFinal={prixFinal}
+              bookingData={bookingData}
+              phoneNumber={phoneNumber}
+              userName={name}
+              walletBalanceEur={balanceEur ?? 0}
+              user={user}
+              reservationDate={reservationDate}
+              onSuccess={onSuccess}
+              onCancel={onCancel}
+              onBack={() => setPaymentMethod(null)}
             />
           ) : clientSecret ? (
             <Elements
