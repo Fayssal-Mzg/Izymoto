@@ -149,6 +149,7 @@ RESEND_API_KEY=
 - **`PerformanceMonitor`** est rendu uniquement en `process.env.NODE_ENV === "development"` sur la landing — c'est un outil de debug, pas une fonctionnalité utilisateur.
 - **Vérification Google Search Console** : fichier `public/google675d24b21567992b.html` + `verification.google` dans metadata — ne pas casser.
 - **TypeScript strict mais base mixte** : `npx tsc --noEmit` passe ; `next lint` peut signaler des warnings sur le legacy `.jsx`.
+- **Paiement Stripe = hold/capture, pas débit immédiat** (depuis commit C1 `de38937`, 2026-05-06). `create-payment-intent` utilise `capture_method: "manual"` + `request_incremental_authorization`. Le débit réel passe par `/api/capture-payment` (admin). Endpoints associés : `/api/cancel-payment`, `/api/increment-authorization`, `/api/webhooks/stripe`. Statut Firestore : `authorized` → `captured` (plus de `paid` immédiat).
 
 ## 8. Commandes essentielles
 

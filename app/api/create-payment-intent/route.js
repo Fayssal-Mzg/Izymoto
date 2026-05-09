@@ -26,24 +26,25 @@ export async function POST(request) {
 
     // Modèle "Uber" : on autorise les fonds sans débiter (`capture_method: manual`),
     // l'admin déclenche la capture après la course via /api/capture-payment.
-    // `request_incremental_authorization: if_available` permet d'ajouter des frais
-    // (attente, péage, pourboire) avant capture si le réseau le supporte (Visa/MC
-    // toutes catégories). Stripe applique le fallback silencieusement sinon.
+    // TODO: réactiver `payment_method_options.card.request_incremental_authorization: "if_available"`
+    // une fois l'équipe spécialisée Stripe (escalade John, 2026-05-08) confirme l'activation IC.
+    // En attendant, on peut capturer pour MOINS que l'autorisé, mais pas augmenter le hold.
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: "eur",
       capture_method: "manual",
-      payment_method_options: {
-        card: {
-          request_incremental_authorization: "if_available",
-        },
-      },
-      metadata: {
-        ...(metadata || {}),
-        // Stripe stocke metadata en strings — on aplatit les valeurs non-string.
-        ...(metadata?.depart && { depart: String(metadata.depart) }),
-        ...(metadata?.arrivee && { arrivee: String(metadata.arrivee) }),
-      },
+      // Stripe metadata: valeurs string uniquement, max 500 chars. On stringify
+      // les objets/arrays (ex. detailsMajorations), on coerce le reste en string.
+      metadata: Object.fromEntries(
+        Object.entries(metadata || {})
+          .map(([k, v]) => {
+            if (v === null || v === undefined) return null;
+            const str = typeof v === "object" ? JSON.stringify(v) : String(v);
+            if (!str) return null;
+            return [k, str.length > 500 ? str.slice(0, 500) : str];
+          })
+          .filter(Boolean)
+      ),
       automatic_payment_methods: {
         enabled: true,
       },

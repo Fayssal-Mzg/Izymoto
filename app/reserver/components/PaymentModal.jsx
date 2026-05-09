@@ -264,13 +264,21 @@ function CheckoutForm({
         ) {
           router.push("/paiement-annule");
         }
-      } else if (paymentIntent && paymentIntent.status === "succeeded") {
-        console.log("💳 Paiement confirmé avec ID:", paymentIntent.id);
-        
-        // Traiter le succès du paiement
-        await onSuccess(paymentIntent.id);
+      } else if (
+        paymentIntent &&
+        (paymentIntent.status === "requires_capture" ||
+          paymentIntent.status === "succeeded")
+      ) {
+        // requires_capture = flux hold/capture (auth gelée, capture manuelle plus tard)
+        // succeeded = flux auto-capture (compat si on bascule un jour)
+        console.log(
+          "💳 Paiement autorisé avec ID:",
+          paymentIntent.id,
+          "status:",
+          paymentIntent.status
+        );
 
-        // Rediriger vers la page de succès après le traitement
+        await onSuccess(paymentIntent.id);
         router.push("/paiement-reussi");
       }
     } catch (err) {
