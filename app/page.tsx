@@ -829,6 +829,7 @@ function HomeReservationSection() {
           prioriteReservation={prioriteReservation}
           setPrioriteReservation={setPrioriteReservation}
           onCancel={() => setCurrentStep("form")}
+          onClose={resetForm}
           onProceed={proceedToReservation}
           onRequestDevis={handleRequestDevis}
           reservationDate={reservationDate}
@@ -849,6 +850,7 @@ function HomeReservationSection() {
               console.log("Cancel clicked in GuestInfoModal");
               setCurrentStep("devis");
             },
+            onClose: resetForm,
           } as any)}
         />
       )}
@@ -874,6 +876,7 @@ function HomeReservationSection() {
               console.log("Cancel clicked in ReservationModal");
               setCurrentStep("devis");
             },
+            onClose: resetForm,
           } as any)}
         />
       )}
@@ -891,6 +894,7 @@ function HomeReservationSection() {
             console.log("Cancel clicked in PaymentModal");
             setCurrentStep("reservation");
           }}
+          onClose={resetForm}
         />
       )}
 

@@ -18,27 +18,10 @@ export default function ConnexionPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get("redirectTo") ?? null;
 
-  // Vérifier localStorage au chargement
-  useEffect(() => {
-    const pendingReservation = localStorage.getItem("pendingReservation");
-    if (pendingReservation && !reservationDetails) {
-      try {
-        const details = JSON.parse(pendingReservation);
-        setReservationDetails(details);
-      } catch (error) {
-        console.error(
-          "Erreur lors de la lecture des détails de réservation:",
-          error
-        );
-      }
-    }
-  }, []);
+  // AuthContext lit déjà pendingReservation au mount → pas de doublon ici.
 
   // Fonction pour rediriger après connexion
   const redirectAfterLogin = () => {
-    // Nettoyer localStorage
-    localStorage.removeItem("pendingReservation");
-
     // Si un redirectTo interne est passé en query param, on le privilégie.
     // Validation : doit commencer par "/" pour éviter les open-redirects.
     if (redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")) {
@@ -46,12 +29,12 @@ export default function ConnexionPage() {
       return;
     }
 
-    // Si des détails de réservation sont en attente, aller à la section réservation
+    // Si des détails de réservation sont en attente, on revient sur le tunnel
+    // SANS purger le draft (preserveDraft: true) : useReservation hydratera
+    // l'état complet depuis localStorage au mount de la landing.
     if (reservationDetails) {
-      // Naviguer vers la page d'accueil puis scroller vers la section réservation
-      navigateToReservation();
+      navigateToReservation({ preserveDraft: true });
     } else {
-      // Sinon, rediriger vers la page d'accueil
       router.push("/");
     }
   };

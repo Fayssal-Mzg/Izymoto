@@ -44,6 +44,7 @@ export default function UnifiedUserModal({
   submitButtonText,
   onSubmit,
   onCancel,
+  onClose,
   reservationDate,
   setReservationDate,
   notes,
@@ -121,7 +122,7 @@ export default function UnifiedUserModal({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
-        onCancel();
+        (onClose ?? onCancel)?.();
       }
 
       if (e.key === "Tab") {
@@ -438,7 +439,7 @@ export default function UnifiedUserModal({
           </p>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={onClose ?? onCancel}
             className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
             aria-label="Fermer le modal"
           >

@@ -964,6 +964,7 @@ export default function PaymentModal({
   bookingData,
   onSuccess,
   onCancel,
+  onClose,
   reservationDate,
 }) {
   const [clientSecret, setClientSecret] = useState("");
@@ -1171,8 +1172,8 @@ export default function PaymentModal({
             </p>
           )}
           
-          <button 
-            onClick={onCancel}
+          <button
+            onClick={onClose ?? onCancel}
             className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
             aria-label="Fermer"
           >

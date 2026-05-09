@@ -40,6 +40,7 @@ export default function DevisModal({
   reservationDate,
   setReservationDate,
   onCancel,
+  onClose,
   onProceed,
   onRequestDevis,
 }) {
@@ -182,8 +183,9 @@ export default function DevisModal({
             Détails de votre trajet
           </h3>
           <button
-            onClick={onCancel}
+            onClick={onClose ?? onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+            aria-label="Fermer"
           >
             <X size={20} />
           </button>
@@ -273,31 +275,37 @@ export default function DevisModal({
             </div>
           )}
 
-          {/* Section Option Priorité */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 transition-colors hover:bg-gray-100">
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                id="priority"
-                checked={prioriteReservation}
-                onChange={() => setPrioriteReservation(!prioriteReservation)}
-                className="mt-1 mr-3 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-              />
-              <div>
-                <label
-                  htmlFor="priority"
-                  className="font-medium block mb-1 text-gray-900"
-                >
-                  Option priorité (+{SUPPLEMENT_PRIORITE}€)
-                </label>
-                <p className="text-gray-600 text-sm">
-                  Service prioritaire : votre course sera traitée en priorité,
-                  garantissant l'arrivée d'un chauffeur dans les meilleurs
-                  délais.
-                </p>
+          {/* Section Option Priorité — masquée si la course est dans l'heure
+              (le DateTimeInput affiche déjà le bloc jaune OBLIGATOIRE) */}
+          {!(
+            reservationDate &&
+            (new Date(reservationDate) - new Date()) / (1000 * 60 * 60) < 1
+          ) && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 transition-colors hover:bg-gray-100">
+              <div className="flex items-start">
+                <input
+                  type="checkbox"
+                  id="priority-option"
+                  checked={prioriteReservation}
+                  onChange={() => setPrioriteReservation(!prioriteReservation)}
+                  className="mt-1 mr-3 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                />
+                <div>
+                  <label
+                    htmlFor="priority-option"
+                    className="font-medium block mb-1 text-gray-900"
+                  >
+                    Option priorité (+{SUPPLEMENT_PRIORITE}€)
+                  </label>
+                  <p className="text-gray-600 text-sm">
+                    Service prioritaire : votre course sera traitée en priorité,
+                    garantissant l'arrivée d'un chauffeur dans les meilleurs
+                    délais.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Récapitulatif des prix */}
           <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">

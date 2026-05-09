@@ -237,6 +237,7 @@ export default function ReservationProcess({
             prioriteReservation={prioriteReservation}
             setPrioriteReservation={setPrioriteReservation}
             onCancel={() => setCurrentStep("form")}
+            onClose={resetForm}
             onProceed={proceedToReservation}
             onRequestDevis={handleRequestDevis}
             reservationDate={reservationDate}
@@ -254,6 +255,7 @@ export default function ReservationProcess({
                 handleRequestDevis(userData);
               },
               onCancel: () => setCurrentStep("devis"),
+              onClose: resetForm,
             } as any)}
           />
         )}
@@ -276,6 +278,7 @@ export default function ReservationProcess({
                 proceedToPayment();
               },
               onCancel: () => setCurrentStep("devis"),
+              onClose: resetForm,
             } as any)}
           />
         )}
@@ -287,6 +290,7 @@ export default function ReservationProcess({
             reservationDate={reservationDate}
             onSuccess={handlePaymentSuccess}
             onCancel={() => setCurrentStep("reservation")}
+            onClose={resetForm}
           />
         )}
 
