@@ -6,6 +6,7 @@ import {
   MapPin,
   Wallet,
   CreditCard,
+  Sparkles,
 } from "lucide-react";
 
 export default function ReservationDetailsModal({
@@ -139,7 +140,7 @@ export default function ReservationDetailsModal({
               Paiement
             </h4>
             <div className="bg-gray-50 p-4 rounded space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {booking.paymentMethod === "wallet" ? (
                   <>
                     <Wallet className="h-5 w-5 text-amber-600" />
@@ -148,6 +149,15 @@ export default function ReservationDetailsModal({
                     </span>
                     <span className="text-sm text-gray-600">
                       — {booking.prix}€ débités au moment de la réservation
+                    </span>
+                  </>
+                ) : booking.paymentMethod === "hybrid" ? (
+                  <>
+                    <Sparkles className="h-5 w-5 text-amber-600" />
+                    <span className="font-semibold text-amber-800">Hybride</span>
+                    <span className="text-sm text-gray-600">
+                      — wallet +{" "}
+                      {booking.paymentStatus === "captured" ? "CB capturée" : "CB en hold"}
                     </span>
                   </>
                 ) : (
@@ -164,11 +174,35 @@ export default function ReservationDetailsModal({
                   </>
                 )}
               </div>
-              {booking.paymentMethod !== "wallet" && booking.paymentId && (
-                <p className="text-xs text-gray-400 font-mono">
-                  ID Stripe : {booking.paymentId}
-                </p>
+
+              {booking.paymentMethod === "hybrid" && (
+                <div className="mt-3 pt-3 border-t border-gray-200 grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-white rounded p-2 border border-amber-200">
+                    <div className="text-xs uppercase tracking-wider text-amber-700 flex items-center gap-1">
+                      <Wallet className="h-3 w-3" /> Portefeuille
+                    </div>
+                    <div className="font-semibold tabular-nums mt-0.5">
+                      {((booking.walletAmountCents || 0) / 100).toFixed(2)}€
+                    </div>
+                  </div>
+                  <div className="bg-white rounded p-2 border border-gray-200">
+                    <div className="text-xs uppercase tracking-wider text-gray-600 flex items-center gap-1">
+                      <CreditCard className="h-3 w-3" /> Carte
+                    </div>
+                    <div className="font-semibold tabular-nums mt-0.5">
+                      {((booking.cardAmountCents || 0) / 100).toFixed(2)}€
+                    </div>
+                  </div>
+                </div>
               )}
+
+              {(booking.paymentMethod === "card" ||
+                booking.paymentMethod === "hybrid") &&
+                booking.paymentId && (
+                  <p className="text-xs text-gray-400 font-mono pt-1">
+                    ID Stripe : {booking.paymentId}
+                  </p>
+                )}
             </div>
           </div>
 

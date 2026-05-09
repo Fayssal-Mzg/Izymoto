@@ -19,6 +19,7 @@ import {
   Clock,
   ChevronRight,
   CreditCard,
+  Layers,
 } from "lucide-react";
 
 const STATUS_META = {
@@ -275,6 +276,7 @@ export default function AdminDashboard() {
                 {recentBookings.map((booking) => {
                   const statusMeta = getStatusMeta(booking.status);
                   const isWallet = booking.paymentMethod === "wallet";
+                  const isHybrid = booking.paymentMethod === "hybrid";
                   return (
                     <li key={booking.id}>
                       <Link
@@ -317,6 +319,11 @@ export default function AdminDashboard() {
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
                                 <Wallet className="h-3 w-3" />
                                 Wallet
+                              </span>
+                            ) : isHybrid ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+                                <Layers className="h-3 w-3" />
+                                Hybride
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs">

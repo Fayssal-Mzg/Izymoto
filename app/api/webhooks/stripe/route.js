@@ -6,6 +6,7 @@ import {
   creditWallet,
   buildRechargeDescription,
   getTierOrThrow,
+  refundWalletForBooking,
 } from "@/lib/wallet/server";
 
 // Webhook Stripe — source unique de vérité pour les transitions de statut.
@@ -17,8 +18,10 @@ import {
 // - payment_intent.amount_capturable_updated : autorisation prête (post-3DS),
 //   on passe la résa en "authorized" (= hold actif, pas encore débité).
 // - payment_intent.succeeded : capture réussie → "captured" (= argent reçu).
-// - payment_intent.canceled : hold libéré → "released".
-// - payment_intent.payment_failed : auth refusée → "failed".
+// - payment_intent.canceled : hold libéré → "released". Pour les bookings
+//   hybrid (wallet+CB), on refund la part wallet (idempotent via event.id).
+// - payment_intent.payment_failed : auth refusée → "failed". Idem refund wallet
+//   si hybrid.
 //
 // Wallet (capture immédiate, Checkout Session) :
 // - checkout.session.completed (mode=payment, metadata.intent=wallet_recharge) :
@@ -39,21 +42,54 @@ async function readRawBody(req) {
   return Buffer.concat(chunks);
 }
 
-const updateBookingByPaymentIntent = async (paymentIntentId, fields) => {
+const findBookingsByPaymentIntent = async (paymentIntentId) => {
   const q = query(
     collection(db, "bookings"),
     where("paymentId", "==", paymentIntentId)
   );
   const snap = await getDocs(q);
-  if (snap.empty) {
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+const updateBookingByPaymentIntent = async (paymentIntentId, fields) => {
+  const bookings = await findBookingsByPaymentIntent(paymentIntentId);
+  if (bookings.length === 0) {
     console.warn(`[stripe-webhook] aucune réservation trouvée pour paymentId=${paymentIntentId}`);
-    return;
+    return [];
   }
-  for (const docSnap of snap.docs) {
-    await updateDoc(doc(db, "bookings", docSnap.id), {
-      ...fields,
-      paymentUpdatedAt: Timestamp.now(),
-    });
+  await Promise.all(
+    bookings.map((b) =>
+      updateDoc(doc(db, "bookings", b.id), {
+        ...fields,
+        paymentUpdatedAt: Timestamp.now(),
+      })
+    )
+  );
+  return bookings;
+};
+
+// Refund de la part wallet pour les bookings hybrid quand le PI Stripe est
+// canceled ou failed. Idempotent via l'event.id Stripe.
+const refundHybridBookings = async (bookings, eventId) => {
+  for (const b of bookings) {
+    if (b.paymentMethod !== "hybrid") continue;
+    if (!b.userId || !b.walletAmountCents) continue;
+    try {
+      await refundWalletForBooking({
+        userId: b.userId,
+        amountCents: b.walletAmountCents,
+        bookingId: b.id,
+        refundEventId: `${b.id}:${eventId}`,
+        description: `Annulation course ${b.reservationId || b.id} — remboursement part portefeuille`,
+      });
+    } catch (err) {
+      console.error(
+        `[stripe-webhook] échec refund wallet pour booking ${b.id}:`,
+        err
+      );
+      // Ne pas throw : on a déjà mis à jour le booking, le refund peut être
+      // rejoué manuellement si besoin. Logue pour suivi.
+    }
   }
 };
 
@@ -144,22 +180,26 @@ export async function POST(request) {
         });
         break;
 
-      case "payment_intent.canceled":
+      case "payment_intent.canceled": {
         if (isWalletRecharge) break;
-        await updateBookingByPaymentIntent(obj.id, {
+        const bookings = await updateBookingByPaymentIntent(obj.id, {
           paymentStatus: "released",
           status: "cancelled",
         });
+        await refundHybridBookings(bookings, event.id);
         break;
+      }
 
-      case "payment_intent.payment_failed":
+      case "payment_intent.payment_failed": {
         if (isWalletRecharge) break;
-        await updateBookingByPaymentIntent(obj.id, {
+        const bookings = await updateBookingByPaymentIntent(obj.id, {
           paymentStatus: "failed",
           paymentFailureMessage:
             obj.last_payment_error?.message || "Paiement refusé",
         });
+        await refundHybridBookings(bookings, event.id);
         break;
+      }
 
       default:
         // évent ignoré (on ne s'abonne pas à tout)

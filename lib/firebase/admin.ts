@@ -39,7 +39,7 @@ interface Booking {
   createdAt: Date;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   paymentId?: string;
-  paymentMethod?: "card" | "wallet";
+  paymentMethod?: "card" | "wallet" | "hybrid";
   paymentStatus?:
     | "authorized"
     | "captured"
@@ -49,6 +49,7 @@ interface Booking {
   amountAuthorized?: number;
   amountCaptured?: number;
   walletAmountCents?: number;
+  cardAmountCents?: number;
   paymentFailureMessage?: string;
   paymentUpdatedAt?: Date;
   [key: string]: any;

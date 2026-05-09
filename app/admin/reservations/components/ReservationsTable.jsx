@@ -9,6 +9,7 @@ import {
   Calendar,
   User,
   Phone,
+  Sparkles,
 } from "lucide-react";
 
 const STATUS_META = {
@@ -67,6 +68,14 @@ function PaymentBadge({ method }) {
       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">
         <Wallet className="h-3 w-3" />
         Portefeuille
+      </span>
+    );
+  }
+  if (method === "hybrid") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">
+        <Sparkles className="h-3 w-3" />
+        Hybride
       </span>
     );
   }

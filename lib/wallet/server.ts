@@ -265,6 +265,126 @@ export async function debitWalletForBooking(
   });
 }
 
+export interface DebitWalletForHybridBookingParams {
+  userId: string;
+  walletAmountCents: number;
+  cardAmountCents: number;
+  paymentIntentId: string;
+  bookingData: Record<string, unknown>;
+  clientToken: string;
+  description?: string;
+}
+
+// Pendant hybride de debitWalletForBooking : débite la part wallet et crée le
+// booking après confirmation 3DS Stripe. Le PaymentIntent est déjà en hold
+// (status requires_capture), la capture admin déclenchera le débit CB final.
+//
+// En cas d'erreur de débit (solde insuffisant entre temps), le caller doit
+// cancel le PaymentIntent Stripe pour libérer le hold CB.
+export async function debitWalletForHybridBooking(
+  params: DebitWalletForHybridBookingParams
+): Promise<DebitWalletForBookingResult> {
+  const {
+    userId,
+    walletAmountCents,
+    cardAmountCents,
+    paymentIntentId,
+    bookingData,
+    clientToken,
+    description,
+  } = params;
+
+  if (!Number.isFinite(walletAmountCents) || walletAmountCents <= 0) {
+    throw new WalletError("INVALID_AMOUNT", "walletAmountCents doit être positif");
+  }
+  if (!Number.isFinite(cardAmountCents) || cardAmountCents <= 0) {
+    throw new WalletError("INVALID_AMOUNT", "cardAmountCents doit être positif");
+  }
+
+  const db = getAdminFirestore();
+  const walletRef = db.collection(WALLETS).doc(userId);
+  const txRef = db.collection(WALLET_TX).doc(clientToken);
+  const bookingRef = db.collection(BOOKINGS).doc();
+  const reservationId = `CMD-${Math.random()
+    .toString(36)
+    .substring(2, 10)
+    .toUpperCase()}`;
+  const totalCents = walletAmountCents + cardAmountCents;
+
+  return db.runTransaction(async (tx: Transaction) => {
+    const existingTxSnap = await tx.get(txRef);
+    if (existingTxSnap.exists) {
+      const existing = existingTxSnap.data() as WalletTransactionDoc;
+      return {
+        bookingId: existing.bookingId ?? "",
+        reservationId: (existing as any).reservationId ?? "",
+        balanceAfterCents: existing.balanceAfterCents,
+      };
+    }
+
+    const walletSnap = await tx.get(walletRef);
+    if (!walletSnap.exists) {
+      throw new WalletError(
+        "WALLET_NOT_FOUND",
+        "Aucun portefeuille trouvé pour cet utilisateur"
+      );
+    }
+
+    const wallet = walletSnap.data() as WalletDoc;
+    if (wallet.balanceCents < walletAmountCents) {
+      throw new WalletError(
+        "INSUFFICIENT_BALANCE",
+        `Solde insuffisant : ${wallet.balanceCents} cents, ${walletAmountCents} requis`
+      );
+    }
+
+    const now = Timestamp.now();
+    const newBalance = wallet.balanceCents - walletAmountCents;
+
+    tx.update(walletRef, {
+      balanceCents: newBalance,
+      updatedAt: now,
+    });
+
+    tx.set(bookingRef, {
+      ...bookingData,
+      userId,
+      reservationId,
+      paymentMethod: "hybrid",
+      paymentStatus: "authorized",
+      paymentId: paymentIntentId,
+      walletAmountCents,
+      cardAmountCents,
+      amountAuthorized: cardAmountCents / 100,
+      prix: totalCents / 100,
+      isPaid: false,
+      status: "confirmed",
+      createdAt: now,
+    });
+
+    const txDoc: WalletTransactionDoc & { reservationId?: string } = {
+      userId,
+      type: "debit",
+      amountCents: walletAmountCents,
+      balanceAfterCents: newBalance,
+      description:
+        description ||
+        `Course ${reservationId} (part portefeuille — hybride wallet+CB)`,
+      bookingId: bookingRef.id,
+      paymentIntentId,
+      reservationId,
+      createdAt: now,
+    };
+    tx.set(txRef, txDoc);
+
+    return {
+      bookingId: bookingRef.id,
+      reservationId,
+      balanceAfterCents: newBalance,
+    };
+  });
+}
+
 // Re-crédite le wallet après annulation d'un booking payé par wallet.
 // Idempotent via `refundEventId` (généralement bookingId+":refund").
 export interface RefundWalletForBookingParams {

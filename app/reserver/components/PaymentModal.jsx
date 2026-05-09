@@ -200,14 +200,14 @@ function PhoneVerification({ onVerified, onCancel, initialPhone }) {
           <button
             type="button"
             onClick={onCancel}
-            className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 text-center"
+            className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 min-w-0 text-center"
             disabled={isLoading}
           >
             Retour
           </button>
           <button
             type="submit"
-            className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 text-center flex items-center justify-center space-x-2 group"
+            className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 min-w-0 text-center flex items-center justify-center space-x-2 group"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -339,7 +339,7 @@ function CheckoutForm({
         <button
           type="submit"
           disabled={!stripe || !elements || isLoading}
-          className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 text-center flex items-center justify-center space-x-2"
+          className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 min-w-0 text-center flex items-center justify-center space-x-2"
         >
           {isLoading ? (
             <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
@@ -353,13 +353,15 @@ function CheckoutForm({
   );
 }
 
-// Écran de choix entre paiement portefeuille ou CB.
-// Affiché uniquement si l'user a un solde wallet > 0. Si solde >= prix, le
-// bouton wallet est actif. Sinon, il est désactivé avec un lien "Recharger".
+// Écran de choix entre paiement portefeuille / hybride / CB.
+// - Solde >= prix : option "Tout wallet" active.
+// - 0 < solde < prix : option "Hybride" active (wallet + CB pour le delta).
+// - Solde = 0 : on n'arrive pas ici (auto-skip CB côté PaymentModal).
 function PaymentMethodChoice({
   prixFinal,
   walletBalanceEur,
   onChooseWallet,
+  onChooseHybrid,
   onChooseCard,
   onCancel,
 }) {
@@ -368,8 +370,9 @@ function PaymentMethodChoice({
     setAnimateIn(true);
   }, []);
 
-  const balanceSuffisant = walletBalanceEur >= prixFinal;
-  const manque = Math.max(0, prixFinal - walletBalanceEur);
+  const balanceCovers = walletBalanceEur >= prixFinal;
+  const canHybrid = walletBalanceEur > 0 && walletBalanceEur < prixFinal;
+  const cardPart = Math.max(0, prixFinal - walletBalanceEur);
 
   return (
     <div
@@ -382,65 +385,84 @@ function PaymentMethodChoice({
           Comment souhaitez-vous régler ?
         </h3>
         <p className="text-gray-600 text-sm">
-          Montant : <span className="font-semibold">{Math.round(prixFinal)}€</span>
+          Montant :{" "}
+          <span className="font-semibold">{Math.round(prixFinal)}€</span>
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={onChooseWallet}
-        disabled={!balanceSuffisant}
-        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-          balanceSuffisant
-            ? "border-amber-400 bg-amber-50 hover:bg-amber-100 cursor-pointer"
-            : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-70"
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-              balanceSuffisant ? "bg-black" : "bg-gray-300"
-            }`}
-          >
-            <Wallet
-              className={`h-5 w-5 ${
-                balanceSuffisant ? "text-amber-400" : "text-white"
-              }`}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-gray-900">
-                Mon portefeuille
-              </span>
-              {balanceSuffisant && (
+      {balanceCovers && (
+        <button
+          type="button"
+          onClick={onChooseWallet}
+          className="w-full text-left p-4 rounded-xl border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 transition-all"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+              <Wallet className="h-5 w-5 text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-gray-900">
+                  Mon portefeuille
+                </span>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                   <Sparkles className="h-3 w-3" />
                   Aucun frais CB
                 </span>
-              )}
+              </div>
+              <div className="text-sm text-gray-600 mt-0.5">
+                Solde : {formatEuro(walletBalanceEur)}
+              </div>
             </div>
-            <div className="text-sm text-gray-600 mt-0.5">
-              Solde : {formatEuro(walletBalanceEur)}
+          </div>
+        </button>
+      )}
+
+      {canHybrid && (
+        <button
+          type="button"
+          onClick={onChooseHybrid}
+          className="w-full text-left p-4 rounded-xl border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 transition-all"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+              <Sparkles className="h-5 w-5 text-amber-400" />
             </div>
-            {!balanceSuffisant && (
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-700">
-                <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>
-                  Solde insuffisant ({formatEuro(manque)} manquants).{" "}
-                  <Link
-                    href="/portefeuille#paliers"
-                    target="_blank"
-                    className="font-semibold underline"
-                  >
-                    Recharger
-                  </Link>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-gray-900">
+                  Portefeuille + carte
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                  Recommandé
                 </span>
               </div>
-            )}
+              <div className="text-sm text-gray-600 mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="font-semibold text-amber-800 tabular-nums">
+                  {formatEuro(walletBalanceEur)}
+                </span>
+                <span className="text-gray-500">portefeuille</span>
+                <span className="text-gray-400">+</span>
+                <span className="font-semibold tabular-nums">
+                  {formatEuro(cardPart)}
+                </span>
+                <span className="text-gray-500">carte</span>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                On utilise tout votre solde puis on prélève la différence sur
+                votre CB. Pas de bonus perdu.{" "}
+                <Link
+                  href="/portefeuille#paliers"
+                  target="_blank"
+                  className="font-semibold text-black underline"
+                >
+                  Ou recharger
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
-      </button>
+        </button>
+      )}
 
       <button
         type="button"
@@ -452,11 +474,15 @@ function PaymentMethodChoice({
             <CreditCard className="h-5 w-5 text-gray-700" />
           </div>
           <div className="flex-1">
-            <div className="font-semibold text-gray-900">
-              Carte bancaire
-            </div>
+            <div className="font-semibold text-gray-900">Carte bancaire</div>
             <div className="text-sm text-gray-600 mt-0.5">
               Visa, Mastercard, Amex
+              {walletBalanceEur > 0 && (
+                <span className="text-gray-400">
+                  {" "}
+                  · ne touche pas à votre solde
+                </span>
+              )}
             </div>
           </div>
           <ArrowRight className="h-5 w-5 text-gray-400 self-center" />
@@ -654,7 +680,7 @@ function WalletPaymentForm({
         <button
           type="button"
           onClick={onBack}
-          className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1"
+          className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 min-w-0"
           disabled={isLoading}
         >
           Retour
@@ -662,7 +688,7 @@ function WalletPaymentForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="py-3 px-4 bg-amber-400 text-black rounded-lg font-bold hover:bg-amber-300 transition-colors flex-1 flex items-center justify-center gap-2 disabled:opacity-60"
+          className="py-3 px-4 bg-amber-400 text-black rounded-lg font-bold hover:bg-amber-300 transition-colors flex-1 min-w-0 flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {isLoading ? (
             <div className="animate-spin h-5 w-5 border-2 border-black border-t-transparent rounded-full" />
@@ -670,6 +696,260 @@ function WalletPaymentForm({
             <Wallet className="h-5 w-5" />
           )}
           <span>
+            {isLoading ? "Traitement…" : `Payer ${Math.round(prixFinal)}€`}
+          </span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// Formulaire hybride : récap split wallet/CB + Stripe Elements pour la part
+// CB. Au submit : confirmPayment 3DS, puis appel à finalize-hybrid-booking
+// qui débite le wallet et crée le booking dans une transaction atomique.
+function HybridPaymentForm({
+  prixFinal,
+  walletAmountEur,
+  cardAmountEur,
+  bookingData,
+  phoneNumber,
+  userName,
+  user,
+  reservationDate,
+  onSuccess,
+  onBack,
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [animateIn, setAnimateIn] = useState(false);
+
+  useEffect(() => {
+    setAnimateIn(true);
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          payment_method_data: {
+            billing_details: {
+              phone: phoneNumber,
+              name: userName,
+            },
+          },
+        },
+        redirect: "if_required",
+      });
+
+      if (stripeError) {
+        setError(stripeError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (
+        !paymentIntent ||
+        (paymentIntent.status !== "requires_capture" &&
+          paymentIntent.status !== "succeeded")
+      ) {
+        setError(
+          `État de paiement inattendu : ${paymentIntent?.status || "inconnu"}`
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      const clientToken =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `hybrid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      const date = new Date(reservationDate);
+      const formattedDate = `${date.toLocaleDateString()} à ${date.toLocaleTimeString()}`;
+
+      const fullBookingData = {
+        depart: bookingData.depart,
+        arrivee: bookingData.arrivee,
+        distance: bookingData.distance,
+        duree: bookingData.duree,
+        name: userName || user.displayName || "",
+        phone: phoneNumber,
+        notes: bookingData.notes || "",
+        prioriteReservation: bookingData.prioriteReservation || false,
+        reservationDate: date,
+        dateFormatted: formattedDate,
+        email: user.email,
+      };
+
+      const response = await fetch("/api/wallet/finalize-hybrid-booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.uid,
+          paymentIntentId: paymentIntent.id,
+          walletAmountCents: Math.round(walletAmountEur * 100),
+          cardAmountCents: Math.round(cardAmountEur * 100),
+          bookingData: fullBookingData,
+          clientToken,
+          description: `Course du ${formattedDate} (${bookingData.depart} → ${bookingData.arrivee})`,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Erreur lors de la finalisation. La part CB sera automatiquement libérée."
+        );
+      }
+
+      // MAJ profil user (best effort)
+      try {
+        const db = getFirestore();
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            displayName: userName || user.displayName,
+            phoneNumber: phoneNumber,
+          },
+          { merge: true }
+        );
+      } catch (e) {
+        console.warn("MAJ profil KO :", e);
+      }
+
+      const emailData = {
+        ...fullBookingData,
+        bookingId: data.bookingId,
+        reservationId: data.reservationId,
+        prix: prixFinal,
+        clientName: userName || user.displayName || user.email,
+        paymentMethod: "hybrid",
+        paymentStatus: "authorized",
+        paymentId: paymentIntent.id,
+        walletAmountCents: Math.round(walletAmountEur * 100),
+        cardAmountCents: Math.round(cardAmountEur * 100),
+        amountAuthorized: cardAmountEur,
+        isPaid: false,
+        status: "confirmed",
+      };
+
+      try {
+        await sendClientConfirmationEmail(emailData);
+      } catch (e) {
+        console.warn("Email client KO :", e);
+      }
+      try {
+        await sendAdminNotificationEmail(emailData);
+      } catch (e) {
+        console.warn("Email admin KO :", e);
+      }
+
+      toast.success("Réservation confirmée — paiement hybride !");
+
+      onSuccess({
+        id: data.bookingId,
+        reservationId: data.reservationId,
+        ...emailData,
+      });
+      router.push("/paiement-reussi");
+    } catch (err) {
+      console.error("Erreur paiement hybride:", err);
+      setError(err.message || "Une erreur est survenue.");
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={`p-6 space-y-5 transition-all duration-300 ${
+        animateIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
+    >
+      <div className="flex items-center p-3 bg-green-50 border border-green-100 rounded-lg">
+        <Check className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
+        <span className="text-green-700 text-sm">
+          Numéro enregistré : {phoneNumber}
+        </span>
+      </div>
+
+      <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-4">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-amber-800 font-semibold mb-3">
+          <Sparkles className="h-4 w-4" />
+          Détail du paiement
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-700 inline-flex items-center gap-1.5">
+              <Wallet className="h-3.5 w-3.5" />
+              Portefeuille
+            </span>
+            <span className="font-semibold tabular-nums">
+              {formatEuro(walletAmountEur)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-700 inline-flex items-center gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" />
+              Carte bancaire
+            </span>
+            <span className="font-semibold tabular-nums">
+              {formatEuro(cardAmountEur)}
+            </span>
+          </div>
+          <div className="flex justify-between border-t border-amber-200 pt-2 mt-2">
+            <span className="font-bold text-gray-900">Total</span>
+            <span className="font-bold text-lg tabular-nums">
+              {Math.round(prixFinal)}€
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-3 rounded-lg border border-gray-200">
+        <div className="text-xs text-gray-500 mb-2">
+          Saisissez votre carte pour le complément ({Math.round(cardAmountEur)}€) :
+        </div>
+        <PaymentElement />
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 min-w-0"
+          disabled={isLoading}
+        >
+          Retour
+        </button>
+        <button
+          type="submit"
+          disabled={!stripe || !elements || isLoading}
+          className="py-3 px-4 bg-amber-400 text-black rounded-lg font-bold hover:bg-amber-300 transition-colors flex-1 min-w-0 flex items-center justify-center gap-2 disabled:opacity-60"
+        >
+          {isLoading ? (
+            <div className="animate-spin h-5 w-5 border-2 border-black border-t-transparent rounded-full" />
+          ) : (
+            <Sparkles className="h-5 w-5" />
+          )}
+          <span className="truncate">
             {isLoading ? "Traitement…" : `Payer ${Math.round(prixFinal)}€`}
           </span>
         </button>
@@ -692,8 +972,11 @@ export default function PaymentModal({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [name, setName] = useState("");
   const [animateIn, setAnimateIn] = useState(false);
-  // null tant que l'user n'a pas choisi (ou auto-décidé). "wallet" ou "card".
+  // null tant que l'user n'a pas choisi (ou auto-décidé).
+  // "wallet" : tout wallet (pas de Stripe). "card" : tout CB. "hybrid" : split.
   const [paymentMethod, setPaymentMethod] = useState(null);
+  // Pour le mode hybride : montants split (en cents).
+  const [hybridSplit, setHybridSplit] = useState(null); // { walletCents, cardCents }
 
   const { user } = useAuth();
   const { balanceEur, loading: walletLoading } = useWallet();
@@ -753,17 +1036,23 @@ export default function PaymentModal({
     }
   }, [user, phoneVerified, walletLoading, balanceEur, prixFinal, paymentMethod]);
 
-  // Crée le PaymentIntent Stripe uniquement quand l'user choisit CB.
+  // Crée le PaymentIntent Stripe quand l'user choisit CB ou hybrid.
+  // Pour hybrid : on passe walletAmountCents au backend pour que le PI soit
+  // créé pour le delta (prix - solde).
   useEffect(() => {
     if (
       user &&
       phoneVerified &&
-      paymentMethod === "card" &&
+      (paymentMethod === "card" || paymentMethod === "hybrid") &&
       !clientSecret
     ) {
-      createPaymentIntent();
+      const walletCents =
+        paymentMethod === "hybrid" && balanceEur
+          ? Math.floor(balanceEur * 100)
+          : 0;
+      createPaymentIntent(walletCents);
     }
-  }, [phoneVerified, prixFinal, user, paymentMethod, clientSecret]);
+  }, [phoneVerified, prixFinal, user, paymentMethod, clientSecret, balanceEur]);
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
@@ -789,7 +1078,7 @@ export default function PaymentModal({
     }
   };
 
-  const createPaymentIntent = async () => {
+  const createPaymentIntent = async (walletAmountCents = 0) => {
     try {
       const bookingWithPhone = {
         ...bookingData,
@@ -805,6 +1094,7 @@ export default function PaymentModal({
         body: JSON.stringify({
           amount: prixFinal,
           metadata: bookingWithPhone,
+          walletAmountCents: walletAmountCents || undefined,
         }),
       });
 
@@ -817,6 +1107,14 @@ export default function PaymentModal({
 
       const data = await response.json();
       setClientSecret(data.clientSecret);
+      if (data.isHybrid) {
+        setHybridSplit({
+          walletCents: data.walletAmountCents,
+          cardCents: data.cardAmountCents,
+        });
+      } else {
+        setHybridSplit(null);
+      }
     } catch (error) {
       console.error("Erreur:", error);
       setError(
@@ -837,12 +1135,19 @@ export default function PaymentModal({
     if (!phoneVerified) return "Information de contact";
     if (paymentMethod === null) return "Mode de paiement";
     if (paymentMethod === "wallet") return "Paiement portefeuille";
+    if (paymentMethod === "hybrid") return "Paiement portefeuille + carte";
     return "Paiement sécurisé";
   };
 
+  const goBackToChoice = () => {
+    setPaymentMethod(null);
+    setClientSecret("");
+    setHybridSplit(null);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-300 ${
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className={`bg-white rounded-xl w-full max-w-md md:max-w-lg mx-auto shadow-2xl transform transition-all duration-300 ${
         animateIn ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
       }`} style={{ maxHeight: '90vh' }}>
         {/* Header avec bouton de fermeture */}
@@ -902,6 +1207,7 @@ export default function PaymentModal({
                 prixFinal={prixFinal}
                 walletBalanceEur={balanceEur ?? 0}
                 onChooseWallet={() => setPaymentMethod("wallet")}
+                onChooseHybrid={() => setPaymentMethod("hybrid")}
                 onChooseCard={() => setPaymentMethod("card")}
                 onCancel={onCancel}
               />
@@ -917,7 +1223,7 @@ export default function PaymentModal({
               reservationDate={reservationDate}
               onSuccess={onSuccess}
               onCancel={onCancel}
-              onBack={() => setPaymentMethod(null)}
+              onBack={goBackToChoice}
             />
           ) : clientSecret ? (
             <Elements
@@ -928,19 +1234,37 @@ export default function PaymentModal({
                   theme: "stripe",
                   variables: {
                     colorPrimary: "#000000",
-                    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+                    fontFamily:
+                      'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
                   },
                 },
               }}
             >
-              <CheckoutForm
-                clientSecret={clientSecret}
-                prixFinal={prixFinal}
-                onSuccess={handlePaymentSuccess}
-                onCancel={onCancel}
-                phoneNumber={phoneNumber}
-                userName={name}
-              />
+              {paymentMethod === "hybrid" && hybridSplit ? (
+                <HybridPaymentForm
+                  prixFinal={prixFinal}
+                  walletAmountEur={hybridSplit.walletCents / 100}
+                  cardAmountEur={hybridSplit.cardCents / 100}
+                  bookingData={bookingData}
+                  phoneNumber={phoneNumber}
+                  userName={name}
+                  user={user}
+                  reservationDate={reservationDate}
+                  onSuccess={onSuccess}
+                  onBack={goBackToChoice}
+                />
+              ) : (
+                <CheckoutForm
+                  clientSecret={clientSecret}
+                  prixFinal={prixFinal}
+                  onSuccess={handlePaymentSuccess}
+                  onCancel={
+                    balanceEur && balanceEur > 0 ? goBackToChoice : onCancel
+                  }
+                  phoneNumber={phoneNumber}
+                  userName={name}
+                />
+              )}
             </Elements>
           ) : (
             <div className="flex flex-col items-center justify-center py-12">

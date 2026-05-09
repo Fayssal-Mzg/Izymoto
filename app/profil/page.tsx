@@ -35,7 +35,7 @@ interface Booking {
   arrivee: string;
   prix: number;
   status: string;
-  paymentMethod?: "card" | "wallet";
+  paymentMethod?: "card" | "wallet" | "hybrid";
 }
 
 const STATUS_META: Record<
@@ -399,6 +399,7 @@ export default function ProfilPage() {
                   .map((booking) => {
                     const statusMeta = getStatusMeta(booking.status);
                     const isWallet = booking.paymentMethod === "wallet";
+                    const isHybrid = booking.paymentMethod === "hybrid";
                     return (
                       <li
                         key={booking.id}
@@ -437,7 +438,7 @@ export default function ProfilPage() {
 
                             <span
                               className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                                isWallet
+                                isWallet || isHybrid
                                   ? "text-amber-700"
                                   : "text-gray-600"
                               }`}
@@ -446,6 +447,11 @@ export default function ProfilPage() {
                                 <>
                                   <Wallet className="h-3.5 w-3.5" />
                                   Portefeuille
+                                </>
+                              ) : isHybrid ? (
+                                <>
+                                  <Wallet className="h-3.5 w-3.5" />
+                                  Portefeuille + carte
                                 </>
                               ) : (
                                 <>
