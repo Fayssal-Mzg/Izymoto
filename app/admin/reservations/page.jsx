@@ -128,6 +128,7 @@ export default function ReservationsPage() {
           onStatusChange={handleStatusChange}
           onDelete={handleDelete}
           onGenerateInvoice={handleGenerateInvoice}
+          onRefresh={fetchBookings}
         />
       )}
     </AdminLayout>

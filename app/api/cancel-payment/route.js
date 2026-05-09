@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
+import { requireAdmin, AdminAuthError } from "@/lib/firebase/admin-server";
 
 // Annule une autorisation gelée. Le client n'est jamais débité, le hold
 // disparaît de sa CB sous quelques minutes (selon réseau).
 //
-// TODO commit suivant : protéger l'endpoint par vérif Firebase ID token admin.
+// Pour les bookings hybrid (wallet + CB) : le webhook Stripe se charge
+// automatiquement de refund la part wallet (cf. webhooks/stripe/route.js).
+//
+// Auth : ID token Firebase + check users/{uid}.isAdmin === true.
 export async function POST(request) {
+  try {
+    await requireAdmin(request);
+  } catch (err) {
+    if (err instanceof AdminAuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error("[cancel-payment] erreur auth:", err);
+    return NextResponse.json(
+      { error: "Erreur d'authentification" },
+      { status: 500 }
+    );
+  }
+
   try {
     const { paymentIntentId, cancellationReason } = await request.json();
 

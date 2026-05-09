@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
+import { requireAdmin, AdminAuthError } from "@/lib/firebase/admin-server";
 
 // Capture les fonds gelés. Appelé depuis le back-office admin une fois la
 // course terminée. Le montant capturé peut être différent du montant autorisé :
@@ -7,8 +8,21 @@ import { stripe } from "@/lib/stripe-server";
 // - supérieur → uniquement si une incrément a été faite avant via
 //   /api/increment-authorization (Stripe refuse sinon)
 //
-// TODO commit suivant : protéger l'endpoint par vérif Firebase ID token admin.
+// Auth : ID token Firebase + check users/{uid}.isAdmin === true.
 export async function POST(request) {
+  try {
+    await requireAdmin(request);
+  } catch (err) {
+    if (err instanceof AdminAuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error("[capture-payment] erreur auth:", err);
+    return NextResponse.json(
+      { error: "Erreur d'authentification" },
+      { status: 500 }
+    );
+  }
+
   try {
     const { paymentIntentId, amountToCapture } = await request.json();
 
