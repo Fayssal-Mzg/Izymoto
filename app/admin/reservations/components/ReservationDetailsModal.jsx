@@ -1,4 +1,12 @@
-import { X, User, Phone, Calendar, MapPin } from "lucide-react";
+import {
+  X,
+  User,
+  Phone,
+  Calendar,
+  MapPin,
+  Wallet,
+  CreditCard,
+} from "lucide-react";
 
 export default function ReservationDetailsModal({
   booking,
@@ -123,6 +131,44 @@ export default function ReservationDetailsModal({
                   <p>{booking.arrivee}</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-medium text-gray-500 uppercase text-xs mb-2">
+              Paiement
+            </h4>
+            <div className="bg-gray-50 p-4 rounded space-y-2">
+              <div className="flex items-center gap-2">
+                {booking.paymentMethod === "wallet" ? (
+                  <>
+                    <Wallet className="h-5 w-5 text-amber-600" />
+                    <span className="font-semibold text-amber-800">
+                      Portefeuille
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      — {booking.prix}€ débités au moment de la réservation
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="h-5 w-5 text-gray-600" />
+                    <span className="font-semibold text-gray-800">
+                      Carte bancaire
+                    </span>
+                    {booking.paymentStatus && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({booking.paymentStatus})
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+              {booking.paymentMethod !== "wallet" && booking.paymentId && (
+                <p className="text-xs text-gray-400 font-mono">
+                  ID Stripe : {booking.paymentId}
+                </p>
+              )}
             </div>
           </div>
 

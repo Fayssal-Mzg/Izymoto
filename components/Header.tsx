@@ -5,7 +5,7 @@ import { useReservation } from "@/lib/hooks/useReservation";
 import { Phone, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import HeaderWalletBadge from "@/components/wallet/HeaderWalletBadge";
 
@@ -14,6 +14,10 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { resetForm } = useReservation();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Sur /admin, le AdminLayout fournit sa propre nav — on masque le Header global.
+  if (pathname?.startsWith("/admin")) return null;
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);

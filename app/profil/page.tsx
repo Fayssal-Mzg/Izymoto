@@ -18,7 +18,13 @@ import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Wallet, ArrowRight, Loader2 } from "lucide-react";
+import {
+  Wallet,
+  ArrowRight,
+  Loader2,
+  CreditCard,
+  Calendar,
+} from "lucide-react";
 
 // Définir l'interface pour une réservation
 interface Booking {
@@ -29,6 +35,40 @@ interface Booking {
   arrivee: string;
   prix: number;
   status: string;
+  paymentMethod?: "card" | "wallet";
+}
+
+const STATUS_META: Record<
+  string,
+  { label: string; bg: string; text: string; dot: string }
+> = {
+  confirmed: { label: "Confirmée", bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
+  pending: { label: "En attente", bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-500" },
+  completed: { label: "Terminée", bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  cancelled: { label: "Annulée", bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
+};
+
+function getStatusMeta(status: string) {
+  return (
+    STATUS_META[status] || {
+      label: status,
+      bg: "bg-gray-50",
+      text: "text-gray-700",
+      dot: "bg-gray-400",
+    }
+  );
+}
+
+function formatBookingDate(d: Date | number | string): string {
+  const date = new Date(d);
+  return `${date.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })} · ${date.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 }
 
 export default function ProfilPage() {
@@ -325,70 +365,116 @@ export default function ProfilPage() {
         {/* Historique des réservations */}
         <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
           <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Mes réservations</h2>
+            <div className="flex items-baseline justify-between mb-4">
+              <h2 className="text-xl font-semibold">Mes réservations</h2>
+              {bookings.length > 0 && (
+                <span className="text-sm text-gray-500">
+                  {bookings.length}{" "}
+                  {bookings.length > 1 ? "courses" : "course"}
+                </span>
+              )}
+            </div>
 
             {bookings.length === 0 ? (
-              <p className="text-gray-500 italic">
-                Aucune réservation trouvée.
-              </p>
+              <div className="py-10 text-center">
+                <p className="text-gray-500 italic mb-4">
+                  Aucune réservation trouvée.
+                </p>
+                <Link
+                  href="/#reservation"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-black hover:underline"
+                >
+                  Réserver une course
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Référence
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Trajet
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Prix
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Statut
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {bookings.map((booking) => (
-                      <tr key={booking.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {booking.reservationId}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(booking.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          <div className="truncate max-w-xs">
-                            <div>
-                              <span className="font-medium">De:</span>{" "}
-                              {booking.depart}
-                            </div>
-                            <div>
-                              <span className="font-medium">À:</span>{" "}
-                              {booking.arrivee}
+              <ul className="space-y-3">
+                {[...bookings]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime()
+                  )
+                  .map((booking) => {
+                    const statusMeta = getStatusMeta(booking.status);
+                    const isWallet = booking.paymentMethod === "wallet";
+                    return (
+                      <li
+                        key={booking.id}
+                        className="border border-gray-200 rounded-xl p-4 hover:border-gray-400 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-stretch gap-4">
+                          {/* Colonne trajet */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-3">
+                              <div className="flex flex-col items-center pt-1.5 flex-shrink-0">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <div className="w-px h-6 bg-gray-300 my-1" />
+                                <div className="w-2 h-2 rounded-full bg-red-500" />
+                              </div>
+                              <div className="flex-1 min-w-0 space-y-2.5">
+                                <div className="text-sm text-gray-900 break-words">
+                                  {booking.depart}
+                                </div>
+                                <div className="text-sm text-gray-900 break-words">
+                                  {booking.arrivee}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {booking.prix.toFixed(2)}€
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {booking.status === "confirmed"
-                              ? "Confirmée"
-                              : booking.status}
+
+                          {/* Colonne meta (statut, mode, prix, ref/date) */}
+                          <div className="md:w-56 md:border-l md:pl-4 border-gray-100 flex flex-col gap-2 md:items-end">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${statusMeta.bg} ${statusMeta.text} self-start md:self-auto`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`}
+                              />
+                              {statusMeta.label}
+                            </span>
+
+                            <span
+                              className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                                isWallet
+                                  ? "text-amber-700"
+                                  : "text-gray-600"
+                              }`}
+                            >
+                              {isWallet ? (
+                                <>
+                                  <Wallet className="h-3.5 w-3.5" />
+                                  Portefeuille
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard className="h-3.5 w-3.5" />
+                                  Carte bancaire
+                                </>
+                              )}
+                            </span>
+
+                            <div className="text-xl font-bold tabular-nums text-gray-900 mt-auto">
+                              {booking.prix.toFixed(2)}€
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer carte */}
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between gap-3 text-xs text-gray-500">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {formatBookingDate(booking.createdAt)}
                           </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          <span className="font-mono text-gray-400">
+                            #{booking.reservationId}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+              </ul>
             )}
           </div>
         </div>
