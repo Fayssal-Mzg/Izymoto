@@ -16,9 +16,13 @@ import {
   Mail,
   User,
   Hash,
+  SlidersHorizontal,
+  Shield,
 } from "lucide-react";
 import AdminLayout from "../../components/AdminLayout";
+import AdminWalletAdjustModal from "../components/AdminWalletAdjustModal";
 import {
+  getWalletByUid,
   getAllWallets,
   getUserWalletTransactions,
 } from "@/lib/firebase/admin";
@@ -26,9 +30,10 @@ import { formatEuro } from "@/lib/wallet/tiers";
 
 const TX_LABELS = {
   recharge: "Recharge",
-  debit: "Débit",
+  debit: "Débit course",
   refund: "Remboursement",
-  bonus_adjustment: "Ajustement",
+  bonus_adjustment: "Crédit admin",
+  admin_debit: "Débit admin",
 };
 
 function txMeta(type) {
@@ -40,7 +45,9 @@ function txMeta(type) {
     case "refund":
       return { Icon: RotateCcw, sign: "+", color: "text-blue-700", bg: "bg-blue-50", ring: "ring-blue-200" };
     case "bonus_adjustment":
-      return { Icon: Sparkles, sign: "+", color: "text-amber-700", bg: "bg-amber-50", ring: "ring-amber-200" };
+      return { Icon: Shield, sign: "+", color: "text-emerald-700", bg: "bg-emerald-50", ring: "ring-emerald-200" };
+    case "admin_debit":
+      return { Icon: Shield, sign: "−", color: "text-red-700", bg: "bg-red-50", ring: "ring-red-200" };
     default:
       return { Icon: Receipt, sign: "", color: "text-gray-700", bg: "bg-gray-50", ring: "ring-gray-200" };
   }
@@ -62,24 +69,44 @@ export default function AdminWalletDetailPage() {
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showAdjustModal, setShowAdjustModal] = useState(false);
+
+  const [txError, setTxError] = useState(null);
 
   const fetchAll = async () => {
     if (!uid) return;
     try {
       setIsLoading(true);
       setNotFound(false);
-      const [allWallets, txs] = await Promise.all([
-        getAllWallets(),
-        getUserWalletTransactions(uid, 100),
-      ]);
-      const found = allWallets.find((w) => w.uid === uid);
+      setTxError(null);
+
+      // Lecture du wallet (lecture directe + fallback liste complète si null)
+      let found = await getWalletByUid(uid).catch(() => null);
+      if (!found) {
+        const allWallets = await getAllWallets().catch(() => []);
+        found = allWallets.find((w) => w.uid === uid) || null;
+      }
       if (!found) {
         setNotFound(true);
         setWallet(null);
         setTransactions([]);
-      } else {
-        setWallet(found);
+        return;
+      }
+      setWallet(found);
+
+      // Lecture des transactions séparément — si l'index Firestore composite
+      // (userId + createdAt desc) manque, on ne plante pas la page.
+      try {
+        const txs = await getUserWalletTransactions(uid, 100);
         setTransactions(txs);
+      } catch (err) {
+        console.warn("[wallet detail] échec chargement transactions :", err);
+        setTransactions([]);
+        setTxError(
+          err?.message?.includes("index")
+            ? "Index Firestore manquant — l'historique sera disponible une fois l'index créé (1-2 min)."
+            : "Impossible de charger l'historique des transactions."
+        );
       }
     } catch (err) {
       console.error("Erreur lors du chargement du portefeuille:", err);
@@ -161,14 +188,23 @@ export default function AdminWalletDetailPage() {
               </span>
             </div>
           </div>
-          <button
-            onClick={fetchAll}
-            className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors"
-            disabled={isLoading}
-            title="Recharger"
-          >
-            <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdjustModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-400 text-black font-semibold rounded-lg hover:bg-amber-300 transition-colors text-sm"
+            >
+              <SlidersHorizontal size={16} />
+              Ajuster le solde
+            </button>
+            <button
+              onClick={fetchAll}
+              className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors"
+              disabled={isLoading}
+              title="Recharger"
+            >
+              <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -220,77 +256,95 @@ export default function AdminWalletDetailPage() {
             </h2>
           </div>
 
-          {transactions.length === 0 ? (
+          {txError ? (
+            <div className="p-8 text-center">
+              <p className="text-orange-700 text-sm font-semibold mb-2">
+                ⚠️ {txError}
+              </p>
+              <p className="text-xs text-gray-500">
+                L'index est créé automatiquement au premier query. Recharge la
+                page dans 1-2 min.
+              </p>
+            </div>
+          ) : transactions.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               Aucune transaction pour ce portefeuille.
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Montant
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Solde après
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Référence
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {transactions.map((tx) => {
-                  const meta = txMeta(tx.type);
-                  const { Icon, sign, color, bg, ring } = meta;
-                  const ref =
-                    tx.paymentIntentId ||
+            <ul className="divide-y divide-gray-100">
+              {transactions.map((tx) => {
+                const meta = txMeta(tx.type);
+                const { Icon, sign, color, bg, ring } = meta;
+                const isAdminAdjustment =
+                  tx.type === "bonus_adjustment" || tx.type === "admin_debit";
+                const ref = isAdminAdjustment
+                  ? tx.adminEmail || tx.adminUid || "—"
+                  : tx.paymentIntentId ||
                     tx.checkoutSessionId ||
                     tx.bookingId ||
                     tx.stripeEventId ||
                     "—";
-                  return (
-                    <tr key={tx.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${bg} ring-1 ${ring} ${color}`}
-                        >
-                          <Icon size={12} />
-                          {TX_LABELS[tx.type] || tx.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700 max-w-xs truncate">
-                        {tx.description || "—"}
-                      </td>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap text-sm font-semibold text-right tabular-nums ${color}`}
+                const refDisplay =
+                  ref.length > 28 ? `${ref.substring(0, 28)}…` : ref;
+                return (
+                  <li
+                    key={tx.id}
+                    className="p-4 lg:p-5 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-start gap-3 lg:gap-4">
+                      <div
+                        className={`flex-shrink-0 w-10 h-10 rounded-full ${bg} ring-1 ${ring} flex items-center justify-center`}
                       >
-                        {sign}
-                        {formatEuro(tx.amountCents / 100)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right tabular-nums">
-                        {formatEuro(tx.balanceAfterCents / 100)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                        {formatDateTime(tx.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-400 font-mono">
-                        {ref.length > 20 ? `${ref.substring(0, 20)}…` : ref}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <Icon size={18} className={color} />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-baseline gap-2 mb-0.5">
+                          <span
+                            className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${bg} ring-1 ${ring} ${color}`}
+                          >
+                            {TX_LABELS[tx.type] || tx.type}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {formatDateTime(tx.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-900 break-words">
+                          {tx.description || "—"}
+                        </p>
+                        <p
+                          className={`text-xs font-mono mt-1 truncate ${
+                            isAdminAdjustment
+                              ? "text-emerald-700"
+                              : "text-gray-400"
+                          }`}
+                          title={
+                            isAdminAdjustment
+                              ? `Ajustement par ${ref}`
+                              : `Référence : ${ref}`
+                          }
+                        >
+                          {isAdminAdjustment ? "👤 " : ""}
+                          {refDisplay}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-end flex-shrink-0">
+                        <span
+                          className={`font-semibold tabular-nums text-base ${color}`}
+                        >
+                          {sign}
+                          {formatEuro(tx.amountCents / 100)}
+                        </span>
+                        <span className="text-xs text-gray-500 tabular-nums mt-0.5">
+                          Solde : {formatEuro(tx.balanceAfterCents / 100)}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </div>
 
@@ -300,6 +354,14 @@ export default function AdminWalletDetailPage() {
           </p>
         )}
       </div>
+
+      {showAdjustModal && (
+        <AdminWalletAdjustModal
+          walletUser={wallet}
+          onClose={() => setShowAdjustModal(false)}
+          onSuccess={fetchAll}
+        />
+      )}
     </AdminLayout>
   );
 }

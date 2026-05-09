@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Loader2,
   Receipt,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWallet } from "@/lib/hooks/useWallet";
@@ -25,9 +26,10 @@ import type { WalletTransactionType } from "@/lib/wallet/server";
 
 const TX_LABELS: Record<WalletTransactionType, string> = {
   recharge: "Recharge",
-  debit: "Débit",
+  debit: "Débit course",
   refund: "Remboursement",
-  bonus_adjustment: "Ajustement bonus",
+  bonus_adjustment: "Crédit Izymoto",
+  admin_debit: "Ajustement Izymoto",
 };
 
 function txMeta(type: WalletTransactionType) {
@@ -58,11 +60,19 @@ function txMeta(type: WalletTransactionType) {
       };
     case "bonus_adjustment":
       return {
-        Icon: Sparkles,
+        Icon: Shield,
         sign: "+",
-        bg: "bg-amber-50",
-        ring: "ring-amber-200",
-        text: "text-amber-700",
+        bg: "bg-emerald-50",
+        ring: "ring-emerald-200",
+        text: "text-emerald-700",
+      };
+    case "admin_debit":
+      return {
+        Icon: Shield,
+        sign: "−",
+        bg: "bg-red-50",
+        ring: "ring-red-200",
+        text: "text-red-700",
       };
   }
 }

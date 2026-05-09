@@ -26,6 +26,10 @@ export interface WalletTransactionItem {
   checkoutSessionId?: string;
   bookingId?: string;
   stripeEventId?: string;
+  // Présents pour les transactions de type bonus_adjustment / admin_debit.
+  adminUid?: string;
+  adminEmail?: string;
+  reason?: string;
   createdAt: Date;
 }
 
@@ -80,6 +84,9 @@ export function useWalletTransactions(
             checkoutSessionId: data.checkoutSessionId,
             bookingId: data.bookingId,
             stripeEventId: data.stripeEventId,
+            adminUid: data.adminUid,
+            adminEmail: data.adminEmail,
+            reason: data.reason,
             createdAt: ts ? ts.toDate() : new Date(),
           };
         });

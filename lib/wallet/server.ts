@@ -6,7 +6,8 @@ export type WalletTransactionType =
   | "recharge"
   | "debit"
   | "refund"
-  | "bonus_adjustment";
+  | "bonus_adjustment"
+  | "admin_debit";
 
 export interface WalletDoc {
   userId: string;
@@ -28,6 +29,10 @@ export interface WalletTransactionDoc {
   checkoutSessionId?: string;
   bookingId?: string;
   stripeEventId?: string;
+  // Audit pour les ajustements manuels admin (type "bonus_adjustment" ou "admin_debit").
+  adminUid?: string;
+  adminEmail?: string;
+  reason?: string;
   createdAt: Timestamp;
 }
 
@@ -382,6 +387,109 @@ export async function debitWalletForHybridBooking(
       reservationId,
       balanceAfterCents: newBalance,
     };
+  });
+}
+
+export interface AdjustWalletAdminParams {
+  userId: string;
+  amountCents: number;
+  direction: "credit" | "debit";
+  reason: string;
+  adminUid: string;
+  adminEmail: string | null;
+}
+
+export interface AdjustWalletAdminResult {
+  balanceAfterCents: number;
+  transactionId: string;
+}
+
+// Ajustement manuel admin du solde wallet d'un user (geste commercial,
+// correction d'erreur, dédommagement). Crée une transaction tracée avec
+// adminUid + adminEmail + reason pour audit.
+//
+// Direction "credit" → type "bonus_adjustment", solde augmenté.
+// Direction "debit"  → type "admin_debit", solde diminué (échoue si insuffisant).
+//
+// Idempotence : on génère l'ID de transaction côté serveur (timestamp +
+// random). Pour un retry strict il faudrait passer un clientToken, mais ces
+// opérations sont peu fréquentes et déclenchées manuellement par un admin.
+export async function adjustWalletAdmin(
+  params: AdjustWalletAdminParams
+): Promise<AdjustWalletAdminResult> {
+  const { userId, amountCents, direction, reason, adminUid, adminEmail } =
+    params;
+
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    throw new WalletError("INVALID_AMOUNT", "amountCents doit être positif");
+  }
+  if (!reason || !reason.trim()) {
+    throw new WalletError(
+      "INVALID_AMOUNT",
+      "Un motif est requis pour l'ajustement"
+    );
+  }
+
+  const db = getAdminFirestore();
+  const walletRef = db.collection(WALLETS).doc(userId);
+  const txId = `admin_${Date.now()}_${Math.random()
+    .toString(36)
+    .substring(2, 10)}`;
+  const txRef = db.collection(WALLET_TX).doc(txId);
+  const trimmedReason = reason.trim().slice(0, 500);
+  const isCredit = direction === "credit";
+
+  return db.runTransaction(async (tx: Transaction) => {
+    const walletSnap = await tx.get(walletRef);
+    const now = Timestamp.now();
+    const previousBalance = walletSnap.exists
+      ? ((walletSnap.data() as WalletDoc).balanceCents ?? 0)
+      : 0;
+    const previousCumulative = walletSnap.exists
+      ? ((walletSnap.data() as WalletDoc).cumulativeRechargedCents ?? 0)
+      : 0;
+
+    if (!isCredit && previousBalance < amountCents) {
+      throw new WalletError(
+        "INSUFFICIENT_BALANCE",
+        `Solde insuffisant : ${previousBalance} cents disponibles, ${amountCents} requis pour le débit`
+      );
+    }
+
+    const newBalance = isCredit
+      ? previousBalance + amountCents
+      : previousBalance - amountCents;
+
+    if (walletSnap.exists) {
+      tx.update(walletRef, {
+        balanceCents: newBalance,
+        updatedAt: now,
+      });
+    } else {
+      tx.set(walletRef, {
+        userId,
+        balanceCents: newBalance,
+        cumulativeRechargedCents: previousCumulative,
+        currency: "EUR",
+        createdAt: now,
+        updatedAt: now,
+      } satisfies WalletDoc);
+    }
+
+    const txDoc: WalletTransactionDoc = {
+      userId,
+      type: isCredit ? "bonus_adjustment" : "admin_debit",
+      amountCents,
+      balanceAfterCents: newBalance,
+      description: trimmedReason,
+      adminUid,
+      adminEmail: adminEmail || undefined,
+      reason: trimmedReason,
+      createdAt: now,
+    };
+    tx.set(txRef, txDoc);
+
+    return { balanceAfterCents: newBalance, transactionId: txId };
   });
 }
 

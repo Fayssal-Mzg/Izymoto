@@ -90,7 +90,7 @@ export interface WalletAdminRow {
 export interface WalletTransactionAdminRow {
   id: string;
   userId: string;
-  type: "recharge" | "debit" | "refund" | "bonus_adjustment";
+  type: "recharge" | "debit" | "refund" | "bonus_adjustment" | "admin_debit";
   amountCents: number;
   balanceAfterCents: number;
   description: string;
@@ -99,6 +99,9 @@ export interface WalletTransactionAdminRow {
   checkoutSessionId?: string;
   bookingId?: string;
   stripeEventId?: string;
+  adminUid?: string;
+  adminEmail?: string;
+  reason?: string;
   createdAt: Date | null;
 }
 
@@ -225,6 +228,25 @@ export async function getAllFactures(): Promise<Facture[]> {
   });
 }
 
+// Convertit un champ Firestore en Date JS, robuste aux différents formats :
+// - Timestamp Firestore (.toDate())
+// - Date JS native
+// - String ISO
+// - Objet { seconds, nanoseconds } (Timestamp sérialisé)
+function coerceDate(value: any): Date | null {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate();
+  if (value instanceof Date) return value;
+  if (typeof value === "string" || typeof value === "number") {
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof value === "object" && typeof value.seconds === "number") {
+    return new Date(value.seconds * 1000);
+  }
+  return null;
+}
+
 export async function getAllBookings(): Promise<Booking[]> {
   try {
     const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
@@ -244,11 +266,8 @@ export async function getAllBookings(): Promise<Booking[]> {
         depart: data.depart ?? "",
         arrivee: data.arrivee ?? "",
         status: data.status ?? "pending",
-        createdAt:
-          (data.createdAt as unknown as Timestamp)?.toDate() ?? new Date(),
-        reservationDate:
-          (data.reservationDate as unknown as Timestamp)?.toDate() ??
-          new Date(),
+        createdAt: coerceDate(data.createdAt) ?? new Date(),
+        reservationDate: coerceDate(data.reservationDate) ?? new Date(),
         ...(data as any), // Permet de conserver les champs additionnels
       } as Booking;
     });
@@ -384,6 +403,34 @@ export async function getAllWallets(): Promise<WalletAdminRow[]> {
   return rows;
 }
 
+// Lit directement wallets/{uid} et joint avec users/{uid} pour avoir
+// email + displayName. Utilisé sur la page détail admin pour éviter de
+// récupérer la liste complète des wallets juste pour en trouver un.
+export async function getWalletByUid(
+  uid: string
+): Promise<WalletAdminRow | null> {
+  const [walletSnap, userSnap] = await Promise.all([
+    getDoc(doc(db, "wallets", uid)),
+    getDoc(doc(db, "users", uid)),
+  ]);
+
+  if (!walletSnap.exists()) return null;
+
+  const data = walletSnap.data() as any;
+  const userData = userSnap.exists() ? (userSnap.data() as any) : null;
+
+  return {
+    uid,
+    email: userData?.email ?? null,
+    displayName: userData?.displayName ?? null,
+    balanceCents: data.balanceCents ?? 0,
+    cumulativeRechargedCents: data.cumulativeRechargedCents ?? 0,
+    currency: data.currency ?? "EUR",
+    createdAt: (data.createdAt as Timestamp | undefined)?.toDate() ?? null,
+    updatedAt: (data.updatedAt as Timestamp | undefined)?.toDate() ?? null,
+  };
+}
+
 // Récupère les N dernières transactions d'un user (côté admin).
 export async function getUserWalletTransactions(
   uid: string,
@@ -409,6 +456,9 @@ export async function getUserWalletTransactions(
       checkoutSessionId: data.checkoutSessionId,
       bookingId: data.bookingId,
       stripeEventId: data.stripeEventId,
+      adminUid: data.adminUid,
+      adminEmail: data.adminEmail,
+      reason: data.reason,
       createdAt:
         (data.createdAt as Timestamp | undefined)?.toDate() ?? null,
     };
