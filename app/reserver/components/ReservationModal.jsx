@@ -117,16 +117,16 @@ export default function ReservationModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
       <div
-        className={`bg-white rounded-xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-300 ${
+        className={`bg-white rounded-xl w-full max-w-md md:max-w-lg mx-auto shadow-2xl transform transition-all duration-300 flex flex-col ${
           animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
         style={{ maxHeight: "90vh" }}
       >
-        {/* Header */}
-        <div className="relative p-6 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900">
+        {/* Header — hauteur fixe, ne défile pas */}
+        <div className="relative p-6 border-b border-gray-100 flex-shrink-0">
+          <h3 className="text-xl font-bold text-gray-900 pr-10">
             Finaliser votre réservation
           </h3>
           <button
@@ -138,11 +138,8 @@ export default function ReservationModal({
           </button>
         </div>
 
-        {/* Contenu */}
-        <div
-          className="p-6 overflow-y-auto"
-          style={{ maxHeight: "calc(90vh - 78px)" }}
-        >
+        {/* Contenu — prend la place restante et défile */}
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
           <p className="text-gray-600 mb-6">
             Veuillez compléter les informations pour finaliser votre
             réservation.
@@ -284,34 +281,33 @@ export default function ReservationModal({
                 </div>
               </div>
 
-              {/* Boutons */}
-              <div className="pt-2">
-                <p className="text-xs text-gray-500 mb-4">
-                  * Champs obligatoires
-                </p>
-                <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
-                  <button
-                    type="button"
-                    onClick={onCancel}
-                    className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 text-center"
-                  >
-                    Retour
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleProceed}
-                    className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 text-center flex items-center justify-center space-x-2 group"
-                  >
-                    <span>Continuer</span>
-                    <ArrowRight
-                      size={16}
-                      className="transform group-hover:translate-x-1 transition-transform"
-                    />
-                  </button>
-                </div>
-              </div>
             </div>
           )}
+        </div>
+
+        {/* Footer fixe — toujours visible quel que soit le scroll */}
+        <div className="px-6 pt-4 pb-6 border-t border-gray-100 flex-shrink-0 bg-white rounded-b-xl">
+          <p className="text-xs text-gray-500 mb-3">* Champs obligatoires</p>
+          <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 min-w-0 text-center"
+            >
+              Retour
+            </button>
+            <button
+              type="button"
+              onClick={handleProceed}
+              className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 min-w-0 text-center flex items-center justify-center space-x-2 group"
+            >
+              <span>Continuer</span>
+              <ArrowRight
+                size={16}
+                className="transform group-hover:translate-x-1 transition-transform"
+              />
+            </button>
+          </div>
         </div>
       </div>
     </div>

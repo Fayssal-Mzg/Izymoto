@@ -1147,11 +1147,11 @@ export default function PaymentModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
-      <div className={`bg-white rounded-xl w-full max-w-md md:max-w-lg mx-auto shadow-2xl transform transition-all duration-300 ${
+      <div className={`bg-white rounded-xl w-full max-w-md md:max-w-lg mx-auto shadow-2xl transform transition-all duration-300 flex flex-col ${
         animateIn ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
       }`} style={{ maxHeight: '90vh' }}>
         {/* Header avec bouton de fermeture */}
-        <div className="relative border-b border-gray-100 p-6">
+        <div className="relative border-b border-gray-100 p-6 flex-shrink-0">
           <div className="flex items-center">
             {!user ? (
               <LogIn className="text-gray-800 mr-3 h-5 w-5" />
@@ -1180,8 +1180,8 @@ export default function PaymentModal({
           </button>
         </div>
 
-        {/* Conteneur avec scrolling */}
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
+        {/* Conteneur avec scrolling — prend la place restante */}
+        <div className="overflow-y-auto flex-1 min-h-0">
           {error && (
             <div className="mx-6 mt-6 p-3 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-md text-sm">
               {error}

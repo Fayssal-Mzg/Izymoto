@@ -415,7 +415,7 @@ export default function UnifiedUserModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -423,17 +423,17 @@ export default function UnifiedUserModal({
     >
       <div
         ref={modalRef}
-        className={`bg-white rounded-xl w-full max-w-md mx-auto shadow-2xl transform transition-all duration-300 ${
+        className={`bg-white rounded-xl w-full max-w-md md:max-w-lg mx-auto shadow-2xl transform transition-all duration-300 flex flex-col ${
           animateIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
         style={{ maxHeight: "90vh" }}
       >
-        {/* Header */}
-        <div className="relative p-6 border-b border-gray-100">
-          <h3 id="modal-title" className="text-xl font-bold text-gray-900">
+        {/* Header — hauteur fixe, ne défile pas */}
+        <div className="relative p-6 border-b border-gray-100 flex-shrink-0">
+          <h3 id="modal-title" className="text-xl font-bold text-gray-900 pr-10">
             {config.title}
           </h3>
-          <p id="modal-description" className="text-sm text-gray-600 mt-1">
+          <p id="modal-description" className="text-sm text-gray-600 mt-1 pr-10">
             {config.subtitle}
           </p>
           <button
@@ -446,11 +446,8 @@ export default function UnifiedUserModal({
           </button>
         </div>
 
-        {/* Contenu */}
-        <div
-          className="p-6 overflow-y-auto"
-          style={{ maxHeight: "calc(90vh - 78px)" }}
-        >
+        {/* Zone scrollable — prend la place restante */}
+        <div className="p-6 overflow-y-auto flex-1 min-h-0">
           {/* Messages d'erreur globaux */}
           {userDataError && (
             <div className="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 rounded mb-6 flex items-start space-x-2">
@@ -504,7 +501,7 @@ export default function UnifiedUserModal({
               </span>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate>
+            <form id="unified-user-form" onSubmit={handleSubmit} noValidate>
               <div className="space-y-6">
                 {/* Date et heure - Conditionnel */}
                 {shouldShowDateField && (
@@ -749,55 +746,57 @@ export default function UnifiedUserModal({
                   </div>
                 )}
 
-                {/* Boutons */}
-                <div className="pt-2">
-                  <p className="text-xs text-gray-500 mb-4">
-                    * Champs obligatoires
-                  </p>
-                  <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
-                    <button
-                      type="button"
-                      onClick={onCancel}
-                      disabled={isSubmitting}
-                      className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 text-center disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                    >
-                      Retour
-                    </button>
-                    <button
-                      ref={submitButtonRef}
-                      type="submit"
-                      disabled={disabled || isSubmitting}
-                      className={`py-3 px-4 rounded-lg font-medium transition-colors flex-1 text-center flex items-center justify-center space-x-2 group disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                        customButtonClass ||
-                        "bg-black text-white hover:bg-gray-800 focus:ring-black"
-                      }`}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                          <span>Traitement...</span>
-                        </>
-                      ) : showSuccess ? (
-                        <>
-                          <CheckCircle size={16} />
-                          <span>Sauvegardé !</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>{config.submitButtonText}</span>
-                          <ArrowRight
-                            size={16}
-                            className="transform group-hover:translate-x-1 transition-transform"
-                          />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
               </div>
             </form>
           )}
         </div>
+
+        {/* Footer fixe — toujours visible (sauf en loading) */}
+        {!userDataLoading && (
+          <div className="px-6 pt-4 pb-6 border-t border-gray-100 flex-shrink-0 bg-white rounded-b-xl">
+            <p className="text-xs text-gray-500 mb-3">* Champs obligatoires</p>
+            <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={isSubmitting}
+                className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 min-w-0 text-center disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              >
+                Retour
+              </button>
+              <button
+                ref={submitButtonRef}
+                type="submit"
+                form="unified-user-form"
+                disabled={disabled || isSubmitting}
+                className={`py-3 px-4 rounded-lg font-medium transition-colors flex-1 min-w-0 text-center flex items-center justify-center space-x-2 group disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  customButtonClass ||
+                  "bg-black text-white hover:bg-gray-800 focus:ring-black"
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    <span>Traitement...</span>
+                  </>
+                ) : showSuccess ? (
+                  <>
+                    <CheckCircle size={16} />
+                    <span>Sauvegardé !</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="truncate">{config.submitButtonText}</span>
+                    <ArrowRight
+                      size={16}
+                      className="transform group-hover:translate-x-1 transition-transform flex-shrink-0"
+                    />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
