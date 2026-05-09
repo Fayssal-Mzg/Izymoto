@@ -168,7 +168,7 @@ export default function RootLayout({
         <Script
           src="https://limova-web-sltj.onrender.com/scripts/chatbot-loader.js"
           data-connection-id="0ac42bfe-b334-4a78-a15a-2004ae8005e9"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
       </body>
     </html>
