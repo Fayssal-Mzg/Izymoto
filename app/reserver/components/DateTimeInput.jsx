@@ -128,7 +128,7 @@ export default function DateTimeInput({
           <div className="flex items-start">
             <input
               type="checkbox"
-              id="priority"
+              id="priority-mandatory"
               checked={prioriteReservation}
               onChange={() => setPrioriteReservation(!prioriteReservation)}
               className="mt-1 mr-3"
@@ -136,7 +136,7 @@ export default function DateTimeInput({
             />
             <div>
               <label
-                htmlFor="priority"
+                htmlFor="priority-mandatory"
                 className="font-medium block mb-1 text-sm text-yellow-700"
               >
                 Option priorité (+20€) OBLIGATOIRE

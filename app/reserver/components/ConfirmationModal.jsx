@@ -23,15 +23,15 @@ export default function ConfirmationModal({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-lg w-full h-full sm:h-auto sm:w-full sm:max-w-md mx-auto flex flex-col sm:max-h-[90vh]">
-        <div className="bg-green-600 p-4 rounded-t-lg flex-shrink-0">
+      <div className="bg-white rounded-lg w-full h-full sm:h-auto sm:w-full sm:max-w-md md:sm:max-w-lg mx-auto flex flex-col sm:max-h-[90vh]">
+        <div className="bg-green-600 p-4 sm:rounded-t-lg flex-shrink-0">
           <h3 className="text-xl font-bold text-white">
             Réservation confirmée !
           </h3>
         </div>
 
         {/* Conteneur avec scrolling */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="h-8 w-8 text-green-600" />
@@ -77,7 +77,7 @@ export default function ConfirmationModal({
             </div>
           </div>
 
-          <div className="bg-blue-50 p-4 rounded-md border border-blue-100 mb-6">
+          <div className="bg-blue-50 p-4 rounded-md border border-blue-100">
             <div className="flex">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -105,6 +105,10 @@ export default function ConfirmationModal({
             </div>
           </div>
 
+        </div>
+
+        {/* Footer fixe — bouton toujours visible */}
+        <div className="p-4 border-t border-gray-100 flex-shrink-0 bg-white sm:rounded-b-lg">
           <button
             onClick={onClose}
             className="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-sm font-medium"
