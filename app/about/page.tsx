@@ -39,7 +39,7 @@ export default function AboutPage() {
       <section className="relative py-20 bg-black text-white">
         <div className="absolute inset-0 opacity-30">
           <Image
-            src="/moto.jpg"
+            src="/taxi-paris.jpg"
             alt="Moto taxi background"
             fill
             className="object-cover"
