@@ -68,6 +68,32 @@ interface AdminStats {
   totalRevenue: number;
 }
 
+export interface WalletAdminRow {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  balanceCents: number;
+  cumulativeRechargedCents: number;
+  currency: "EUR";
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface WalletTransactionAdminRow {
+  id: string;
+  userId: string;
+  type: "recharge" | "debit" | "refund" | "bonus_adjustment";
+  amountCents: number;
+  balanceAfterCents: number;
+  description: string;
+  tierId?: string;
+  paymentIntentId?: string;
+  checkoutSessionId?: string;
+  bookingId?: string;
+  stripeEventId?: string;
+  createdAt: Date | null;
+}
+
 export async function generateInvoicePDF(
   booking: Booking
 ): Promise<{ factureId: string; pdfUrl: string }> {
@@ -302,6 +328,83 @@ export async function setUserAdminStatus(
     console.error("Erreur lors de la modification du statut admin:", error);
     throw error;
   }
+}
+
+// Liste tous les wallets joints avec les infos user (email, displayName).
+// Tri par updatedAt desc côté client (collection sans index sur updatedAt).
+export async function getAllWallets(): Promise<WalletAdminRow[]> {
+  const [walletsSnap, usersSnap] = await Promise.all([
+    getDocs(collection(db, "wallets")),
+    getDocs(collection(db, "users")),
+  ]);
+
+  const usersById = new Map<
+    string,
+    { email: string | null; displayName: string | null }
+  >();
+  usersSnap.forEach((u) => {
+    const data = u.data() as any;
+    usersById.set(u.id, {
+      email: data.email ?? null,
+      displayName: data.displayName ?? null,
+    });
+  });
+
+  const rows: WalletAdminRow[] = walletsSnap.docs.map((w) => {
+    const data = w.data() as any;
+    const user = usersById.get(w.id);
+    return {
+      uid: w.id,
+      email: user?.email ?? null,
+      displayName: user?.displayName ?? null,
+      balanceCents: data.balanceCents ?? 0,
+      cumulativeRechargedCents: data.cumulativeRechargedCents ?? 0,
+      currency: data.currency ?? "EUR",
+      createdAt:
+        (data.createdAt as Timestamp | undefined)?.toDate() ?? null,
+      updatedAt:
+        (data.updatedAt as Timestamp | undefined)?.toDate() ?? null,
+    };
+  });
+
+  rows.sort((a, b) => {
+    const at = a.updatedAt?.getTime() ?? 0;
+    const bt = b.updatedAt?.getTime() ?? 0;
+    return bt - at;
+  });
+
+  return rows;
+}
+
+// Récupère les N dernières transactions d'un user (côté admin).
+export async function getUserWalletTransactions(
+  uid: string,
+  max: number = 100
+): Promise<WalletTransactionAdminRow[]> {
+  const q = query(
+    collection(db, "walletTransactions"),
+    where("userId", "==", uid),
+    orderBy("createdAt", "desc")
+  );
+  const snap = await getDocs(q);
+  return snap.docs.slice(0, max).map((d) => {
+    const data = d.data() as any;
+    return {
+      id: d.id,
+      userId: data.userId,
+      type: data.type,
+      amountCents: data.amountCents,
+      balanceAfterCents: data.balanceAfterCents,
+      description: data.description,
+      tierId: data.tierId,
+      paymentIntentId: data.paymentIntentId,
+      checkoutSessionId: data.checkoutSessionId,
+      bookingId: data.bookingId,
+      stripeEventId: data.stripeEventId,
+      createdAt:
+        (data.createdAt as Timestamp | undefined)?.toDate() ?? null,
+    };
+  });
 }
 
 // Obtenir les statistiques pour le tableau de bord

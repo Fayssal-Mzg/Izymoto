@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   CalendarClock,
   Users,
+  Wallet,
   Settings,
   LogOut,
   Menu,
@@ -16,13 +17,15 @@ export default function Sidebar({ onLogout }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isActive = (path) => {
-    return pathname === path;
+    if (path === "/admin") return pathname === path;
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
   const navItems = [
     { icon: LayoutDashboard, name: "Tableau de bord", path: "/admin" },
     { icon: CalendarClock, name: "Réservations", path: "/admin/reservations" },
     { icon: Users, name: "Utilisateurs", path: "/admin/utilisateurs" },
+    { icon: Wallet, name: "Portefeuilles", path: "/admin/wallets" },
     { icon: Settings, name: "Paramètres", path: "/admin/parametres" },
   ];
 

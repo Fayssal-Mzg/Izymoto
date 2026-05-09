@@ -2,6 +2,8 @@
 
 import AdminButton from "@/components/AdminButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWallet } from "@/lib/hooks/useWallet";
+import { formatEuro } from "@/lib/wallet/tiers";
 import { getUserBookings } from "@/lib/firebase/bookings";
 import { db } from "@/lib/firebaseConfig";
 import {
@@ -13,8 +15,10 @@ import {
   User,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { Wallet, ArrowRight, Loader2 } from "lucide-react";
 
 // Définir l'interface pour une réservation
 interface Booking {
@@ -29,6 +33,7 @@ interface Booking {
 
 export default function ProfilPage() {
   const { user, loading, logOut, updatePhoneNumber } = useAuth();
+  const { balanceEur, loading: walletLoading } = useWallet();
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -274,6 +279,46 @@ export default function ProfilPage() {
                 )}
               </div>
             </form>
+          </div>
+        </div>
+
+        {/* Mon portefeuille */}
+        <div className="relative bg-black text-white rounded-lg shadow overflow-hidden mb-8">
+          <div
+            className="absolute inset-0 opacity-30 pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 100% 0%, rgba(251, 191, 36, 0.4), transparent 50%)",
+            }}
+          />
+          <div className="relative p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-amber-400/10 border border-amber-400/30 flex items-center justify-center flex-shrink-0">
+                <Wallet className="h-6 w-6 text-amber-400" />
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wider text-gray-400">
+                  Mon portefeuille
+                </div>
+                <div className="text-2xl sm:text-3xl font-bold tabular-nums mt-0.5">
+                  {walletLoading || balanceEur === null ? (
+                    <span className="inline-flex items-center gap-2 text-base text-gray-300">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Chargement…
+                    </span>
+                  ) : (
+                    formatEuro(balanceEur)
+                  )}
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/profil/portefeuille"
+              className="inline-flex items-center justify-center gap-2 bg-amber-400 text-black font-semibold px-5 py-2.5 rounded-md hover:bg-amber-300 transition-colors text-sm"
+            >
+              Voir mon portefeuille
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
 
