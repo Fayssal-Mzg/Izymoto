@@ -27,6 +27,11 @@ const ALL_SEO_PAGES: { slug: string; label: string }[] = [
   { slug: "moto-taxi-gare-de-lyon", label: "Taxi moto Gare de Lyon" },
   { slug: "moto-taxi-la-defense", label: "Taxi moto La Défense" },
   { slug: "moto-taxi-disneyland", label: "Taxi moto Disneyland Paris" },
+  { slug: "taxi-moto-paris-8", label: "Taxi moto Paris 8e" },
+  { slug: "taxi-moto-paris-16", label: "Taxi moto Paris 16e" },
+  { slug: "taxi-moto-champs-elysees", label: "Taxi moto Champs-Élysées" },
+  { slug: "taxi-moto-bastille", label: "Taxi moto Bastille" },
+  { slug: "taxi-moto-saint-germain", label: "Taxi moto Saint-Germain" },
 ];
 
 export default function SeoLandingPage({

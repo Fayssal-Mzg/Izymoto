@@ -32,5 +32,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.85,
   }));
 
-  return [...corePages, ...seoLandingPages];
+  const neighborhoodPages: MetadataRoute.Sitemap = [
+    "taxi-moto-paris-8",
+    "taxi-moto-paris-16",
+    "taxi-moto-champs-elysees",
+    "taxi-moto-bastille",
+    "taxi-moto-saint-germain",
+  ].map((slug) => ({
+    url: `${SITE_URL}/${slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.75,
+  }));
+
+  return [...corePages, ...seoLandingPages, ...neighborhoodPages];
 }
