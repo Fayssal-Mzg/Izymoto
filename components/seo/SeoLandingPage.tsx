@@ -19,6 +19,16 @@ export type SeoLandingProps = {
 
 const SITE_URL = "https://izymoto.com";
 
+const ALL_SEO_PAGES: { slug: string; label: string }[] = [
+  { slug: "moto-taxi-paris", label: "Taxi moto Paris" },
+  { slug: "moto-taxi-aeroport-cdg", label: "Taxi moto Aéroport CDG" },
+  { slug: "moto-taxi-aeroport-orly", label: "Taxi moto Aéroport Orly" },
+  { slug: "moto-taxi-gare-du-nord", label: "Taxi moto Gare du Nord" },
+  { slug: "moto-taxi-gare-de-lyon", label: "Taxi moto Gare de Lyon" },
+  { slug: "moto-taxi-la-defense", label: "Taxi moto La Défense" },
+  { slug: "moto-taxi-disneyland", label: "Taxi moto Disneyland Paris" },
+];
+
 export default function SeoLandingPage({
   slug,
   h1,
@@ -71,6 +81,8 @@ export default function SeoLandingPage({
       { "@type": "ListItem", position: 2, name: serviceName, item: url },
     ],
   };
+
+  const otherPages = ALL_SEO_PAGES.filter((p) => p.slug !== slug).slice(0, 6);
 
   return (
     <>
@@ -191,6 +203,28 @@ export default function SeoLandingPage({
             </div>
           </div>
         </section>
+
+        {otherPages.length > 0 && (
+          <section className="py-12 md:py-16 bg-white border-t border-gray-100">
+            <div className="container mx-auto px-4 max-w-5xl">
+              <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">
+                Nos autres trajets en taxi moto à Paris
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {otherPages.map((p) => (
+                  <Link
+                    key={p.slug}
+                    href={`/${p.slug}`}
+                    className="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-3 text-sm md:text-base text-gray-800 transition flex items-center justify-between"
+                  >
+                    <span>{p.label}</span>
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="py-12 md:py-20 bg-black text-white">
           <div className="container mx-auto px-4 text-center">

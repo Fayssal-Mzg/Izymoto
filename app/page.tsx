@@ -100,13 +100,14 @@ export default function Home() {
               <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pt-10">
                 <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
                   <span className="text-gold-400">
-                    Transport motorisé de passager
+                    Taxi moto à Paris
                   </span>{" "}
-                  de qualité à Paris et en France
+                  — moto-taxi premium 24/7 en Île-de-France
                 </h1>
                 <p className="text-base md:text-lg text-gray-300 max-w-lg mb-6">
-                  Déplacez-vous rapidement et confortablement dans Paris avec
-                  notre service IZYMOTO premium.
+                  Déplacez-vous rapidement et confortablement à Paris avec
+                  votre taxi moto Izymoto. Transferts aéroports, gares et
+                  trajets business — tarif fixe dès 50€.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <a
@@ -128,7 +129,7 @@ export default function Home() {
                 <div className="relative md:max-w-md md:mx-auto">
                   <Image
                     src="/taxi-paris.jpg"
-                    alt="Moto-taxi IZYMOTO de service de transport premium à Paris"
+                    alt="Taxi moto Izymoto à Paris — moto-taxi premium pour transferts et trajets"
                     className="rounded-lg shadow-2xl w-full h-auto"
                     width={700}
                     height={450}

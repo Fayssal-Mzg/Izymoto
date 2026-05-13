@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import SeoLandingPage from "@/components/seo/SeoLandingPage";
 
 export const metadata: Metadata = {
-  title: "Moto-taxi Paris 24/7 — Réservation & tarif fixe dès 50€",
+  title: "Taxi moto Paris 24/7 — Moto-taxi premium dès 50€ | Izymoto",
   description:
-    "Moto-taxi à Paris disponible 24h/24, 7j/7. Évitez les embouteillages, tarif fixe dès 50€, chauffeurs professionnels, équipement fourni. Réservation en ligne ou +33 6 49 50 25 25.",
+    "Taxi moto à Paris 24h/24, 7j/7. Service moto-taxi premium dès 50€, tarif fixe, chauffeurs professionnels, équipement fourni. Réservation en ligne ou +33 6 49 50 25 25.",
   alternates: { canonical: "/moto-taxi-paris" },
   openGraph: {
-    title: "Moto-taxi Paris 24/7 — Izymoto",
-    description: "Service de moto-taxi premium à Paris. Tarif fixe dès 50€, 7j/7.",
+    title: "Taxi moto Paris 24/7 — Izymoto",
+    description: "Taxi moto et moto-taxi premium à Paris. Tarif fixe dès 50€, 7j/7.",
     url: "/moto-taxi-paris",
   },
 };
@@ -17,15 +17,15 @@ export default function Page() {
   return (
     <SeoLandingPage
       slug="moto-taxi-paris"
-      serviceName="Moto-taxi à Paris"
+      serviceName="Taxi moto à Paris"
       areaServed="Paris"
-      h1="Moto-taxi à Paris : trajets rapides 24/7 dès 50€"
-      intro="Izymoto est votre service de moto-taxi premium à Paris. Que ce soit pour un rendez-vous d'affaires, un transfert aéroport ou un trajet inter-quartiers, nos chauffeurs vous emmènent en évitant les embouteillages, avec un tarif fixe annoncé à l'avance et un équipement de sécurité complet fourni."
+      h1="Taxi moto à Paris : moto-taxi premium 24/7 dès 50€"
+      intro="Izymoto est votre service de taxi moto à Paris (aussi appelé moto-taxi). Que ce soit pour un rendez-vous d'affaires, un transfert aéroport ou un trajet inter-quartiers, nos chauffeurs vous emmènent en évitant les embouteillages, avec un tarif fixe annoncé à l'avance et un équipement de sécurité complet fourni. Réservez votre taxi moto Paris en quelques clics, 24h/24."
       priceFrom={50}
       highlights={[
-        "Évite les embouteillages parisiens (gain de temps de 40 à 60 % vs voiture aux heures de pointe)",
+        "Le taxi moto évite les embouteillages parisiens (gain de temps de 40 à 60 % vs voiture aux heures de pointe)",
         "Tarif fixe annoncé avant la course — pas de mauvaise surprise à l'arrivée",
-        "Chauffeurs professionnels formés à la conduite défensive et à l'accueil clientèle",
+        "Chauffeurs moto-taxi professionnels formés à la conduite défensive et à l'accueil clientèle",
       ]}
       routes={[
         { label: "Paris ↔ Paris (intra-muros)", price: "65€", duration: "10–25 min" },
@@ -36,12 +36,17 @@ export default function Page() {
       ]}
       faq={[
         {
-          question: "Combien coûte un moto-taxi à Paris ?",
+          question: "Combien coûte un taxi moto à Paris ?",
           answer:
-            "Un trajet en moto-taxi dans Paris démarre à 50€ pour un parcours intra-muros jusqu'à 10 km. Les transferts aéroport (CDG, Orly) sont à partir de 80€. Tous les tarifs sont fixes et annoncés avant la course.",
+            "Un trajet en taxi moto dans Paris démarre à 50€ pour un parcours intra-muros jusqu'à 10 km. Les transferts aéroport (CDG, Orly) sont à partir de 80€. Tous les tarifs sont fixes et annoncés avant la course.",
         },
         {
-          question: "Quel est le délai pour avoir un moto-taxi à Paris ?",
+          question: "Quelle est la différence entre taxi moto et moto-taxi ?",
+          answer:
+            "Aucune : ce sont deux orthographes du même service. « Taxi moto » (sans tiret) est l'usage courant, « moto-taxi » est le terme officiel utilisé dans la réglementation française (décret n°2010-1223). Izymoto opère sous statut moto-taxi homologué.",
+        },
+        {
+          question: "Quel est le délai pour avoir un taxi moto à Paris ?",
           answer:
             "Le délai moyen de prise en charge est de 15 minutes. Pour les réservations programmées, vous indiquez l'heure et le chauffeur arrive ponctuellement.",
         },
@@ -51,12 +56,12 @@ export default function Page() {
             "Oui : casque, gants, blouson et sur-pantalon adaptés à la météo sont fournis et désinfectés entre chaque course.",
         },
         {
-          question: "Le moto-taxi est-il plus rapide qu'un VTC à Paris ?",
+          question: "Le taxi moto est-il plus rapide qu'un VTC à Paris ?",
           answer:
-            "Aux heures de pointe (8h–10h et 17h–20h), le moto-taxi est en moyenne 40 à 60 % plus rapide qu'une voiture grâce au filtrage et à la circulation entre les files.",
+            "Aux heures de pointe (8h–10h et 17h–20h), un taxi moto est en moyenne 40 à 60 % plus rapide qu'une voiture grâce au filtrage et à la circulation entre les files.",
         },
         {
-          question: "Comment réserver un moto-taxi à Paris ?",
+          question: "Comment réserver un taxi moto à Paris ?",
           answer:
             "Via le formulaire en ligne sur izymoto.com (devis instantané), par téléphone au +33 6 49 50 25 25, ou par email à contact@izymoto.com.",
         },
