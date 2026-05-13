@@ -45,5 +45,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.75,
   }));
 
-  return [...corePages, ...seoLandingPages, ...neighborhoodPages];
+  const blogPages: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    ...[
+      "prix-taxi-moto-paris-cdg",
+      "taxi-moto-vs-vtc-paris",
+      "comment-reserver-taxi-moto-paris",
+    ].map((slug) => ({
+      url: `${SITE_URL}/blog/${slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+  ];
+
+  return [...corePages, ...seoLandingPages, ...neighborhoodPages, ...blogPages];
 }

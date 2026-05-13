@@ -86,6 +86,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/blog"
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/chauffeur/inscription"
                   className="text-amber-400 hover:text-amber-300 transition-colors duration-300 text-sm font-semibold"
                 >
