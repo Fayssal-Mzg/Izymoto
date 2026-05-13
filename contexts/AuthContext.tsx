@@ -29,11 +29,14 @@ interface ReservationDetails {
   prix: number | null;
 }
 
+export type UserRole = "client" | "driver" | "admin";
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   reservationDetails: ReservationDetails | null;
   signUp: (email: string, password: string) => Promise<void>;
+  signUpAsDriver: (email: string, password: string) => Promise<User>;
   logIn: (email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -91,11 +94,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await setDoc(doc(db, "users", newUser.uid), {
       uid: newUser.uid,
       email: newUser.email,
+      role: "client",
       createdAt: serverTimestamp(),
       lastLogin: serverTimestamp(),
       isAdmin: false,
       ...(reservationDetails ? { pendingReservation: reservationDetails } : {}),
     });
+  };
+
+  // Inscription chauffeur : crée l'utilisateur Firebase Auth + marque le rôle
+  // "driver" sur users/{uid}. La fiche drivers/{uid} est créée dans un second
+  // temps par le wizard (étapes infos + docs) avec status "pending".
+  const signUpAsDriver = async (
+    email: string,
+    password: string
+  ): Promise<User> => {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const newUser = userCredential.user;
+
+    await setDoc(doc(db, "users", newUser.uid), {
+      uid: newUser.uid,
+      email: newUser.email,
+      role: "driver",
+      createdAt: serverTimestamp(),
+      lastLogin: serverTimestamp(),
+      isAdmin: false,
+    });
+
+    return newUser;
   };
 
   const logIn = async (email: string, password: string) => {
@@ -114,6 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
+        role: "client",
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
         isAdmin: false,
@@ -151,6 +182,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: user.email,
         displayName: user.displayName || null,
         photoURL: user.photoURL,
+        role: "client",
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
         isAdmin: false,
@@ -204,6 +236,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
         reservationDetails,
         signUp,
+        signUpAsDriver,
         logIn,
         logOut,
         signInWithGoogle,

@@ -246,7 +246,9 @@ export async function debitWalletForBooking(
       paymentStatus: "paid_wallet",
       walletAmountCents: amountCents,
       isPaid: true,
-      status: "confirmed",
+      // Wallet = paiement immédiat, la course peut entrer directement dans
+      // le pool des chauffeurs (FCFS).
+      status: "awaiting_driver",
       createdAt: now,
     });
 
@@ -363,7 +365,10 @@ export async function debitWalletForHybridBooking(
       amountAuthorized: cardAmountCents / 100,
       prix: totalCents / 100,
       isPaid: false,
-      status: "confirmed",
+      // Hybride : part wallet débitée + hold carte autorisé → la course peut
+      // entrer dans le pool. Si le hold échoue plus tard (webhook failed),
+      // refundHybridBookings remboursera la part wallet et passera en cancelled.
+      status: "awaiting_driver",
       createdAt: now,
     });
 

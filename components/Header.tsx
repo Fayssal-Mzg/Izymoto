@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useReservation } from "@/lib/hooks/useReservation";
-import { Phone, Menu, X, User, LogOut } from "lucide-react";
+import { Phone, Menu, X, User, LogOut, Bike } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,8 +16,10 @@ const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Sur /admin, le AdminLayout fournit sa propre nav — on masque le Header global.
+  // Sur /admin et /chauffeur, le layout dédié fournit sa propre nav — on
+  // masque le Header global pour éviter le doublon.
   if (pathname?.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/chauffeur")) return null;
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -145,6 +147,15 @@ const Header = () => {
           {/* Contact et authentification desktop */}
           <div className="hidden md:flex items-center gap-2 lg:gap-3 text-white">
             <HeaderWalletBadge />
+            <Link
+              href="/chauffeur/inscription"
+              onClick={handleNavigation}
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs tracking-wider text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 rounded-md transition-colors"
+              title="Espace chauffeur"
+            >
+              <Bike className="h-3.5 w-3.5" />
+              Espace chauffeur
+            </Link>
             <a
               href="tel:+33649502525"
               title="Nous appeler : (+33) 6 49 50 25 25"
@@ -249,6 +260,15 @@ const Header = () => {
               onClick={handleNavigation}
             >
               À propos
+            </Link>
+
+            <Link
+              href="/chauffeur/inscription"
+              onClick={handleNavigation}
+              className="inline-flex items-center justify-center gap-2 text-amber-400 text-base uppercase tracking-widest border border-amber-400/40 hover:bg-amber-400 hover:text-black transition-all duration-300 px-6 py-2.5 rounded-md mt-4"
+            >
+              <Bike className="h-4 w-4" />
+              Espace chauffeur
             </Link>
 
             <div className="pt-8 flex flex-col items-center space-y-4">

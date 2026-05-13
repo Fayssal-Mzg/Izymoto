@@ -8,6 +8,7 @@ import {
   Settings,
   LogOut,
   ExternalLink,
+  Bike,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export const NAV_ITEMS = [
   { icon: LayoutDashboard, name: "Tableau de bord", path: "/admin" },
   { icon: CalendarClock, name: "Réservations", path: "/admin/reservations" },
+  { icon: Bike, name: "Chauffeurs", path: "/admin/chauffeurs" },
   { icon: Users, name: "Utilisateurs", path: "/admin/utilisateurs" },
   { icon: Wallet, name: "Portefeuilles", path: "/admin/wallets" },
   { icon: Settings, name: "Paramètres", path: "/admin/parametres" },

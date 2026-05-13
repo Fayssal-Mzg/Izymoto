@@ -7,6 +7,7 @@ import { Phone, MapPin } from "lucide-react";
 export function Footer() {
   const pathname = usePathname();
   if (pathname?.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/chauffeur")) return null;
 
   return (
     <footer className="bg-black text-white py-12 md:py-16">
@@ -81,6 +82,14 @@ export function Footer() {
                   className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
                 >
                   Contact
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/chauffeur/inscription"
+                  className="text-amber-400 hover:text-amber-300 transition-colors duration-300 text-sm font-semibold"
+                >
+                  Devenir chauffeur
                 </Link>
               </li>
             </ul>

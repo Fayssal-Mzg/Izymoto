@@ -165,9 +165,14 @@ export async function POST(request) {
 
       case "payment_intent.amount_capturable_updated":
         if (isWalletRecharge) break; // wallet = capture immédiate, pas de hold
+        // Le hold est actif côté Stripe → la course peut désormais être
+        // proposée au pool des chauffeurs (FCFS). Au stade "amount_capturable_updated"
+        // la course n'a jamais pu être acceptée (booking encore en "pending"),
+        // donc pas de conflit avec un éventuel statut assigned.
         await updateBookingByPaymentIntent(obj.id, {
           paymentStatus: "authorized",
           amountAuthorized: obj.amount / 100,
+          status: "awaiting_driver",
         });
         break;
 
