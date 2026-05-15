@@ -8,6 +8,7 @@ import {
   getTierOrThrow,
   refundWalletForBooking,
 } from "@/lib/wallet/server";
+import { sendReviewRequestEmail } from "@/lib/emails/reviewRequestEmail";
 
 // Webhook Stripe — source unique de vérité pour les transitions de statut.
 // Côtés client/admin appellent les endpoints (capture/cancel/increment) puis
@@ -66,6 +67,34 @@ const updateBookingByPaymentIntent = async (paymentIntentId, fields) => {
     )
   );
   return bookings;
+};
+
+// Demande d'avis Google envoyée après capture réussie. Idempotent via le flag
+// reviewRequestEmailSentAt posé sur le booking : si Stripe redélivre
+// payment_intent.succeeded, on skip. Tout échec est loggué sans casser le
+// webhook (le retour 200 reste essentiel pour ne pas que Stripe ré-essaie).
+const sendReviewRequestsForBookings = async (bookings) => {
+  for (const b of bookings) {
+    if (b.reviewRequestEmailSentAt) continue;
+    if (!b.email || typeof b.email !== "string" || !b.email.includes("@")) continue;
+    try {
+      await sendReviewRequestEmail({
+        to: b.email,
+        clientName: b.name || b.userName || b.clientName,
+        bookingId: b.reservationId || b.id,
+        depart: b.depart,
+        arrivee: b.arrivee,
+      });
+      await updateDoc(doc(db, "bookings", b.id), {
+        reviewRequestEmailSentAt: Timestamp.now(),
+      });
+    } catch (err) {
+      console.error(
+        `[stripe-webhook] échec envoi demande d'avis pour booking ${b.id}:`,
+        err
+      );
+    }
+  }
 };
 
 // Refund de la part wallet pour les bookings hybrid quand le PI Stripe est
@@ -176,14 +205,16 @@ export async function POST(request) {
         });
         break;
 
-      case "payment_intent.succeeded":
+      case "payment_intent.succeeded": {
         if (isWalletRecharge) break; // déjà géré par checkout.session.completed
-        await updateBookingByPaymentIntent(obj.id, {
+        const captured = await updateBookingByPaymentIntent(obj.id, {
           paymentStatus: "captured",
           amountCaptured: obj.amount_received / 100,
           status: "completed",
         });
+        await sendReviewRequestsForBookings(captured);
         break;
+      }
 
       case "payment_intent.canceled": {
         if (isWalletRecharge) break;
