@@ -206,7 +206,7 @@ export default function Home() {
                     <Clock className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">RAPIDITÉ</h3>
+                    <h3 className="text-xl font-bold mb-2">SERVICE RAPIDE</h3>
                     <p className="text-gray-700">
                       Gagnez un temps précieux en évitant les embouteillages
                       parisiens. Notre service vous garantit l'arrivée la plus
@@ -223,7 +223,7 @@ export default function Home() {
                     <ThumbsUp className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">CONFORT</h3>
+                    <h3 className="text-xl font-bold mb-2">CONFORT PREMIUM</h3>
                     <p className="text-gray-700">
                       Équipement premium et pilotes expérimentés pour votre
                       sécurité et confort pendant tout le trajet. Nos véhicules
@@ -239,7 +239,7 @@ export default function Home() {
                     <Shield className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">FIABILITÉ</h3>
+                    <h3 className="text-xl font-bold mb-2">FIABILITÉ 24/7</h3>
                     <p className="text-gray-700">
                       Service ponctuel et professionnel, disponible 7j/7. Nos
                       chauffeurs sont formés pour vous offrir une expérience
@@ -565,7 +565,7 @@ export default function Home() {
         >
           <div className="container mx-auto px-4 text-center relative z-10">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
-              Prêt à <span className="text-white">voyager avec classe</span> ?
+              Prêt à <span className="text-white">réserver votre moto-taxi</span> ?
             </h2>
 
             <p className="text-base md:text-xl text-gray-300 max-w-2xl mx-auto mb-10">

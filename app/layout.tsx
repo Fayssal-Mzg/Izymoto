@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/Footer";
 import Header from "@/components/Header";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
@@ -203,13 +204,13 @@ export default function RootLayout({
         <Script
           id="ld-localbusiness"
           type="application/ld+json"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
         <Script
           id="ld-organization"
           type="application/ld+json"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
         <AuthProvider>
@@ -225,6 +226,7 @@ export default function RootLayout({
           data-mode="bubble"
           strategy="lazyOnload"
         />
+        <Analytics />
       </body>
     </html>
   );
