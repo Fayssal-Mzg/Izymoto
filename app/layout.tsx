@@ -193,6 +193,14 @@ const organizationSchema = {
   ],
 };
 
+// TODO Analytics : remplacer par l'ID GA4 réel (format "G-XXXXXXXXXX")
+// récupérable dans Google Analytics > Admin > Flux de données > Web.
+// Tant que la valeur reste le placeholder, gtag n'est pas injecté.
+// ⚠ RGPD : penser à brancher la bannière de consentement avant prod
+// (sinon l'envoi de pageviews sans consentement est non conforme en France).
+const GA_MEASUREMENT_ID = "G-XXXXXXXXXX";
+const GA_ENABLED = GA_MEASUREMENT_ID !== "G-XXXXXXXXXX";
+
 export default function RootLayout({
   children,
 }: {
@@ -204,13 +212,13 @@ export default function RootLayout({
         <Script
           id="ld-localbusiness"
           type="application/ld+json"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
         <Script
           id="ld-organization"
           type="application/ld+json"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
         <AuthProvider>
@@ -220,6 +228,21 @@ export default function RootLayout({
             <Footer />
           </GoogleMapsProvider>
         </AuthProvider>
+        {GA_ENABLED && (
+          <>
+            <Script
+              id="ga4-loader"
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_MEASUREMENT_ID}');`}
+            </Script>
+          </>
+        )}
         <Script
           src="https://limova-web-sltj.onrender.com/scripts/chatbot-loader.js?v=20260515"
           data-connection-id="0ac42bfe-b334-4a78-a15a-2004ae8005e9"
