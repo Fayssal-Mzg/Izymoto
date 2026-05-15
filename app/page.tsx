@@ -701,7 +701,7 @@ export default function Home() {
 
             <div className="flex justify-center space-x-8 md:space-x-16">
               <a
-                href="https://www.facebook.com/zaouiazeddine"
+                href="https://www.facebook.com/Izymoto/"
                 className="social-icon group"
                 aria-label="Facebook"
               >
@@ -711,7 +711,7 @@ export default function Home() {
                 <span className="block mt-2 text-sm">Facebook</span>
               </a>
               <a
-                href="https://www.instagram.com/izymoto_taxi/"
+                href="https://www.instagram.com/izymoto_paris"
                 className="social-icon group"
                 aria-label="Instagram"
               >

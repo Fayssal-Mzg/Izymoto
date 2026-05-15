@@ -123,8 +123,8 @@ const localBusinessSchema = {
     closes: "23:59",
   },
   sameAs: [
-    "https://www.facebook.com/zaouiazeddine",
-    "https://www.instagram.com/izymoto_taxi/",
+    "https://www.facebook.com/Izymoto/",
+    "https://www.instagram.com/izymoto_paris",
     "https://www.linkedin.com/in/azeddine-zaouia-a6640788/",
   ],
   hasOfferCatalog: {
@@ -172,8 +172,9 @@ export default function RootLayout({
           </GoogleMapsProvider>
         </AuthProvider>
         <Script
-          src="https://limova-web-sltj.onrender.com/scripts/chatbot-loader.js"
+          src="https://limova-web-sltj.onrender.com/scripts/chatbot-loader.js?v=20260515"
           data-connection-id="0ac42bfe-b334-4a78-a15a-2004ae8005e9"
+          data-mode="bubble"
           strategy="lazyOnload"
         />
       </body>
