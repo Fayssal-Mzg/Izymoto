@@ -17,7 +17,7 @@ export function Footer() {
           <div className="md:col-span-1">
             <img
               src="/Izymoto1.svg"
-              alt="Logo IZYMOTO"
+              alt="Izymoto — Moto-taxi Paris & Île-de-France"
               className="h-10 mb-4"
               loading="lazy"
             />

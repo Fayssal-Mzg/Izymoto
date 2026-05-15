@@ -52,13 +52,13 @@ export default function ReservationForm({
       {/* Colonne de gauche - Formulaire */}
       <div className={cn("w-full flex flex-col", customFormClass)}>
         <div className="w-full max-w-md">
-          <h1 className="text-xl md:text-4xl font-bold mb-4 text-black">
+          <h2 className="text-xl md:text-4xl font-bold mb-4 text-black">
             {isSimplified ? (
               "Votre trajet"
             ) : (
               <>Où souhaitez-vous être déposé&nbsp;?</>
             )}
-          </h1>
+          </h2>
 
           <div className="space-y-4">
             <SearchForm

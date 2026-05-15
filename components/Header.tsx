@@ -85,7 +85,7 @@ const Header = () => {
           >
             <Image
               src="/Izymoto1.svg"
-              alt="Izymoto"
+              alt="Izymoto — Taxi moto Paris & moto-taxi premium"
               width={120}
               height={40}
               className="object-contain h-10 w-auto"

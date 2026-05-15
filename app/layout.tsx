@@ -11,11 +11,11 @@ const SITE_URL = "https://izymoto.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Izymoto — Taxi moto Paris & moto-taxi premium 24/7 | CDG, Orly, gares",
+    default: "Taxi moto Paris — Moto-taxi premium 24/7 | Izymoto",
     template: "%s | IZYMOTO",
   },
   description:
-    "Taxi moto Paris & moto-taxi premium en Île-de-France 24h/24, 7j/7. Transferts aéroports (CDG, Orly, Beauvais), gares, trajets en ville, mise à disposition. Tarif fixe dès 50€.",
+    "Taxi moto à Paris 24h/24 : transferts CDG, Orly, gares et trajets business en moto-taxi premium. Tarif fixe dès 50€. Réservation en ligne 7j/7.",
   keywords: [
     "taxi moto paris",
     "taxi moto",
@@ -47,9 +47,9 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: SITE_URL,
     siteName: "IZYMOTO",
-    title: "Izymoto — Taxi moto Paris & moto-taxi premium 24/7",
+    title: "Taxi moto Paris — Moto-taxi premium 24/7 | Izymoto",
     description:
-      "Taxi moto à Paris : transferts aéroport, trajets en ville et mise à disposition. Réservation en ligne, tarif fixe, moto-taxi disponible 7j/7.",
+      "Taxi moto Paris 24h/24 : transferts CDG, Orly, gares, trajets business. Tarif fixe dès 50€. Réservation 7j/7.",
     images: [
       {
         url: "/taxi-paris.jpg",
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Izymoto — Taxi moto Paris & moto-taxi premium 24/7",
+    title: "Taxi moto Paris — Moto-taxi 24/7 | Izymoto",
     description:
-      "Taxi moto Paris : transferts aéroport, trajets en ville. Tarif fixe, 7j/7.",
+      "Taxi moto Paris 24h/24 : transferts CDG, Orly, gares. Tarif fixe dès 50€.",
     images: ["/taxi-paris.jpg"],
   },
   robots: {
@@ -150,6 +150,48 @@ const localBusinessSchema = {
   },
 };
 
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
+  name: "IZYMOTO",
+  alternateName: ["Izymoto", "Izymoto Taxi", "Izymoto Moto-taxi"],
+  url: SITE_URL,
+  logo: {
+    "@type": "ImageObject",
+    url: `${SITE_URL}/Izymoto.svg`,
+    width: 512,
+    height: 512,
+  },
+  image: `${SITE_URL}/taxi-paris.jpg`,
+  description:
+    "Izymoto est un service de taxi moto et moto-taxi premium basé à Paris. Transferts aéroports (CDG, Orly, Beauvais), gares (Gare du Nord, Gare de Lyon), trajets en ville et mise à disposition à l'heure, 24h/24 et 7j/7.",
+  foundingDate: "2010",
+  email: "contact@izymoto.com",
+  telephone: "+33649502525",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "25 Rue de Ponthieu",
+    addressLocality: "Paris",
+    postalCode: "75008",
+    addressRegion: "Île-de-France",
+    addressCountry: "FR",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: "+33649502525",
+    email: "contact@izymoto.com",
+    contactType: "customer service",
+    areaServed: "FR",
+    availableLanguage: ["French", "English"],
+  },
+  sameAs: [
+    "https://www.facebook.com/Izymoto/",
+    "https://www.instagram.com/izymoto_paris",
+    "https://www.linkedin.com/in/azeddine-zaouia-a6640788/",
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -163,6 +205,12 @@ export default function RootLayout({
           type="application/ld+json"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        />
+        <Script
+          id="ld-organization"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
         <AuthProvider>
           <GoogleMapsProvider>

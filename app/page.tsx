@@ -153,7 +153,7 @@ export default function Home() {
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3">
-                Réservez votre trajet
+                Réservez votre taxi moto à Paris
               </h2>
               <p className="text-base text-gray-600 max-w-xl mx-auto">
                 Indiquez votre point de départ et d'arrivée pour obtenir un
@@ -258,7 +258,7 @@ export default function Home() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
-                Nos <span className="text-black">tarifs</span>
+                Nos <span className="text-black">tarifs taxi moto</span>
               </h2>
               <div className="w-16 h-1 bg-black mx-auto mb-4"></div>
               <p className="text-base md:text-lg text-gray-600 max-w-xl mx-auto">
@@ -351,7 +351,7 @@ export default function Home() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Bike size={20} className="text-white" />
-                    <h3 className="text-xl font-bold">TRAJET EN VILLE</h3>
+                    <h3 className="text-xl font-bold">TRAJET EN VILLE EN MOTO-TAXI</h3>
                   </div>
                   <div className="w-12 h-1 bg-white"></div>
                 </div>
@@ -426,7 +426,7 @@ export default function Home() {
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar size={20} className="text-black" />
-                    <h3 className="text-xl font-bold">MISE À DISPOSITION</h3>
+                    <h3 className="text-xl font-bold">MISE À DISPOSITION MOTO-TAXI</h3>
                   </div>
                   <div className="w-12 h-1 bg-black"></div>
                 </div>
@@ -524,7 +524,7 @@ export default function Home() {
               </div>
               <div className="lg:w-1/2">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-                  À <span className="text-black">propos</span> de nous
+                  À <span className="text-black">propos</span> d'Izymoto, taxi moto à Paris
                 </h2>
                 <div className="w-16 h-1 bg-black mb-6"></div>
                 <p className="text-gray-700 mb-4">

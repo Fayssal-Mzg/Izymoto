@@ -141,9 +141,9 @@ export default function ReservationProcess({
                 className="px-4 py-3 flex items-center justify-between cursor-pointer lg:cursor-default"
                 onClick={() => setFormExpanded(!formExpanded)}
               >
-                <h1 className="text-xl font-medium text-white">
+                <h2 className="text-xl font-medium text-white">
                   Réserver un trajet
-                </h1>
+                </h2>
                 <button
                   className="lg:hidden rounded-full bg-white/10 p-1.5 transition-transform duration-300"
                   aria-label={
