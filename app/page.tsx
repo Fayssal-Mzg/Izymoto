@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
 import ConfirmationModal from "@/app/reserver/components/ConfirmationModal";
@@ -550,6 +551,144 @@ export default function Home() {
                     2010
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Trajets populaires (maillage interne SEO) */}
+        <section
+          aria-labelledby="trajets-populaires-heading"
+          className="py-12 md:py-16 bg-white border-t border-gray-100"
+        >
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center mb-8">
+              <h2
+                id="trajets-populaires-heading"
+                className="text-2xl md:text-4xl font-bold mb-3"
+              >
+                Nos trajets en <span className="text-black">taxi moto à Paris</span>
+              </h2>
+              <div className="w-16 h-1 bg-black mx-auto mb-4" aria-hidden="true"></div>
+              <p className="text-base text-gray-600 max-w-2xl mx-auto">
+                Découvrez nos pages dédiées par destination, aéroport, gare ou
+                quartier parisien pour réserver votre moto-taxi en quelques clics.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                  Aéroports & gares
+                </h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/moto-taxi-aeroport-cdg" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Aéroport CDG
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/moto-taxi-aeroport-orly" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Aéroport Orly
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/moto-taxi-gare-du-nord" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Gare du Nord
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/moto-taxi-gare-de-lyon" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Gare de Lyon
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/moto-taxi-disneyland" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Disneyland Paris
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                  Quartiers parisiens
+                </h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/moto-taxi-paris" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Paris (tous arrondissements)
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/taxi-moto-paris-8" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Paris 8e
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/taxi-moto-paris-16" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Paris 16e
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/taxi-moto-champs-elysees" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Champs-Élysées
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/taxi-moto-bastille" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Bastille
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/taxi-moto-saint-germain" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto Saint-Germain
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-3">
+                  Business & ressources
+                </h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/moto-taxi-la-defense" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto La Défense
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/portefeuille" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Portefeuille entreprise
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/nos-tarifs" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Tarifs taxi moto Paris
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/aeroports" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Tous nos transferts aéroports
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/blog/prix-taxi-moto-paris-cdg" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Prix taxi moto Paris ↔ CDG
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/blog/taxi-moto-vs-vtc-paris" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Taxi moto vs VTC à Paris
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/blog/comment-reserver-taxi-moto-paris" className="text-gray-800 hover:text-black hover:underline text-sm">
+                      Comment réserver un taxi moto
+                    </Link>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>

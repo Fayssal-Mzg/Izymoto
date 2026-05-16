@@ -4,6 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Phone, MapPin } from "lucide-react";
 
+const SEO_LANDING_LINKS: { href: string; label: string }[] = [
+  { href: "/moto-taxi-paris", label: "Taxi moto Paris" },
+  { href: "/moto-taxi-aeroport-cdg", label: "Taxi moto CDG" },
+  { href: "/moto-taxi-aeroport-orly", label: "Taxi moto Orly" },
+  { href: "/moto-taxi-gare-du-nord", label: "Taxi moto Gare du Nord" },
+  { href: "/moto-taxi-gare-de-lyon", label: "Taxi moto Gare de Lyon" },
+  { href: "/moto-taxi-la-defense", label: "Taxi moto La Défense" },
+  { href: "/moto-taxi-disneyland", label: "Taxi moto Disneyland" },
+  { href: "/taxi-moto-paris-8", label: "Taxi moto Paris 8e" },
+  { href: "/taxi-moto-paris-16", label: "Taxi moto Paris 16e" },
+  { href: "/taxi-moto-champs-elysees", label: "Taxi moto Champs-Élysées" },
+  { href: "/taxi-moto-bastille", label: "Taxi moto Bastille" },
+  { href: "/taxi-moto-saint-germain", label: "Taxi moto Saint-Germain" },
+];
+
 export function Footer() {
   const pathname = usePathname();
   if (pathname?.startsWith("/admin")) return null;
@@ -176,6 +191,51 @@ export function Footer() {
             </form>
           </div>
         </div>
+
+        <nav
+          aria-label="Trajets populaires en taxi moto à Paris"
+          className="mt-10 pt-8 border-t border-gray-800"
+        >
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">
+            Trajets populaires en taxi moto
+          </h3>
+          <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2">
+            {SEO_LANDING_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="text-gray-400 hover:text-white text-xs transition-colors duration-300"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link
+                href="/blog"
+                className="text-gray-400 hover:text-white text-xs transition-colors duration-300"
+              >
+                Blog moto-taxi Paris
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/aeroports"
+                className="text-gray-400 hover:text-white text-xs transition-colors duration-300"
+              >
+                Transferts aéroports
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/nos-tarifs"
+                className="text-gray-400 hover:text-white text-xs transition-colors duration-300"
+              >
+                Tarifs taxi moto Paris
+              </Link>
+            </li>
+          </ul>
+        </nav>
 
         <div className="mt-10 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-500 text-xs mb-4 md:mb-0">
