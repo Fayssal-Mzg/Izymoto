@@ -25,15 +25,15 @@ export function Footer() {
   if (pathname?.startsWith("/chauffeur")) return null;
 
   return (
-    <footer className="bg-black text-white py-12 md:py-16">
+    <footer className="bg-navy-950 text-white py-12 md:py-16">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Logo and intro */}
           <div className="md:col-span-1">
             <img
-              src="/Izymoto1.svg"
+              src="/izymoto-logo-v6.png"
               alt="Izymoto — Moto-taxi Paris & Île-de-France"
-              className="h-10 mb-4"
+              className="h-10 mb-4 w-auto"
               loading="lazy"
             />
             <p className="text-gray-400 mb-4 text-sm">

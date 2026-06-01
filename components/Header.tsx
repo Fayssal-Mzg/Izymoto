@@ -75,7 +75,7 @@ const Header = () => {
   return (
     <header className="w-full z-50 bg-transparent">
       {/* Barre supérieure combinée */}
-      <div className="bg-black backdrop-blur-sm">
+      <div className="bg-navy-950 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           {/* Logo */}
           <Link
@@ -84,10 +84,10 @@ const Header = () => {
             onClick={handleNavigation}
           >
             <Image
-              src="/Izymoto1.svg"
+              src="/izymoto-logo-v6.png"
               alt="Izymoto — Taxi moto Paris & moto-taxi premium"
-              width={120}
-              height={40}
+              width={260}
+              height={80}
               className="object-contain h-10 w-auto"
               priority
             />
@@ -213,7 +213,7 @@ const Header = () => {
 
       {/* Menu mobile */}
       <div
-        className={`fixed inset-0 bg-black/95 z-40 transform transition-transform duration-500 ease-in-out ${
+        className={`fixed inset-0 bg-navy-950/95 z-40 transform transition-transform duration-500 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

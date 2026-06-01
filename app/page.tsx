@@ -82,11 +82,126 @@ export default function Home() {
   return (
     <MapWrapper>
       <div className="bg-background overflow-x-hidden min-h-screen">
+        {/* 🚀 App Teaser Hero — "Bientôt disponible" product reveal */}
+        <section
+          aria-label="Application Izymoto — bientôt disponible"
+          className="relative overflow-hidden bg-navy-950 text-white"
+        >
+          {/* Halos mint en fond */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-luxury-radial opacity-70"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-32 -right-24 h-96 w-96 rounded-full bg-mint-400/20 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-mint-500/15 blur-3xl"
+          />
+
+          <div className="container relative mx-auto px-4 py-14 md:py-20 lg:py-24 md:px-6 lg:px-8">
+            <div className="grid items-center gap-10 md:gap-12 lg:gap-16 md:grid-cols-2">
+              {/* Colonne texte */}
+              <div className="order-2 md:order-1">
+                <span className="inline-flex items-center gap-2 rounded-full border border-mint-400/40 bg-mint-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-mint-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-mint-400" />
+                  </span>
+                  Bientôt disponible
+                </span>
+
+                <h1 className="mt-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl md:text-6xl">
+                  Notre app arrive,{" "}
+                  <span className="text-mint-400">réservez en 30 secondes.</span>
+                </h1>
+
+                <p className="mt-5 max-w-lg text-base text-white/80 md:text-lg">
+                  L'application Izymoto débarque sur iOS et Android.
+                  Moto-taxi à Paris, n'importe où, n'importe quand —
+                  rapide, fiable, partout en Île-de-France.
+                </p>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href="#reservation"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-mint-400 px-6 py-3 text-base font-semibold text-navy-950 shadow-[0_10px_30px_-10px_rgba(45,212,191,0.6)] transition-all duration-300 hover:bg-mint-300 hover:shadow-[0_15px_40px_-10px_rgba(45,212,191,0.8)] hover:-translate-y-0.5"
+                  >
+                    Réserver dès maintenant
+                    <ArrowRight className="h-5 w-5" />
+                  </a>
+                  <a
+                    href="mailto:contact@izymoto.com?subject=Pr%C3%A9-inscription%20app%20Izymoto"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 px-6 py-3 text-base font-medium text-white transition-colors duration-300 hover:border-mint-400 hover:bg-white/5 hover:text-mint-300"
+                  >
+                    M'avertir au lancement
+                  </a>
+                </div>
+
+                <div className="mt-8 flex items-center gap-5 text-sm text-white/60">
+                  <div className="flex items-center gap-2">
+                    <span className="text-mint-400">★</span> 4,9/5 avis clients
+                  </div>
+                  <span className="h-1 w-1 rounded-full bg-white/30" />
+                  <div>Service 24h/24, 7j/7</div>
+                </div>
+              </div>
+
+              {/* Colonne affiche */}
+              <div className="order-1 md:order-2">
+                <div className="relative mx-auto max-w-xl">
+                  {/* Cadre avec lueur mint */}
+                  <div className="absolute -inset-2 rounded-2xl bg-gradient-to-tr from-mint-400/40 via-mint-300/20 to-transparent blur-xl" />
+                  <div className="relative overflow-hidden rounded-2xl ring-1 ring-white/10 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)] float-animation">
+                    <Image
+                      src="/app-teaser.png"
+                      alt="Application Izymoto — bientôt disponible sur l'App Store et Google Play"
+                      width={1356}
+                      height={736}
+                      className="block w-full h-auto"
+                      priority
+                    />
+                  </div>
+
+                  {/* Icône app détachée — bottom-left */}
+                  <div className="absolute -bottom-6 -left-4 sm:-bottom-8 sm:-left-8 rotate-[-6deg] transition-transform duration-500 hover:rotate-0 hover:scale-105">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-[28%] bg-mint-400/40 blur-2xl" />
+                      <Image
+                        src="/app-icon.png"
+                        alt="Icône de l'app Izymoto"
+                        width={120}
+                        height={120}
+                        className="relative h-20 w-20 sm:h-28 sm:w-28 rounded-[28%] shadow-2xl ring-2 ring-white/20"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pastille "v1.0 — Été 2026" — top-right */}
+                  <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 rotate-[8deg]">
+                    <div className="rounded-full bg-white text-navy-950 px-4 py-1.5 text-xs font-bold uppercase tracking-widest shadow-lg">
+                      v1.0 · Été 2026
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Séparateur dégradé vers l'hero suivant */}
+          <div
+            aria-hidden
+            className="h-px w-full bg-gradient-to-r from-transparent via-mint-400/40 to-transparent"
+          />
+        </section>
+
         {/* Hero Section - Mobile Optimized */}
         <section
           ref={heroRef}
           className={cn(
-            "relative bg-slate-900 text-white py-6 md:py-0",
+            "relative bg-navy-950 text-white py-6 md:py-0",
             heroInView ? "opacity-100" : "opacity-0",
             "transition-opacity duration-1000"
           )}
@@ -100,12 +215,12 @@ export default function Home() {
             <div className="flex flex-col md:flex-row items-center md:items-start md:mt-8">
               <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pt-10">
                 <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
-                  <span className="text-gold-400">
+                  <span className="text-mint-400">
                     Taxi moto à Paris
                   </span>{" "}
                   — moto-taxi premium 24/7 en Île-de-France
                 </h1>
-                <p className="text-base md:text-lg text-gray-300 max-w-lg mb-6">
+                <p className="text-base md:text-lg text-white/80 max-w-lg mb-6">
                   Déplacez-vous rapidement et confortablement à Paris avec
                   votre taxi moto Izymoto. Transferts aéroports, gares et
                   trajets business — tarif fixe dès 50€.
@@ -113,14 +228,14 @@ export default function Home() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <a
                     href="#reservation"
-                    className="bg-black text-white font-medium text-base px-6 py-3 rounded-lg inline-flex items-center justify-center group hover:bg-gray-800 transition-colors duration-300 w-full sm:w-auto"
+                    className="bg-mint-400 text-navy-950 font-semibold text-base px-6 py-3 rounded-lg inline-flex items-center justify-center group hover:bg-mint-300 transition-colors duration-300 w-full sm:w-auto shadow-[0_10px_30px_-10px_rgba(45,212,191,0.6)]"
                   >
                     <span>Réserver maintenant</span>
                     <ArrowRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
                   </a>
                   <a
                     href="#tarifs"
-                    className="border border-gray-400 text-white font-medium text-base px-6 py-3 rounded-lg inline-flex items-center justify-center hover:bg-white/10 transition-colors duration-300 w-full sm:w-auto"
+                    className="border border-white/30 text-white font-medium text-base px-6 py-3 rounded-lg inline-flex items-center justify-center hover:border-mint-400 hover:bg-white/5 hover:text-mint-300 transition-colors duration-300 w-full sm:w-auto"
                   >
                     <span>Nos tarifs</span>
                   </a>
@@ -137,7 +252,7 @@ export default function Home() {
                     priority
                     style={{ maxHeight: "60vh" }}
                   />
-                  <div className="absolute -bottom-4 -right-4 bg-black text-white py-2 px-4 rounded-lg shadow-lg text-sm hidden sm:block">
+                  <div className="absolute -bottom-4 -right-4 bg-mint-400 text-navy-950 py-2 px-4 rounded-lg shadow-lg text-sm font-semibold hidden sm:block">
                     <div className="flex items-center gap-2">
                       <Clock size={16} />
                       <span>Service 24/7</span>

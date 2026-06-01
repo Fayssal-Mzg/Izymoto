@@ -10,16 +10,16 @@ const SkeletonLoader = () => {
     <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
       <div className="text-center">
         <img
-          src="/Izymoto1.svg"
+          src="/app-icon.png"
           alt="IZYMOTO"
-          className="mx-auto mb-6"
+          className="mx-auto mb-6 rounded-2xl"
           width="64"
           height="64"
           style={{ width: "64px", height: "64px" }}
         />
 
         <div className="flex space-x-3 justify-center">
-          <div className="w-3 h-3 bg-gold-500 rounded-full animate-pulse"></div>
+          <div className="w-3 h-3 bg-mint-500 rounded-full animate-pulse"></div>
           <div
             className="w-3 h-3 bg-gold-500 rounded-full animate-pulse"
             style={{ animationDelay: "0.1s" }}
