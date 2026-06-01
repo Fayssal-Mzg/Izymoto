@@ -212,53 +212,36 @@ export default function Home() {
           }}
         >
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start md:mt-8">
-              <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pt-10">
-                <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
-                  <span className="text-mint-400">
-                    Taxi moto à Paris
-                  </span>{" "}
-                  — moto-taxi premium 24/7 en Île-de-France
-                </h1>
-                <p className="text-base md:text-lg text-white/80 max-w-lg mb-6">
-                  Déplacez-vous rapidement et confortablement à Paris avec
-                  votre taxi moto Izymoto. Transferts aéroports, gares et
-                  trajets business — tarif fixe dès 50€.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <a
-                    href="#reservation"
-                    className="bg-mint-400 text-navy-950 font-semibold text-base px-6 py-3 rounded-lg inline-flex items-center justify-center group hover:bg-mint-300 transition-colors duration-300 w-full sm:w-auto shadow-[0_10px_30px_-10px_rgba(45,212,191,0.6)]"
-                  >
-                    <span>Réserver maintenant</span>
-                    <ArrowRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
-                  </a>
-                  <a
-                    href="#tarifs"
-                    className="border border-white/30 text-white font-medium text-base px-6 py-3 rounded-lg inline-flex items-center justify-center hover:border-mint-400 hover:bg-white/5 hover:text-mint-300 transition-colors duration-300 w-full sm:w-auto"
-                  >
-                    <span>Nos tarifs</span>
-                  </a>
-                </div>
-              </div>
-              <div className="w-full md:w-1/2 md:pl-8">
-                <div className="relative md:max-w-md md:mx-auto">
-                  <Image
-                    src="/taxi-paris.jpg"
-                    alt="Taxi moto Izymoto à Paris — moto-taxi premium pour transferts et trajets"
-                    className="rounded-lg shadow-2xl w-full h-auto"
-                    width={700}
-                    height={450}
-                    priority
-                    style={{ maxHeight: "60vh" }}
-                  />
-                  <div className="absolute -bottom-4 -right-4 bg-mint-400 text-navy-950 py-2 px-4 rounded-lg shadow-lg text-sm font-semibold hidden sm:block">
-                    <div className="flex items-center gap-2">
-                      <Clock size={16} />
-                      <span>Service 24/7</span>
-                    </div>
-                  </div>
-                </div>
+            <div className="max-w-3xl mx-auto text-center md:mt-8">
+              <span className="inline-flex items-center gap-2 rounded-full border border-mint-400/40 bg-mint-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-mint-300 mb-6">
+                <Clock size={14} />
+                Service 24h/24 · 7j/7
+              </span>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
+                <span className="text-mint-400">
+                  Taxi moto à Paris
+                </span>{" "}
+                — moto-taxi premium 24/7 en Île-de-France
+              </h1>
+              <p className="text-base md:text-lg text-white/80 max-w-2xl mx-auto mb-8">
+                Déplacez-vous rapidement et confortablement à Paris avec
+                votre taxi moto Izymoto. Transferts aéroports, gares et
+                trajets business — tarif fixe dès 50€.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a
+                  href="#reservation"
+                  className="bg-mint-400 text-navy-950 font-semibold text-base px-6 py-3 rounded-lg inline-flex items-center justify-center group hover:bg-mint-300 transition-colors duration-300 w-full sm:w-auto shadow-[0_10px_30px_-10px_rgba(45,212,191,0.6)]"
+                >
+                  <span>Réserver maintenant</span>
+                  <ArrowRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
+                </a>
+                <a
+                  href="#tarifs"
+                  className="border border-white/30 text-white font-medium text-base px-6 py-3 rounded-lg inline-flex items-center justify-center hover:border-mint-400 hover:bg-white/5 hover:text-mint-300 transition-colors duration-300 w-full sm:w-auto"
+                >
+                  <span>Nos tarifs</span>
+                </a>
               </div>
             </div>
           </div>
@@ -623,26 +606,15 @@ export default function Home() {
           )}
         >
           <div className="container mx-auto px-4">
-            <div className="flex flex-col lg:flex-row items-center gap-10">
-              <div className="lg:w-1/2">
-                <div className="relative">
-                  <img
-                    src="/about-izymoto.jpg"
-                    alt="L'équipe de chauffeurs professionnels IZYMOTO"
-                    className="rounded-lg shadow-lg w-full h-auto"
-                    loading="lazy"
-                  />
-                  <div className="absolute -bottom-4 -right-4 bg-black text-white py-2 px-4 rounded-lg shadow-lg hidden sm:flex items-center space-x-2">
-                    <Award size={18} />
-                    <span className="text-sm">Service certifié</span>
-                  </div>
-                </div>
+            <div className="max-w-3xl mx-auto">
+              <div className="inline-flex items-center gap-2 rounded-full border border-mint-500/30 bg-mint-50 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-mint-700 mb-5">
+                <Award size={14} />
+                Service certifié
               </div>
-              <div className="lg:w-1/2">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-                  À <span className="text-black">propos</span> d'Izymoto, taxi moto à Paris
-                </h2>
-                <div className="w-16 h-1 bg-black mb-6"></div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+                À <span className="text-mint-500">propos</span> d'Izymoto, taxi moto à Paris
+              </h2>
+              <div className="w-16 h-1 bg-mint-400 mb-6"></div>
                 <p className="text-gray-700 mb-4">
                   IZYMOTO est né d'une vision simple : offrir un service de
                   transport haut de gamme, fiable et accessible à Paris. Fondée
@@ -659,14 +631,13 @@ export default function Home() {
                 <p className="text-gray-700 mb-6">
                   La satisfaction de nos clients est notre priorité absolue.
                 </p>
-                <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
-                  <Award className="h-8 w-8 text-black" />
+                <div className="flex items-center gap-4 bg-mint-50 p-4 rounded-lg border border-mint-100">
+                  <Award className="h-8 w-8 text-mint-500" />
                   <p className="text-gray-700">
                     Service certifié par le décret n°2010-1223 du 11 Octobre
                     2010
                   </p>
                 </div>
-              </div>
             </div>
           </div>
         </section>
