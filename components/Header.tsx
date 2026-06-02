@@ -80,16 +80,16 @@ const Header = () => {
           {/* Logo */}
           <Link
             href="/"
-            className="flex-shrink-0 transition-transform duration-300 hover:scale-105"
+            className="flex-shrink-0 -ml-3 md:-ml-6 transition-transform duration-300 hover:scale-105"
             onClick={handleNavigation}
             aria-label="Izymoto — accueil"
           >
             <Image
               src="/izymoto-logo-v6.png"
               alt="Izymoto — Taxi moto Paris & moto-taxi premium"
-              width={520}
-              height={160}
-              className="object-contain h-14 md:h-16 w-auto"
+              width={640}
+              height={200}
+              className="object-contain h-20 md:h-24 w-auto"
               priority
             />
           </Link>
