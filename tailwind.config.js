@@ -43,6 +43,12 @@ module.exports = {
           800: "#115E59",
           900: "#134E48",
         },
+        // 🌾 Blanc cassé — adoucit la transition navy/mint sur les sections claires
+        cream: {
+          50: "#FBF9F4",
+          100: "#F5F1E8",
+          200: "#ECE6D5",
+        },
         // 🔁 Anciens tokens "gold"/"amber" remappés sur mint pour bascule globale
         // (294 occurrences `gold-*` / `amber-*` migrent sans refactor par fichier)
         gold: {

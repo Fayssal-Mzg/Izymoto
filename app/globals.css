@@ -29,8 +29,8 @@
 /* 3️⃣ Définition des variables CSS */
 @layer base {
   :root {
-    /* 🎨 Palette de marque Izymoto : navy (bleu marine) / mint (vert) / blanc */
-    --background: 0 0% 100%;
+    /* 🎨 Palette de marque Izymoto : navy (bleu marine) / mint (vert) / cream (blanc cassé) */
+    --background: 42 50% 97%; /* cream-50 #FBF9F4 — adoucit la transition navy/mint */
     --foreground: 203 60% 8%; /* navy-950 */
     --card: 0 0% 100%;
     --card-foreground: 203 60% 8%;
