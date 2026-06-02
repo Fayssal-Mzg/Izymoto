@@ -251,9 +251,10 @@ export default function Home() {
         <section id="reservation" className="relative bg-white py-10 md:py-16">
           <div className="container mx-auto px-4 md:px-6 lg:px-8">
             <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3">
-                Réservez votre taxi moto à Paris
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 text-navy-950">
+                Réservez votre <span className="text-mint-500">taxi moto</span> à Paris
               </h2>
+              <div className="w-16 h-1 bg-mint-400 mx-auto mb-4"></div>
               <p className="text-base text-gray-600 max-w-xl mx-auto">
                 Indiquez votre point de départ et d'arrivée pour obtenir un
                 tarif instantané
@@ -278,19 +279,19 @@ export default function Home() {
         >
           <div className="container mx-auto px-4">
             <div className="text-center mb-10 md:mb-20">
-              <Star className="inline-block h-6 w-6 md:h-8 md:w-8 text-black mb-3" />
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 relative overflow-hidden">
+              <Star className="inline-block h-6 w-6 md:h-8 md:w-8 text-mint-500 mb-3" />
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 relative overflow-hidden text-navy-950">
                 <span className="inline-block transform hover:scale-110 transition-transform duration-300">
                   Pourquoi
                 </span>{" "}
                 <span className="inline-block transform hover:scale-110 transition-transform duration-300">
                   choisir
                 </span>{" "}
-                <span className="inline-block text-black transform hover:scale-110 transition-transform duration-300">
+                <span className="inline-block text-mint-500 transform hover:scale-110 transition-transform duration-300">
                   IZYMOTO
                 </span>
               </h2>
-              <div className="w-16 h-1 bg-black mx-auto mb-4"></div>
+              <div className="w-16 h-1 bg-mint-400 mx-auto mb-4"></div>
               <p className="text-base md:text-lg text-gray-600 max-w-xl mx-auto italic">
                 Un service d'exception pour ceux qui valorisent leur temps et
                 leur confort
@@ -299,13 +300,13 @@ export default function Home() {
 
             {/* Responsive Card Layout */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              <div className="md:col-span-6 md:col-start-1 bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow transition-shadow duration-300">
+              <div className="md:col-span-6 md:col-start-1 bg-mint-50/50 border border-mint-100 p-6 rounded-lg shadow-sm hover:shadow-md hover:border-mint-300 transition-all duration-300">
                 <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-mint-500 flex items-center justify-center flex-shrink-0 shadow-[0_8px_20px_-6px_rgba(20,184,166,0.5)]">
                     <Clock className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">SERVICE RAPIDE</h3>
+                    <h3 className="text-xl font-bold mb-2 text-navy-950">SERVICE RAPIDE</h3>
                     <p className="text-gray-700">
                       Gagnez un temps précieux en évitant les embouteillages
                       parisiens. Notre service vous garantit l'arrivée la plus
@@ -316,13 +317,13 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="md:col-span-6 md:col-start-7 bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow transition-shadow duration-300">
+              <div className="md:col-span-6 md:col-start-7 bg-mint-50/50 border border-mint-100 p-6 rounded-lg shadow-sm hover:shadow-md hover:border-mint-300 transition-all duration-300">
                 <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-mint-500 flex items-center justify-center flex-shrink-0 shadow-[0_8px_20px_-6px_rgba(20,184,166,0.5)]">
                     <ThumbsUp className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">CONFORT PREMIUM</h3>
+                    <h3 className="text-xl font-bold mb-2 text-navy-950">CONFORT PREMIUM</h3>
                     <p className="text-gray-700">
                       Équipement premium et pilotes expérimentés pour votre
                       sécurité et confort pendant tout le trajet. Nos véhicules
@@ -332,13 +333,13 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="md:col-span-12 bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow transition-shadow duration-300">
+              <div className="md:col-span-12 bg-mint-50/50 border border-mint-100 p-6 rounded-lg shadow-sm hover:shadow-md hover:border-mint-300 transition-all duration-300">
                 <div className="flex items-start space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-mint-500 flex items-center justify-center flex-shrink-0 shadow-[0_8px_20px_-6px_rgba(20,184,166,0.5)]">
                     <Shield className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">FIABILITÉ 24/7</h3>
+                    <h3 className="text-xl font-bold mb-2 text-navy-950">FIABILITÉ 24/7</h3>
                     <p className="text-gray-700">
                       Service ponctuel et professionnel, disponible 7j/7. Nos
                       chauffeurs sont formés pour vous offrir une expérience
@@ -356,10 +357,10 @@ export default function Home() {
         <section id="tarifs" className="py-12 md:py-20 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3">
-                Nos <span className="text-black">tarifs taxi moto</span>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 text-navy-950">
+                Nos <span className="text-mint-500">tarifs taxi moto</span>
               </h2>
-              <div className="w-16 h-1 bg-black mx-auto mb-4"></div>
+              <div className="w-16 h-1 bg-mint-400 mx-auto mb-4"></div>
               <p className="text-base md:text-lg text-gray-600 max-w-xl mx-auto">
                 Des prix compétitifs et transparents pour tous vos déplacements
               </p>
@@ -367,17 +368,17 @@ export default function Home() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Tarif 1 */}
-              <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+              <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:ring-1 hover:ring-mint-400/40 transition-all duration-300 flex flex-col h-full">
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Bike size={20} className="text-black" />
-                    <h3 className="text-xl font-bold">
+                    <Bike size={20} className="text-mint-500" />
+                    <h3 className="text-xl font-bold text-navy-950">
                       TRANSFERT AÉROPORT EN MOTO
                     </h3>
                   </div>
-                  <div className="w-12 h-1 bg-black"></div>
+                  <div className="w-12 h-1 bg-mint-400"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-black">
+                <div className="text-3xl font-bold mb-4 text-navy-950">
                   A PARTIR DE 80€
                 </div>
                 <p className="text-gray-600 mb-6 flex-grow">
@@ -385,9 +386,9 @@ export default function Home() {
                   Tarif fixe sans surprises.
                 </p>
                 <ul className="mb-6 space-y-2">
-                  <li className="flex items-center">
+                  <li className="flex items-center text-gray-700">
                     <svg
-                      className="h-5 w-5 text-black mr-2"
+                      className="h-5 w-5 text-mint-500 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -401,9 +402,9 @@ export default function Home() {
                     </svg>
                     Accueil personnalisé
                   </li>
-                  <li className="flex items-center">
+                  <li className="flex items-center text-gray-700">
                     <svg
-                      className="h-5 w-5 text-black mr-2"
+                      className="h-5 w-5 text-mint-500 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -417,9 +418,9 @@ export default function Home() {
                     </svg>
                     Attente incluse (15 min)
                   </li>
-                  <li className="flex items-center">
+                  <li className="flex items-center text-gray-700">
                     <svg
-                      className="h-5 w-5 text-black mr-2"
+                      className="h-5 w-5 text-mint-500 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -436,36 +437,35 @@ export default function Home() {
                 </ul>
                 <a
                   href="#reservation"
-                  className="bg-black text-white font-medium rounded-lg py-3 px-6 text-center hover:bg-gray-800 transition-colors duration-300 mt-auto w-full"
+                  className="bg-navy-950 text-white font-semibold rounded-lg py-3 px-6 text-center hover:bg-navy-800 transition-colors duration-300 mt-auto w-full"
                 >
                   Réserver
                 </a>
               </div>
 
-              {/* Tarif 2 */}
-              <div className="bg-black text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-white text-black py-1 px-3 text-xs font-medium rounded-bl-lg">
-                  POPULAIRE
+              {/* Tarif 2 — POPULAIRE */}
+              <div className="bg-navy-950 text-white p-6 rounded-lg shadow-xl ring-2 ring-mint-400/50 hover:ring-mint-400 transition-all duration-300 flex flex-col h-full relative overflow-hidden md:-translate-y-2">
+                <div className="absolute top-0 right-0 bg-mint-400 text-navy-950 py-1 px-3 text-xs font-bold uppercase tracking-wider rounded-bl-lg">
+                  Populaire
                 </div>
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Bike size={20} className="text-white" />
+                    <Bike size={20} className="text-mint-400" />
                     <h3 className="text-xl font-bold">TRAJET EN VILLE EN MOTO-TAXI</h3>
                   </div>
-                  <div className="w-12 h-1 bg-white"></div>
+                  <div className="w-12 h-1 bg-mint-400"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-white">
-                  {" "}
+                <div className="text-3xl font-bold mb-4 text-mint-400">
                   A PARTIR DE 50€
                 </div>
-                <p className="text-gray-300 mb-6 flex-grow">
+                <p className="text-white/75 mb-6 flex-grow">
                   Déplacements depuis Paris dans toute la France. Tarif de base
                   pour des trajets jusqu'à 10km.
                 </p>
                 <ul className="mb-6 space-y-2">
-                  <li className="flex items-center">
+                  <li className="flex items-center text-white/90">
                     <svg
-                      className="h-5 w-5 text-white mr-2"
+                      className="h-5 w-5 text-mint-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -479,9 +479,9 @@ export default function Home() {
                     </svg>
                     Ponctualité garantie
                   </li>
-                  <li className="flex items-center">
+                  <li className="flex items-center text-white/90">
                     <svg
-                      className="h-5 w-5 text-white mr-2"
+                      className="h-5 w-5 text-mint-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -495,9 +495,9 @@ export default function Home() {
                     </svg>
                     Confort premium
                   </li>
-                  <li className="flex items-center">
+                  <li className="flex items-center text-white/90">
                     <svg
-                      className="h-5 w-5 text-white mr-2"
+                      className="h-5 w-5 text-mint-400 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -514,30 +514,30 @@ export default function Home() {
                 </ul>
                 <a
                   href="#reservation"
-                  className="bg-white text-black font-medium rounded-lg py-3 px-6 text-center hover:bg-gray-200 transition-colors duration-300 mt-auto w-full"
+                  className="bg-mint-400 text-navy-950 font-semibold rounded-lg py-3 px-6 text-center hover:bg-mint-300 transition-colors duration-300 mt-auto w-full shadow-[0_10px_30px_-10px_rgba(45,212,191,0.6)]"
                 >
                   Réserver
                 </a>
               </div>
 
               {/* Tarif 3 */}
-              <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+              <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:ring-1 hover:ring-mint-400/40 transition-all duration-300 flex flex-col h-full">
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar size={20} className="text-black" />
-                    <h3 className="text-xl font-bold">MISE À DISPOSITION MOTO-TAXI</h3>
+                    <Calendar size={20} className="text-mint-500" />
+                    <h3 className="text-xl font-bold text-navy-950">MISE À DISPOSITION MOTO-TAXI</h3>
                   </div>
-                  <div className="w-12 h-1 bg-black"></div>
+                  <div className="w-12 h-1 bg-mint-400"></div>
                 </div>
-                <div className="text-3xl font-bold mb-4 text-black">80€/h</div>
+                <div className="text-3xl font-bold mb-4 text-navy-950">80€/h</div>
                 <p className="text-gray-600 mb-6 flex-grow">
                   Chauffeur à votre disposition pour plusieurs heures ou toute
                   la journée. Idéal pour les visites ou événements.
                 </p>
                 <ul className="mb-6 space-y-2">
-                  <li className="flex items-center">
+                  <li className="flex items-center text-gray-700">
                     <svg
-                      className="h-5 w-5 text-black mr-2"
+                      className="h-5 w-5 text-mint-500 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -551,9 +551,9 @@ export default function Home() {
                     </svg>
                     Arrêts multiples
                   </li>
-                  <li className="flex items-center">
+                  <li className="flex items-center text-gray-700">
                     <svg
-                      className="h-5 w-5 text-black mr-2"
+                      className="h-5 w-5 text-mint-500 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -567,9 +567,9 @@ export default function Home() {
                     </svg>
                     Facturation à l'heure
                   </li>
-                  <li className="flex items-center">
+                  <li className="flex items-center text-gray-700">
                     <svg
-                      className="h-5 w-5 text-black mr-2"
+                      className="h-5 w-5 text-mint-500 mr-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -586,7 +586,7 @@ export default function Home() {
                 </ul>
                 <a
                   href="#reservation"
-                  className="bg-black text-white font-medium rounded-lg py-3 px-6 text-center hover:bg-gray-800 transition-colors duration-300 mt-auto w-full"
+                  className="bg-navy-950 text-white font-semibold rounded-lg py-3 px-6 text-center hover:bg-navy-800 transition-colors duration-300 mt-auto w-full"
                 >
                   Réserver
                 </a>
@@ -651,11 +651,11 @@ export default function Home() {
             <div className="text-center mb-8">
               <h2
                 id="trajets-populaires-heading"
-                className="text-2xl md:text-4xl font-bold mb-3"
+                className="text-2xl md:text-4xl font-bold mb-3 text-navy-950"
               >
-                Nos trajets en <span className="text-black">taxi moto à Paris</span>
+                Nos trajets en <span className="text-mint-500">taxi moto à Paris</span>
               </h2>
-              <div className="w-16 h-1 bg-black mx-auto mb-4" aria-hidden="true"></div>
+              <div className="w-16 h-1 bg-mint-400 mx-auto mb-4" aria-hidden="true"></div>
               <p className="text-base text-gray-600 max-w-2xl mx-auto">
                 Découvrez nos pages dédiées par destination, aéroport, gare ou
                 quartier parisien pour réserver votre moto-taxi en quelques clics.
@@ -669,27 +669,27 @@ export default function Home() {
                 </h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="/moto-taxi-aeroport-cdg" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/moto-taxi-aeroport-cdg" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Aéroport CDG
                     </Link>
                   </li>
                   <li>
-                    <Link href="/moto-taxi-aeroport-orly" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/moto-taxi-aeroport-orly" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Aéroport Orly
                     </Link>
                   </li>
                   <li>
-                    <Link href="/moto-taxi-gare-du-nord" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/moto-taxi-gare-du-nord" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Gare du Nord
                     </Link>
                   </li>
                   <li>
-                    <Link href="/moto-taxi-gare-de-lyon" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/moto-taxi-gare-de-lyon" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Gare de Lyon
                     </Link>
                   </li>
                   <li>
-                    <Link href="/moto-taxi-disneyland" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/moto-taxi-disneyland" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Disneyland Paris
                     </Link>
                   </li>
@@ -702,32 +702,32 @@ export default function Home() {
                 </h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="/moto-taxi-paris" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/moto-taxi-paris" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Paris (tous arrondissements)
                     </Link>
                   </li>
                   <li>
-                    <Link href="/taxi-moto-paris-8" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/taxi-moto-paris-8" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Paris 8e
                     </Link>
                   </li>
                   <li>
-                    <Link href="/taxi-moto-paris-16" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/taxi-moto-paris-16" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Paris 16e
                     </Link>
                   </li>
                   <li>
-                    <Link href="/taxi-moto-champs-elysees" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/taxi-moto-champs-elysees" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Champs-Élysées
                     </Link>
                   </li>
                   <li>
-                    <Link href="/taxi-moto-bastille" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/taxi-moto-bastille" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Bastille
                     </Link>
                   </li>
                   <li>
-                    <Link href="/taxi-moto-saint-germain" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/taxi-moto-saint-germain" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto Saint-Germain
                     </Link>
                   </li>
@@ -740,37 +740,37 @@ export default function Home() {
                 </h3>
                 <ul className="space-y-2">
                   <li>
-                    <Link href="/moto-taxi-la-defense" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/moto-taxi-la-defense" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto La Défense
                     </Link>
                   </li>
                   <li>
-                    <Link href="/portefeuille" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/portefeuille" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Portefeuille entreprise
                     </Link>
                   </li>
                   <li>
-                    <Link href="/nos-tarifs" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/nos-tarifs" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Tarifs taxi moto Paris
                     </Link>
                   </li>
                   <li>
-                    <Link href="/aeroports" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/aeroports" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Tous nos transferts aéroports
                     </Link>
                   </li>
                   <li>
-                    <Link href="/blog/prix-taxi-moto-paris-cdg" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/blog/prix-taxi-moto-paris-cdg" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Prix taxi moto Paris ↔ CDG
                     </Link>
                   </li>
                   <li>
-                    <Link href="/blog/taxi-moto-vs-vtc-paris" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/blog/taxi-moto-vs-vtc-paris" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Taxi moto vs VTC à Paris
                     </Link>
                   </li>
                   <li>
-                    <Link href="/blog/comment-reserver-taxi-moto-paris" className="text-gray-800 hover:text-black hover:underline text-sm">
+                    <Link href="/blog/comment-reserver-taxi-moto-paris" className="text-gray-700 hover:text-mint-600 hover:underline text-sm">
                       Comment réserver un taxi moto
                     </Link>
                   </li>
@@ -784,39 +784,49 @@ export default function Home() {
         <section
           ref={ctaRef}
           className={cn(
-            "relative py-16 md:py-32 bg-black text-white overflow-hidden transition-all duration-1000",
+            "relative py-16 md:py-32 bg-navy-950 text-white overflow-hidden transition-all duration-1000",
             ctaInView ? "opacity-100" : "opacity-0"
           )}
         >
+          {/* Halos mint en fond */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-mint-400/15 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-mint-500/10 blur-3xl"
+          />
+
           <div className="container mx-auto px-4 text-center relative z-10">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
-              Prêt à <span className="text-white">réserver votre moto-taxi</span> ?
+              Prêt à <span className="text-mint-400">réserver votre moto-taxi</span> ?
             </h2>
 
-            <p className="text-base md:text-xl text-gray-300 max-w-2xl mx-auto mb-10">
+            <p className="text-base md:text-xl text-white/80 max-w-2xl mx-auto mb-10">
               Réservez votre course et découvrez le luxe de se déplacer
               rapidement et confortablement dans toute la France.
             </p>
 
             <a
               href="#reservation"
-              className="bg-white text-black font-medium rounded-lg text-lg px-8 py-4 inline-flex items-center justify-center group hover:bg-gray-100 transition-colors duration-300 w-full sm:w-auto"
+              className="bg-mint-400 text-navy-950 font-semibold rounded-lg text-lg px-8 py-4 inline-flex items-center justify-center group hover:bg-mint-300 transition-colors duration-300 w-full sm:w-auto shadow-[0_15px_40px_-10px_rgba(45,212,191,0.6)]"
             >
               <span>Réserver un trajet</span>
               <ArrowRight className="ml-3 h-5 w-5 transform group-hover:translate-x-2 transition-transform duration-300" />
             </a>
 
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
-              <div className="flex flex-col items-center p-4 bg-white/10 rounded-lg">
-                <div className="text-3xl font-bold text-white mb-2">7J/7</div>
+              <div className="flex flex-col items-center p-4 bg-white/5 border border-mint-400/20 rounded-lg backdrop-blur-sm">
+                <div className="text-3xl font-bold text-mint-400 mb-2">7J/7</div>
                 <p className="text-white/70">Disponibilité</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-white/10 rounded-lg">
-                <div className="text-3xl font-bold text-white mb-2">15 MIN</div>
+              <div className="flex flex-col items-center p-4 bg-white/5 border border-mint-400/20 rounded-lg backdrop-blur-sm">
+                <div className="text-3xl font-bold text-mint-400 mb-2">15 MIN</div>
                 <p className="text-white/70">Délai moyen</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-white/10 rounded-lg">
-                <div className="text-3xl font-bold text-white mb-2">100%</div>
+              <div className="flex flex-col items-center p-4 bg-white/5 border border-mint-400/20 rounded-lg backdrop-blur-sm">
+                <div className="text-3xl font-bold text-mint-400 mb-2">100%</div>
                 <p className="text-white/70">Satisfaction</p>
               </div>
             </div>
@@ -827,10 +837,10 @@ export default function Home() {
         <section id="contact" className="py-12 md:py-16 bg-white">
           <div className="container mx-auto px-4">
             <div className="text-center mb-8">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-3">
-                Contactez-nous
+              <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-navy-950">
+                Contactez-<span className="text-mint-500">nous</span>
               </h2>
-              <div className="w-16 h-1 bg-black mx-auto mb-4"></div>
+              <div className="w-16 h-1 bg-mint-400 mx-auto mb-4"></div>
               <p className="text-base text-gray-600 max-w-xl mx-auto">
                 Une question ou besoin d'assistance ? Notre équipe est à votre
                 disposition
@@ -838,27 +848,27 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gray-50 p-6 rounded-lg hover:shadow-md transition-shadow duration-300">
+              <div className="bg-mint-50/40 border border-mint-100 p-6 rounded-lg hover:shadow-md hover:border-mint-300 transition-all duration-300">
                 <div className="flex items-center gap-4 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-mint-500 flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(20,184,166,0.5)]">
                     <Phone className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Téléphone</h3>
+                    <h3 className="text-lg font-bold text-navy-950">Téléphone</h3>
                     <p className="text-gray-700">+33 6 49 50 25 25</p>
                   </div>
                 </div>
                 <a
                   href="tel:+33649502525"
-                  className="text-sm text-black hover:underline mt-2 inline-block"
+                  className="text-sm font-semibold text-mint-600 hover:text-mint-500 hover:underline mt-2 inline-block"
                 >
                   Appeler maintenant
                 </a>
               </div>
 
-              <div className="bg-gray-50 p-6 rounded-lg hover:shadow-md transition-shadow duration-300">
+              <div className="bg-mint-50/40 border border-mint-100 p-6 rounded-lg hover:shadow-md hover:border-mint-300 transition-all duration-300">
                 <div className="flex items-center gap-4 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-mint-500 flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(20,184,166,0.5)]">
                     <svg
                       className="h-5 w-5 text-white"
                       fill="none"
@@ -874,25 +884,25 @@ export default function Home() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Email</h3>
+                    <h3 className="text-lg font-bold text-navy-950">Email</h3>
                     <p className="text-gray-700">contact@izymoto.com</p>
                   </div>
                 </div>
                 <a
                   href="mailto:contact@izymoto.com"
-                  className="text-sm text-black hover:underline mt-2 inline-block"
+                  className="text-sm font-semibold text-mint-600 hover:text-mint-500 hover:underline mt-2 inline-block"
                 >
                   Envoyer un email
                 </a>
               </div>
 
-              <div className="bg-gray-50 p-6 rounded-lg hover:shadow-md transition-shadow duration-300">
+              <div className="bg-mint-50/40 border border-mint-100 p-6 rounded-lg hover:shadow-md hover:border-mint-300 transition-all duration-300">
                 <div className="flex items-center gap-4 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-mint-500 flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(20,184,166,0.5)]">
                     <MapPin className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Adresse</h3>
+                    <h3 className="text-lg font-bold text-navy-950">Adresse</h3>
                     <p className="text-gray-700">
                       25 Rue de Ponthieu, Paris 8eme
                     </p>
@@ -902,7 +912,7 @@ export default function Home() {
                   href="https://maps.google.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-black hover:underline mt-2 inline-block"
+                  className="text-sm font-semibold text-mint-600 hover:text-mint-500 hover:underline mt-2 inline-block"
                 >
                   Voir sur la carte
                 </a>
@@ -914,9 +924,9 @@ export default function Home() {
         {/* Social Section - Mobile Optimized */}
         <section className="py-10 md:py-16 bg-gray-50">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 inline-block relative">
-              <span className="relative z-10">Suivez-nous</span>
-              <span className="absolute bottom-0 left-0 w-full h-1 bg-black transform scale-x-0 hover:scale-x-100 transition-transform duration-500"></span>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 inline-block relative text-navy-950">
+              <span className="relative z-10">Suivez-<span className="text-mint-500">nous</span></span>
+              <span className="absolute bottom-0 left-0 w-full h-1 bg-mint-400 transform scale-x-0 hover:scale-x-100 transition-transform duration-500"></span>
             </h2>
 
             <p className="text-base text-gray-600 max-w-xl mx-auto mb-8">
@@ -930,30 +940,30 @@ export default function Home() {
                 className="social-icon group"
                 aria-label="Facebook"
               >
-                <div className="bg-white p-4 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110">
-                  <Facebook className="h-6 w-6 md:h-8 md:w-8 text-black" />
+                <div className="bg-white p-4 rounded-full shadow-md hover:shadow-lg hover:bg-mint-50 transition-all duration-300 transform hover:scale-110">
+                  <Facebook className="h-6 w-6 md:h-8 md:w-8 text-mint-500" />
                 </div>
-                <span className="block mt-2 text-sm">Facebook</span>
+                <span className="block mt-2 text-sm text-navy-950">Facebook</span>
               </a>
               <a
                 href="https://www.instagram.com/izymoto_paris"
                 className="social-icon group"
                 aria-label="Instagram"
               >
-                <div className="bg-white p-4 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110">
-                  <Instagram className="h-6 w-6 md:h-8 md:w-8 text-black" />
+                <div className="bg-white p-4 rounded-full shadow-md hover:shadow-lg hover:bg-mint-50 transition-all duration-300 transform hover:scale-110">
+                  <Instagram className="h-6 w-6 md:h-8 md:w-8 text-mint-500" />
                 </div>
-                <span className="block mt-2 text-sm">Instagram</span>
+                <span className="block mt-2 text-sm text-navy-950">Instagram</span>
               </a>
               <a
                 href="https://www.linkedin.com/in/azeddine-zaouia-a6640788/"
                 className="social-icon group"
                 aria-label="LinkedIn"
               >
-                <div className="bg-white p-4 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-110">
-                  <Linkedin className="h-6 w-6 md:h-8 md:w-8 text-black" />
+                <div className="bg-white p-4 rounded-full shadow-md hover:shadow-lg hover:bg-mint-50 transition-all duration-300 transform hover:scale-110">
+                  <Linkedin className="h-6 w-6 md:h-8 md:w-8 text-mint-500" />
                 </div>
-                <span className="block mt-2 text-sm">LinkedIn</span>
+                <span className="block mt-2 text-sm text-navy-950">LinkedIn</span>
               </a>
             </div>
           </div>

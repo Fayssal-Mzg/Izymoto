@@ -76,19 +76,20 @@ const Header = () => {
     <header className="w-full z-50 bg-transparent">
       {/* Barre supérieure combinée */}
       <div className="bg-navy-950 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-6 py-3 md:py-4 flex items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
             className="flex-shrink-0 transition-transform duration-300 hover:scale-105"
             onClick={handleNavigation}
+            aria-label="Izymoto — accueil"
           >
             <Image
               src="/izymoto-logo-v6.png"
               alt="Izymoto — Taxi moto Paris & moto-taxi premium"
-              width={260}
-              height={80}
-              className="object-contain h-10 w-auto"
+              width={520}
+              height={160}
+              className="object-contain h-14 md:h-16 w-auto"
               priority
             />
           </Link>

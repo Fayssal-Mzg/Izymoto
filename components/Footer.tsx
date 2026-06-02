@@ -110,7 +110,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/chauffeur/inscription"
-                  className="text-amber-400 hover:text-amber-300 transition-colors duration-300 text-sm font-semibold"
+                  className="text-mint-300 hover:text-mint-200 transition-colors duration-300 text-sm font-semibold"
                 >
                   Devenir chauffeur
                 </Link>
@@ -178,13 +178,13 @@ export function Footer() {
               <input
                 type="email"
                 placeholder="Votre email"
-                className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors duration-300 text-white"
+                className="bg-navy-800 border border-white/10 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-mint-400/50 focus:border-mint-400/40 transition-colors duration-300 text-white placeholder:text-white/40"
                 aria-label="Votre adresse email"
                 required
               />
               <button
                 type="submit"
-                className="bg-white text-black font-medium rounded-lg px-4 py-2 hover:bg-gray-100 transition-colors duration-300"
+                className="bg-mint-400 text-navy-950 font-semibold rounded-lg px-4 py-2 hover:bg-mint-300 transition-colors duration-300 shadow-[0_8px_20px_-6px_rgba(45,212,191,0.5)]"
               >
                 S'inscrire
               </button>
@@ -194,7 +194,7 @@ export function Footer() {
 
         <nav
           aria-label="Trajets populaires en taxi moto à Paris"
-          className="mt-10 pt-8 border-t border-gray-800"
+          className="mt-10 pt-8 border-t border-white/10"
         >
           <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-300 mb-4">
             Trajets populaires en taxi moto
@@ -237,7 +237,7 @@ export function Footer() {
           </ul>
         </nav>
 
-        <div className="mt-10 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
+        <div className="mt-10 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-500 text-xs mb-4 md:mb-0">
             © {new Date().getFullYear()} IZYMOTO. Tous droits réservés.
           </p>
