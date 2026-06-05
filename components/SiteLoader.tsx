@@ -1,6 +1,7 @@
 "use client";
 
 import { Bike } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 /**
@@ -34,10 +35,23 @@ export default function SiteLoader() {
         </div>
       </div>
 
-      {/* Wordmark */}
-      <p className="select-none text-2xl font-bold uppercase tracking-[0.4em] text-white/90 md:text-3xl">
-        Izy<span className="text-mint-400">moto</span>
-      </p>
+      {/* Logo dévoilé de gauche à droite + balayage lumineux mint */}
+      <div className="-translate-y-14 md:-translate-y-20">
+        <div className="animate-logo-reveal relative overflow-hidden">
+          <Image
+            src="/izymoto-logo-v6.png"
+            alt="Izymoto"
+            width={640}
+            height={200}
+            priority
+            className="h-20 w-auto select-none md:h-24"
+          />
+          <span
+            aria-hidden
+            className="animate-logo-sweep pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-mint-400/60 to-transparent"
+          />
+        </div>
+      </div>
     </div>
   );
 }

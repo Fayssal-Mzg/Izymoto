@@ -317,13 +317,54 @@
   will-change: transform;
 }
 
+/* Logo dévoilé de gauche à droite (comme peint par la moto qui passe) */
+@keyframes logo-reveal {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-logo-reveal {
+  animation: logo-reveal 1.1s cubic-bezier(0.4, 0, 0.2, 1) 0.15s both;
+  will-change: clip-path, transform, opacity;
+}
+
+/* Balayage lumineux mint qui traverse le logo */
+@keyframes logo-sweep {
+  0% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(230%);
+    opacity: 0;
+  }
+}
+.animate-logo-sweep {
+  animation: logo-sweep 1.2s ease-out 0.15s forwards;
+}
+
 /* Respect des préférences système : on coupe les animations décoratives */
 @media (prefers-reduced-motion: reduce) {
   .float-animation,
   .animate-marquee,
   .animate-rotate-slow,
   .gold-shine::after,
-  .animate-moto-cross {
+  .animate-moto-cross,
+  .animate-logo-reveal,
+  .animate-logo-sweep {
     animation: none !important;
   }
 }
