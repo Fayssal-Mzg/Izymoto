@@ -99,6 +99,36 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    /* Curseur en pin de localisation (DA Izymoto) */
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%232DD4BF' stroke='%2306121A' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12z'/%3E%3Ccircle cx='12' cy='9' r='2.6' fill='%2306121A' stroke='none'/%3E%3C/svg%3E")
+        14 26,
+      auto;
+  }
+
+  /* Titres en Oswald, texte courant en Inter */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Oswald", "Inter", system-ui, sans-serif;
+  }
+
+  /* Le pin reste un pin partout ; les zones de saisie gardent le caret natif */
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+  a,
+  button,
+  [role="button"],
+  label,
+  summary {
+    cursor: inherit;
   }
 }
 /* Ajoutez ce CSS à votre fichier globals.css */
@@ -229,18 +259,72 @@
   animation: shine 3s infinite;
 }
 
-/* Animation pour les éléments avec effet de bijouterie */
+/* Effet flottant accentué — transform only (GPU), coût négligeable même mobile */
 @keyframes gentle-float {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) rotate(0deg);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-16px) rotate(-0.6deg);
   }
 }
 
 .float-animation {
-  animation: gentle-float 5s ease-in-out infinite;
+  animation: gentle-float 4.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Halo lumineux réutilisable (à poser sur les sections sombres navy) */
+.halo-glow {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Loader d'entrée — moto qui traverse l'écran */
+@keyframes moto-cross {
+  0% {
+    transform: translateX(-30vw) scaleX(1);
+  }
+  100% {
+    transform: translateX(130vw) scaleX(1);
+  }
+}
+.animate-moto-cross {
+  animation: moto-cross 1.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes loader-fade-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.animate-loader-out {
+  animation: loader-fade-out 0.4s ease-out 1.05s forwards;
+}
+
+/* Bandeau défilant (marquee) — destinations qui défilent en continu */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee-scroll 22s linear infinite;
+  will-change: transform;
+}
+
+/* Respect des préférences système : on coupe les animations décoratives */
+@media (prefers-reduced-motion: reduce) {
+  .float-animation,
+  .animate-marquee,
+  .animate-rotate-slow,
+  .gold-shine::after,
+  .animate-moto-cross {
+    animation: none !important;
+  }
 }
 

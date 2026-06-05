@@ -10,6 +10,7 @@ import DevisSentModal from "@/app/reserver/components/DevisSentModal"; // NOUVEA
 import { MapWrapper } from "@/app/reserver/components/MapWrapper";
 import PaymentModal from "@/app/reserver/components/PaymentModal";
 import ReservationForm from "@/components/reservation/ReservationForm";
+import RouteMarquee from "@/components/RouteMarquee";
 import { ReservationProvider } from "@/contexts/ReservationContext";
 import { useReservation } from "@/lib/hooks/useReservation";
 import { cn } from "@/lib/utils";
@@ -82,6 +83,9 @@ export default function Home() {
   return (
     <MapWrapper>
       <div className="bg-background overflow-x-hidden min-h-screen">
+        {/* Bandeau destinations défilant — juste sous le menu */}
+        <RouteMarquee />
+
         {/* 🚀 App Teaser Hero — "Bientôt disponible" product reveal */}
         <section
           aria-label="Application Izymoto — bientôt disponible"

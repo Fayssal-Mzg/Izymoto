@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { ArrowRight, Phone, ShieldCheck, Clock, BadgeEuro } from "lucide-react";
+import Halo from "@/components/Halo";
+import FaqSection from "@/components/FaqSection";
+import ForfaitCards from "@/components/ForfaitCards";
 
 export const metadata: Metadata = {
   title: "Tarif taxi moto Paris — Prix moto-taxi fixes dès 46€ | Izymoto",
@@ -100,16 +103,6 @@ const faqList = [
   },
 ];
 
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqList.map((item) => ({
-    "@type": "Question",
-    name: item.question,
-    acceptedAnswer: { "@type": "Answer", text: item.answer },
-  })),
-};
-
 export default function NosTarifs() {
   return (
     <>
@@ -119,63 +112,75 @@ export default function NosTarifs() {
         strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
       />
-      <Script
-        id="ld-faq-tarifs"
-        type="application/ld+json"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
 
-      <section className="bg-slate-900 text-white py-12 md:py-16">
-        <div className="container mx-auto px-4">
-          <nav aria-label="Fil d'ariane" className="text-sm text-gray-400 mb-4">
-            <Link href="/" className="hover:text-white">Accueil</Link>
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-navy-950 text-white py-12 md:py-16">
+        <Halo />
+        <div className="relative z-10 container mx-auto px-4">
+          <nav aria-label="Fil d'ariane" className="text-sm text-white/50 mb-4">
+            <Link href="/" className="hover:text-white transition-colors">Accueil</Link>
             <span className="mx-2">/</span>
             <span className="text-white">Nos tarifs</span>
           </nav>
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
+          <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-tight mb-4 leading-tight">
             Tarif taxi moto à Paris : prix fixes moto-taxi Izymoto
           </h1>
-          <p className="text-base md:text-lg text-gray-300 max-w-3xl">
+          <p className="text-base md:text-lg text-white/80 max-w-3xl">
             Tous nos prix de taxi moto à Paris sont des forfaits fixes, annoncés
             avant la course. Pas de compteur, pas de surprise. Voici la grille
             complète de nos tarifs moto-taxi pour les principaux trajets et la
             mise à disposition.
           </p>
-          <div className="text-sm text-gray-400 mt-4">
+          <div className="text-sm text-white/40 mt-4">
             Dernière mise à jour le 5 mai 2026.
           </div>
         </div>
       </section>
 
-      <section className="py-10 md:py-12">
+      {/* Section ForfaitCards */}
+      <section className="py-12 md:py-16 bg-cream-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-navy-950 text-center mb-8">
+            Réservez votre trajet
+          </h2>
+          <ForfaitCards ctaHref="/#reservation" />
+        </div>
+      </section>
+
+      {/* Tableaux tarifaires */}
+      <section className="py-10 md:py-12 bg-white">
         <div className="container mx-auto px-4 max-w-5xl">
+
+          {/* Encarts garanties */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-            <div className="bg-gray-50 p-5 rounded-lg flex items-start gap-3">
-              <BadgeEuro className="h-6 w-6 text-black flex-shrink-0 mt-1" />
+            <div className="bg-white border border-navy-100 rounded-xl shadow-sm p-5 flex items-start gap-3">
+              <BadgeEuro className="h-6 w-6 text-mint-600 flex-shrink-0 mt-1" />
               <div>
-                <div className="font-semibold">Tarif fixe</div>
-                <div className="text-sm text-gray-600">Prix annoncé avant la course, garanti même en cas de trafic.</div>
+                <div className="font-semibold text-navy-950">Tarif fixe</div>
+                <div className="text-sm text-navy-600">Prix annoncé avant la course, garanti même en cas de trafic.</div>
               </div>
             </div>
-            <div className="bg-gray-50 p-5 rounded-lg flex items-start gap-3">
-              <Clock className="h-6 w-6 text-black flex-shrink-0 mt-1" />
+            <div className="bg-white border border-navy-100 rounded-xl shadow-sm p-5 flex items-start gap-3">
+              <Clock className="h-6 w-6 text-mint-600 flex-shrink-0 mt-1" />
               <div>
-                <div className="font-semibold">Attente offerte</div>
-                <div className="text-sm text-gray-600">5 min après l'heure prévue, 20 min après l'atterrissage avion.</div>
+                <div className="font-semibold text-navy-950">Attente offerte</div>
+                <div className="text-sm text-navy-600">5 min après l'heure prévue, 20 min après l'atterrissage avion.</div>
               </div>
             </div>
-            <div className="bg-gray-50 p-5 rounded-lg flex items-start gap-3">
-              <ShieldCheck className="h-6 w-6 text-black flex-shrink-0 mt-1" />
+            <div className="bg-white border border-navy-100 rounded-xl shadow-sm p-5 flex items-start gap-3">
+              <ShieldCheck className="h-6 w-6 text-mint-600 flex-shrink-0 mt-1" />
               <div>
-                <div className="font-semibold">Équipement inclus</div>
-                <div className="text-sm text-gray-600">Casque, gants, blouson et sur-pantalon fournis et désinfectés.</div>
+                <div className="font-semibold text-navy-950">Équipement inclus</div>
+                <div className="text-sm text-navy-600">Casque, gants, blouson et sur-pantalon fournis et désinfectés.</div>
               </div>
             </div>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Forfaits taxi moto par trajet</h2>
-          <p className="text-gray-700 mb-6 max-w-3xl">
+          {/* Tableau 1 : forfaits par trajet */}
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-navy-950 mb-4">
+            Forfaits taxi moto par trajet
+          </h2>
+          <p className="text-navy-600 mb-6 max-w-3xl">
             Les forfaits ci-dessous couvrent les trajets les plus demandés depuis
             Paris : transferts aéroports (Orly, Roissy CDG, Beauvais, Le Bourget),
             quartiers d'affaires (La Défense), parcs et destinations
@@ -183,78 +188,86 @@ export default function NosTarifs() {
             conditions plus bas.
           </p>
           <div className="overflow-x-auto mb-12">
-            <table className="min-w-full bg-white border border-gray-200 shadow-sm">
-              <thead className="bg-black text-white">
+            <table className="min-w-full bg-white border border-navy-100 rounded-xl shadow-sm overflow-hidden">
+              <thead className="bg-navy-950 text-white">
                 <tr>
-                  <th className="py-3 px-4 text-left">Trajet</th>
-                  <th className="py-3 px-4 text-right">Tarif fixe (EUR)</th>
+                  <th className="py-3 px-4 text-left font-semibold">Trajet</th>
+                  <th className="py-3 px-4 text-right font-semibold">Tarif fixe (EUR)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Paris ↔ Paris</td><td className="py-3 px-4 text-right font-semibold">46 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Paris ↔ Orly</td><td className="py-3 px-4 text-right font-semibold">76 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Paris ↔ Roissy CDG</td><td className="py-3 px-4 text-right font-semibold">99 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Paris ↔ La Défense</td><td className="py-3 px-4 text-right font-semibold">50 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Paris ↔ Le Bourget</td><td className="py-3 px-4 text-right font-semibold">65 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Paris ↔ Petite couronne (92, 93, 94)</td><td className="py-3 px-4 text-right font-semibold">70 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">La Défense ↔ Orly</td><td className="py-3 px-4 text-right font-semibold">99 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">La Défense ↔ Roissy CDG</td><td className="py-3 px-4 text-right font-semibold">99 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Orly ↔ Roissy CDG</td><td className="py-3 px-4 text-right font-semibold">139 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Paris ↔ Disneyland Paris</td><td className="py-3 px-4 text-right font-semibold">110 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Beauvais ↔ Paris</td><td className="py-3 px-4 text-right font-semibold">180 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Paris ↔ Paris</td><td className="py-3 px-4 text-right font-semibold text-mint-600">46 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Paris ↔ Orly</td><td className="py-3 px-4 text-right font-semibold text-mint-600">76 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Paris ↔ Roissy CDG</td><td className="py-3 px-4 text-right font-semibold text-mint-600">99 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Paris ↔ La Défense</td><td className="py-3 px-4 text-right font-semibold text-mint-600">50 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Paris ↔ Le Bourget</td><td className="py-3 px-4 text-right font-semibold text-mint-600">65 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Paris ↔ Petite couronne (92, 93, 94)</td><td className="py-3 px-4 text-right font-semibold text-mint-600">70 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">La Défense ↔ Orly</td><td className="py-3 px-4 text-right font-semibold text-mint-600">99 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">La Défense ↔ Roissy CDG</td><td className="py-3 px-4 text-right font-semibold text-mint-600">99 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Orly ↔ Roissy CDG</td><td className="py-3 px-4 text-right font-semibold text-mint-600">139 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Paris ↔ Disneyland Paris</td><td className="py-3 px-4 text-right font-semibold text-mint-600">110 €</td></tr>
+                <tr className="hover:bg-cream-100"><td className="py-3 px-4 text-navy-950">Beauvais ↔ Paris</td><td className="py-3 px-4 text-right font-semibold text-mint-600">180 €</td></tr>
               </tbody>
             </table>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Mise à disposition : tarif moto-taxi à l'heure</h2>
-          <p className="text-gray-700 mb-6 max-w-3xl">
+          {/* Tableau 2 : mise à disposition */}
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-navy-950 mb-4">
+            Mise à disposition : tarif moto-taxi à l'heure
+          </h2>
+          <p className="text-navy-600 mb-6 max-w-3xl">
             La mise à disposition permet de réserver votre chauffeur taxi moto
             sur une durée fixe, pour enchaîner plusieurs rendez-vous,
             accompagner un client VIP ou couvrir un événement. Le chauffeur
             reste à votre disposition pendant toute la période.
           </p>
           <div className="overflow-x-auto mb-12">
-            <table className="min-w-full bg-white border border-gray-200 shadow-sm">
-              <thead className="bg-black text-white">
+            <table className="min-w-full bg-white border border-navy-100 rounded-xl shadow-sm overflow-hidden">
+              <thead className="bg-navy-950 text-white">
                 <tr>
-                  <th className="py-3 px-4 text-left">Durée</th>
-                  <th className="py-3 px-4 text-right">Tarif (EUR)</th>
+                  <th className="py-3 px-4 text-left font-semibold">Durée</th>
+                  <th className="py-3 px-4 text-right font-semibold">Tarif (EUR)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">1 heure</td><td className="py-3 px-4 text-right font-semibold">95 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">4 heures</td><td className="py-3 px-4 text-right font-semibold">320 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">8 heures (journée)</td><td className="py-3 px-4 text-right font-semibold">580 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">1 heure</td><td className="py-3 px-4 text-right font-semibold text-mint-600">95 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">4 heures</td><td className="py-3 px-4 text-right font-semibold text-mint-600">320 €</td></tr>
+                <tr className="hover:bg-cream-100"><td className="py-3 px-4 text-navy-950">8 heures (journée)</td><td className="py-3 px-4 text-right font-semibold text-mint-600">580 €</td></tr>
               </tbody>
             </table>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Majorations & conditions</h2>
-          <p className="text-gray-700 mb-6 max-w-3xl">
+          {/* Tableau 3 : majorations & conditions */}
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-navy-950 mb-4">
+            Majorations & conditions
+          </h2>
+          <p className="text-navy-600 mb-6 max-w-3xl">
             Quelques majorations peuvent s'appliquer selon l'horaire et le
             délai de réservation. Elles sont systématiquement annoncées dans
             le devis avant la confirmation, pas de mauvaise surprise.
           </p>
           <div className="overflow-x-auto mb-8">
-            <table className="min-w-full bg-white border border-gray-200 shadow-sm">
-              <thead className="bg-black text-white">
+            <table className="min-w-full bg-white border border-navy-100 rounded-xl shadow-sm overflow-hidden">
+              <thead className="bg-navy-950 text-white">
                 <tr>
-                  <th className="py-3 px-4 text-left">Situation</th>
-                  <th className="py-3 px-4 text-right">Supplément</th>
+                  <th className="py-3 px-4 text-left font-semibold">Situation</th>
+                  <th className="py-3 px-4 text-right font-semibold">Supplément</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Soir / matin tôt (6h-7h ou 20h-23h)</td><td className="py-3 px-4 text-right">+20 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Nuit (23h-6h)</td><td className="py-3 px-4 text-right">+40 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Week-end et jours fériés</td><td className="py-3 px-4 text-right">+20 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Réservation à moins de 2h</td><td className="py-3 px-4 text-right">+20 €</td></tr>
-                <tr className="hover:bg-gray-50 border-b"><td className="py-3 px-4">Annulation à moins de 2 heures</td><td className="py-3 px-4 text-right">+100 %</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Soir / matin tôt (6h-7h ou 20h-23h)</td><td className="py-3 px-4 text-right font-semibold text-mint-600">+20 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Nuit (23h-6h)</td><td className="py-3 px-4 text-right font-semibold text-mint-600">+40 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Week-end et jours fériés</td><td className="py-3 px-4 text-right font-semibold text-mint-600">+20 €</td></tr>
+                <tr className="hover:bg-cream-100 border-b border-navy-100"><td className="py-3 px-4 text-navy-950">Réservation à moins de 2h</td><td className="py-3 px-4 text-right font-semibold text-mint-600">+20 €</td></tr>
+                <tr className="hover:bg-cream-100"><td className="py-3 px-4 text-navy-950">Annulation à moins de 2 heures</td><td className="py-3 px-4 text-right font-semibold text-mint-600">+100 %</td></tr>
               </tbody>
             </table>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Conditions tarifaires</h2>
-          <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-12 max-w-3xl">
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-navy-950 mb-4">
+            Conditions tarifaires
+          </h2>
+          <ul className="list-disc pl-5 space-y-2 text-navy-600 mb-12 max-w-3xl">
             <li>Tarifs applicables hors conditions exceptionnelles et grands évènements.</li>
             <li>Trajet hors zone forfaitaire : prise en charge 30€ + 3€/km, arrondi par paliers de 5€.</li>
             <li>Attente offerte : 5 minutes après l'heure de prise en charge.</li>
@@ -263,74 +276,67 @@ export default function NosTarifs() {
             <li>Trajet récurrent : formule d'abonnement possible — devis sur demande à contact@izymoto.com.</li>
           </ul>
 
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Taxi moto, VTC ou taxi classique : combien ça coûte vraiment ?</h2>
-          <p className="text-gray-700 mb-6 max-w-3xl">
+          {/* Tableau comparatif */}
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-navy-950 mb-4">
+            Taxi moto, VTC ou taxi classique : combien ça coûte vraiment ?
+          </h2>
+          <p className="text-navy-600 mb-6 max-w-3xl">
             Sur un trajet Paris → Roissy CDG aux heures de pointe, voici un
             ordre de grandeur des prix et temps de trajet observés (chiffres
             indicatifs, variables selon la demande).
           </p>
-          <div className="overflow-x-auto mb-12">
-            <table className="min-w-full bg-white border border-gray-200 shadow-sm">
-              <thead className="bg-black text-white">
+          <div className="overflow-x-auto mb-6">
+            <table className="min-w-full bg-white border border-navy-100 rounded-xl shadow-sm overflow-hidden">
+              <thead className="bg-navy-950 text-white">
                 <tr>
-                  <th className="py-3 px-4 text-left">Mode</th>
-                  <th className="py-3 px-4 text-right">Prix moyen</th>
-                  <th className="py-3 px-4 text-right">Temps trajet (heure de pointe)</th>
+                  <th className="py-3 px-4 text-left font-semibold">Mode</th>
+                  <th className="py-3 px-4 text-right font-semibold">Prix moyen</th>
+                  <th className="py-3 px-4 text-right font-semibold">Temps trajet (heure de pointe)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="hover:bg-gray-50 border-b">
-                  <td className="py-3 px-4 font-semibold">Taxi moto Izymoto</td>
-                  <td className="py-3 px-4 text-right">99 € (fixe)</td>
-                  <td className="py-3 px-4 text-right">25–40 min</td>
+                <tr className="hover:bg-cream-100 border-b border-navy-100">
+                  <td className="py-3 px-4 font-semibold text-navy-950">Taxi moto Izymoto</td>
+                  <td className="py-3 px-4 text-right text-mint-600 font-semibold">99 € (fixe)</td>
+                  <td className="py-3 px-4 text-right text-navy-950">25–40 min</td>
                 </tr>
-                <tr className="hover:bg-gray-50 border-b">
-                  <td className="py-3 px-4">VTC standard</td>
-                  <td className="py-3 px-4 text-right">60–100 € (variable)</td>
-                  <td className="py-3 px-4 text-right">45–90 min</td>
+                <tr className="hover:bg-cream-100 border-b border-navy-100">
+                  <td className="py-3 px-4 text-navy-950">VTC standard</td>
+                  <td className="py-3 px-4 text-right text-navy-950">60–100 € (variable)</td>
+                  <td className="py-3 px-4 text-right text-navy-950">45–90 min</td>
                 </tr>
-                <tr className="hover:bg-gray-50 border-b">
-                  <td className="py-3 px-4">Taxi parisien (au compteur)</td>
-                  <td className="py-3 px-4 text-right">55–80 € (forfait) + suppléments</td>
-                  <td className="py-3 px-4 text-right">45–90 min</td>
+                <tr className="hover:bg-cream-100 border-b border-navy-100">
+                  <td className="py-3 px-4 text-navy-950">Taxi parisien (au compteur)</td>
+                  <td className="py-3 px-4 text-right text-navy-950">55–80 € (forfait) + suppléments</td>
+                  <td className="py-3 px-4 text-right text-navy-950">45–90 min</td>
                 </tr>
-                <tr className="hover:bg-gray-50 border-b">
-                  <td className="py-3 px-4">RER B + correspondance</td>
-                  <td className="py-3 px-4 text-right">11,80 €</td>
-                  <td className="py-3 px-4 text-right">50–70 min</td>
+                <tr className="hover:bg-cream-100">
+                  <td className="py-3 px-4 text-navy-950">RER B + correspondance</td>
+                  <td className="py-3 px-4 text-right text-navy-950">11,80 €</td>
+                  <td className="py-3 px-4 text-right text-navy-950">50–70 min</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p className="text-sm text-gray-500 italic mb-12">
+          <p className="text-sm text-navy-600/70 italic mb-12">
             Le taxi moto n'est pas systématiquement le moins cher, mais reste
             l'option la plus rapide aux heures de pointe et garantit l'arrivée
             à l'heure pour un avion ou un rendez-vous critique.
           </p>
 
-          <h2 className="text-2xl md:text-3xl font-bold mb-6">Questions fréquentes sur les tarifs taxi moto</h2>
-          <div className="space-y-3 mb-12">
-            {faqList.map((item, i) => (
-              <details key={i} className="bg-gray-50 rounded-lg p-5 group">
-                <summary className="font-semibold cursor-pointer list-none flex justify-between items-center">
-                  <span>{item.question}</span>
-                  <span className="text-2xl text-black group-open:rotate-45 transition-transform">+</span>
-                </summary>
-                <p className="mt-3 text-gray-700 leading-relaxed">{item.answer}</p>
-              </details>
-            ))}
-          </div>
-
-          <section className="bg-gray-50 p-6 rounded-lg mb-8">
-            <h2 className="text-xl font-semibold mb-4">Règlement des prestations</h2>
-            <ul className="list-disc pl-5 space-y-2 text-gray-700">
+          {/* Règlement des prestations */}
+          <section className="bg-cream-50 border border-navy-100 rounded-xl p-6 mb-8">
+            <h2 className="text-xl font-bold uppercase tracking-tight text-navy-950 mb-4">
+              Règlement des prestations
+            </h2>
+            <ul className="list-disc pl-5 space-y-2 text-navy-600">
               <li>Paiement en ligne sécurisé (CB) lors de la réservation, ou directement au chauffeur (CB / espèces).</li>
               <li>Cartes Visa, Mastercard et American Express acceptées.</li>
               <li>Facturation entreprise sur demande pour les comptes pro.</li>
             </ul>
           </section>
 
-          <p className="text-sm text-gray-600 italic mb-8">
+          <p className="text-sm text-navy-600/60 italic mb-8">
             Tous nos chauffeurs sont certifiés par le décret n° 2010-1223 du 11
             octobre 2010 applicable au 1er avril 2011. Tarifs applicables hors
             conditions exceptionnelles (grève, catastrophe naturelle…) et
@@ -339,25 +345,34 @@ export default function NosTarifs() {
         </div>
       </section>
 
-      <section className="py-12 md:py-16 bg-black text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+      {/* FAQ */}
+      <FaqSection
+        items={faqList.map((item) => ({ q: item.question, a: item.answer }))}
+        title="Questions fréquentes sur les tarifs taxi moto"
+        jsonLdId="faq-tarifs"
+      />
+
+      {/* CTA final */}
+      <section className="relative overflow-hidden bg-navy-950 text-white py-12 md:py-16">
+        <Halo />
+        <div className="relative z-10 container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold uppercase tracking-tight mb-4">
             Réservez votre taxi moto au tarif annoncé
           </h2>
-          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-white/80 mb-8 max-w-2xl mx-auto">
             Devis instantané, prix fixe, chauffeur en route en 15 minutes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/reserver"
-              className="bg-white text-black font-medium text-lg px-8 py-4 rounded-lg inline-flex items-center justify-center hover:bg-gray-200"
+              className="bg-mint-400 text-navy-950 font-semibold text-lg px-8 py-4 rounded-lg inline-flex items-center justify-center hover:bg-mint-300 transition-colors"
             >
               Obtenir mon devis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <a
               href="tel:+33649502525"
-              className="border border-white text-white font-medium text-lg px-8 py-4 rounded-lg inline-flex items-center justify-center hover:bg-white/10"
+              className="border border-white/30 text-white font-semibold text-lg px-8 py-4 rounded-lg inline-flex items-center justify-center hover:border-mint-400 hover:text-mint-300 transition-colors"
             >
               <Phone className="mr-2 h-5 w-5" />
               +33 6 49 50 25 25

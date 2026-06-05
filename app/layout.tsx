@@ -3,6 +3,9 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/Footer";
 import Header from "@/components/Header";
+import SiteLoader from "@/components/SiteLoader";
+import BackToTop from "@/components/BackToTop";
+import MobileReserveBar from "@/components/MobileReserveBar";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "@/app/globals.css";
@@ -208,7 +211,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className="min-h-screen bg-white text-black">
+      <body className="min-h-screen bg-cream-50 text-navy-950">
         <Script
           id="ld-localbusiness"
           type="application/ld+json"
@@ -221,11 +224,16 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
+        <SiteLoader />
         <AuthProvider>
           <GoogleMapsProvider>
             <Header />
             <main>{children}</main>
             <Footer />
+            {/* Espace pour ne pas masquer le bas de page sous la barre mobile */}
+            <div className="h-16 md:hidden" aria-hidden />
+            <BackToTop />
+            <MobileReserveBar />
           </GoogleMapsProvider>
         </AuthProvider>
         {GA_ENABLED && (

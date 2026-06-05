@@ -25,7 +25,11 @@ const mapOptions = {
   fullscreenControl: false,
   streetViewControl: false,
   mapTypeControl: false,
+  // Thème sombre navy (DA Izymoto) — plus de fond blanc agressif
   styles: [
+    { elementType: "geometry", stylers: [{ color: "#0F2730" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#9CB2BD" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#06121A" }] },
     {
       featureType: "poi",
       elementType: "labels",
@@ -37,29 +41,29 @@ const mapOptions = {
       stylers: [{ visibility: "off" }],
     },
     {
+      featureType: "landscape",
+      elementType: "geometry",
+      stylers: [{ color: "#0A1A24" }],
+    },
+    {
       featureType: "road",
       elementType: "geometry",
-      stylers: [{ color: "#f5f5f5" }],
+      stylers: [{ color: "#163341" }],
     },
     {
       featureType: "road.arterial",
       elementType: "geometry",
-      stylers: [{ color: "#e0e0e0" }],
+      stylers: [{ color: "#1F4252" }],
     },
     {
       featureType: "road.highway",
       elementType: "geometry",
-      stylers: [{ color: "#dadada" }],
-    },
-    {
-      featureType: "landscape",
-      elementType: "geometry",
-      stylers: [{ color: "#f9f9f9" }],
+      stylers: [{ color: "#2F5566" }],
     },
     {
       featureType: "water",
       elementType: "geometry",
-      stylers: [{ color: "#c9c9c9" }],
+      stylers: [{ color: "#06121A" }],
     },
   ],
 };
@@ -137,18 +141,22 @@ export default function MapContainer({
   // Si Google Maps n'est pas encore chargé, afficher un loader
   if (!isLoaded) {
     return (
-      <div className="h-full w-full flex items-center justify-center bg-gray-100">
-        <div className="animate-spin h-10 w-10 border-4 border-black border-t-transparent rounded-full"></div>
+      <div className="h-full w-full flex items-center justify-center bg-navy-900 md:rounded-2xl">
+        <div className="animate-spin h-10 w-10 border-4 border-mint-400 border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
   return (
     <div
-      className={`relative h-full w-full ${isFullScreen ? "fixed inset-0 z-50" : ""}`}
+      className={`relative h-full w-full ${
+        isFullScreen
+          ? "fixed inset-0 z-50"
+          : "md:rounded-2xl md:border md:border-navy-700/60 md:shadow-xl md:overflow-hidden"
+      }`}
     >
       <GoogleMap
-        mapContainerClassName="h-full w-full rounded-none md:rounded-lg"
+        mapContainerClassName="h-full w-full rounded-none md:rounded-2xl"
         options={mapOptions}
         center={mapCenter}
         zoom={zoom}
@@ -163,9 +171,9 @@ export default function MapContainer({
             options={{
               suppressMarkers: false,
               polylineOptions: {
-                strokeColor: "#000000",
+                strokeColor: "#2DD4BF",
                 strokeWeight: 6,
-                strokeOpacity: 0.8,
+                strokeOpacity: 0.95,
               },
             }}
           />

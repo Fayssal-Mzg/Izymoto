@@ -9,6 +9,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import HeaderWalletBadge from "@/components/wallet/HeaderWalletBadge";
 
+// Pill de navigation : cadre + léger fond + glow mint au survol, sur une ligne
+const navPillClass =
+  "inline-block whitespace-nowrap rounded-full border border-white/15 bg-white/5 px-4 py-2 text-[11px] font-medium uppercase tracking-widest text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-mint-400/70 hover:bg-mint-400/10 hover:text-mint-300 hover:shadow-[0_0_18px_-4px_rgba(45,212,191,0.55)]";
+
 const Header = () => {
   const { user, logOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -76,7 +80,7 @@ const Header = () => {
     <header className="w-full z-50 bg-transparent">
       {/* Barre supérieure combinée */}
       <div className="bg-navy-950 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-3 md:py-4 flex items-center justify-between">
+        <div className="container mx-auto px-6 py-2.5 md:py-3 flex items-center justify-between">
           {/* Logo */}
           <Link
             href="/"
@@ -89,57 +93,41 @@ const Header = () => {
               alt="Izymoto — Taxi moto Paris & moto-taxi premium"
               width={640}
               height={200}
-              className="object-contain h-20 md:h-24 w-auto"
+              className="object-contain h-16 md:h-[68px] w-auto"
               priority
             />
           </Link>
 
-          {/* Navigation principale */}
+          {/* Navigation principale — pills encadrés, accent mint au survol */}
           <nav className="hidden md:block">
-            <ul className="flex justify-center space-x-10">
+            <ul className="flex items-center justify-center gap-2 lg:gap-3">
               <li>
                 <a
                   href="#reservation"
-                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
+                  className={navPillClass}
                   onClick={handleReservationClick}
                 >
-                  RÉSERVER UN TRAJET
+                  Réserver
                 </a>
               </li>
               <li>
-                <Link
-                  href="/nos-tarifs"
-                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
-                  onClick={handleNavigation}
-                >
-                  NOS TARIFS
+                <Link href="/nos-tarifs" className={navPillClass} onClick={handleNavigation}>
+                  Nos tarifs
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/portefeuille"
-                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
-                  onClick={handleNavigation}
-                >
-                  PORTEFEUILLE
+                <Link href="/portefeuille" className={navPillClass} onClick={handleNavigation}>
+                  Forfaits
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/aeroports"
-                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
-                  onClick={handleNavigation}
-                >
-                  AÉROPORTS PARIS
+                <Link href="/aeroports" className={navPillClass} onClick={handleNavigation}>
+                  Aéroports
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/about"
-                  className="text-white text-sm tracking-wider relative py-2 inline-block transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-white hover:after:w-full after:transition-all after:duration-300"
-                  onClick={handleNavigation}
-                >
-                  À PROPOS DE IZYMOTO
+                <Link href="/about" className={navPillClass} onClick={handleNavigation}>
+                  À propos
                 </Link>
               </li>
             </ul>
@@ -246,7 +234,7 @@ const Header = () => {
               className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
               onClick={handleNavigation}
             >
-              Portefeuille
+              Forfaits
             </Link>
             <Link
               href="/aeroports"
