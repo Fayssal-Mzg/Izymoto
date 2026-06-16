@@ -77,7 +77,7 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full z-50 bg-transparent">
+    <header className="sticky top-0 w-full z-50 bg-transparent">
       {/* Barre supérieure combinée */}
       <div className="bg-navy-950 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-2.5 md:py-3 flex items-center justify-between">
