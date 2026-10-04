@@ -42,10 +42,8 @@ export async function POST(request) {
       monthlyBudgetCents: budgetCents,
     });
 
-    const origin =
-      request.headers.get("origin") ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://izymoto.com";
+    // Base URL serveur : jamais l'en-tête Origin (contrôlé par l'appelant).
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ||"https://izymoto.com";
     const inviteUrl = `${origin}/entreprise/invitation/${invite.token}`;
 
     try {

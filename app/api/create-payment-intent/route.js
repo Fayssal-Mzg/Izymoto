@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
+import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
+import { pickPaymentIntentMetadata } from "@/lib/api/identity";
 
 // Fourchette acceptable pour un trajet moto-taxi (en €). Bloque les tentatives
 // de manipulation côté client (ex: amount=0.50€).
@@ -10,6 +12,16 @@ const MAX_AMOUNT_EUR = 1000;
 const STRIPE_MIN_CHARGE_CENTS = 50;
 
 export async function POST(request) {
+  let auth;
+  try {
+    auth = await requireAuth(request);
+  } catch (err) {
+    if (err instanceof AdminAuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json({ error: "Erreur d'authentification" }, { status: 500 });
+  }
+
   try {
     const { amount, metadata, walletAmountCents } = await request.json();
 
@@ -65,25 +77,17 @@ export async function POST(request) {
       amount: cardAmountCents,
       currency: "eur",
       capture_method: "manual",
-      // Stripe metadata: valeurs string uniquement, max 500 chars. On stringify
-      // les objets/arrays (ex. detailsMajorations), on coerce le reste en string.
-      // On y ajoute la part wallet pour traçabilité + reconnaissance par le webhook.
+      // Stripe metadata (strings). Clés descriptives en liste blanche (aucune donnée
+      // personnelle : le webhook ne lit pas ces métadonnées), puis clés serveur posées
+      // APRÈS la copie, donc non écrasables : propriétaire, mode, parts wallet/total.
       metadata: {
         ...Object.fromEntries(
-          Object.entries(metadata || {})
-            .map(([k, v]) => {
-              if (v === null || v === undefined) return null;
-              const str = typeof v === "object" ? JSON.stringify(v) : String(v);
-              if (!str) return null;
-              return [k, str.length > 500 ? str.slice(0, 500) : str];
-            })
-            .filter(Boolean)
+          Object.entries(pickPaymentIntentMetadata(metadata)).map(([k, v]) => [k, String(v)])
         ),
-        ...(isHybrid && {
-          paymentMode: "hybrid",
-          walletAmountCents: String(walletCents),
-          totalAmountCents: String(totalCents),
-        }),
+        userId: auth.uid,
+        paymentMode: isHybrid ? "hybrid" : "card",
+        walletAmountCents: String(walletCents),
+        totalAmountCents: String(totalCents),
       },
       automatic_payment_methods: {
         enabled: true,
@@ -101,7 +105,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Error creating payment intent:", error);
     return NextResponse.json(
-      { error: "Error creating payment intent: " + error.message },
+      { error: "Erreur lors de la création du paiement" },
       { status: 500 }
     );
   }

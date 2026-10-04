@@ -2,6 +2,7 @@
 
 import emailjs from "@emailjs/browser";
 import { Resend } from "resend";
+import { auth } from "@/lib/firebaseConfig";
 
 // Définir les clés en premier pour qu'elles soient disponibles partout
 const PRIMARY_USER_PUBLIC_KEY = "xRIZqWvmMaxkLXdi1";
@@ -177,10 +178,12 @@ export function prepareEmailData(bookingData: any): EmailBookingData {
 export const sendDevisEmail = async (bookingData: any) => {
   try {
     // Au lieu d'appeler Resend directement, utiliser l'API route existante
+    const idToken = await auth.currentUser?.getIdToken();
     const response = await fetch("/api/send-devis", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
       },
       body: JSON.stringify({
         name: bookingData.name || bookingData.userName || "",

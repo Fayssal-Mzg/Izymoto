@@ -34,14 +34,14 @@ export default function WalletTiersSection({
     setLoadingTierId(tier.id);
     setError(null);
     try {
+      const idToken = await user.getIdToken();
       const res = await fetch("/api/wallet/create-checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tierId: tier.id,
-          userId: user.uid,
-          userEmail: user.email,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ tierId: tier.id }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) {

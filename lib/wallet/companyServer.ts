@@ -361,6 +361,10 @@ export async function debitCompanyWalletForBooking(
     const existingTx = await tx.get(txRef);
     if (existingTx.exists) {
       const e = existingTx.data() as any;
+      // Ledger d'un autre appelant ou d'une autre société : aucune divulgation.
+      if (e.actorUid !== actorUid || e.companyId !== companyId) {
+        throw new WalletError("CONFLICT", "Opération déjà enregistrée");
+      }
       return {
         bookingId: e.bookingId ?? "",
         reservationId: e.reservationId ?? "",
@@ -435,7 +439,8 @@ export interface DebitCompanyForHybridBookingParams {
   cardAmountCents: number;
   paymentIntentId: string;
   bookingData: Record<string, unknown>;
-  clientToken: string;
+  /** Inutilisé : l'idempotence hybride est dérivée du PaymentIntent. */
+  clientToken?: string;
   description?: string;
 }
 
@@ -450,7 +455,6 @@ export async function debitCompanyWalletForHybridBooking(
     cardAmountCents,
     paymentIntentId,
     bookingData,
-    clientToken,
     description,
   } = params;
 
@@ -464,7 +468,8 @@ export async function debitCompanyWalletForHybridBooking(
   const db = getAdminFirestore();
   const companyRef = db.collection(COMPANIES).doc(companyId);
   const memberRef = companyRef.collection(MEMBERS).doc(actorUid);
-  const txRef = db.collection(WALLET_TX).doc(clientToken);
+  // Un PaymentIntent = une seule course : clé de ledger dérivée du PaymentIntent.
+  const txRef = db.collection(WALLET_TX).doc(`hybrid_${paymentIntentId}`);
   const bookingRef = db.collection(BOOKINGS).doc();
   const reservationId = genReservationId();
   const period = currentPeriodKey();
@@ -474,6 +479,10 @@ export async function debitCompanyWalletForHybridBooking(
     const existingTx = await tx.get(txRef);
     if (existingTx.exists) {
       const e = existingTx.data() as any;
+      // Ledger d'un autre appelant ou d'une autre société : aucune divulgation.
+      if (e.actorUid !== actorUid || e.companyId !== companyId) {
+        throw new WalletError("CONFLICT", "Opération déjà enregistrée");
+      }
       return {
         bookingId: e.bookingId ?? "",
         reservationId: e.reservationId ?? "",
@@ -731,7 +740,17 @@ export async function removeCompanyMember(params: {
 
   await db.runTransaction(async (tx: Transaction) => {
     const memberSnap = await tx.get(memberRef);
-    if (!memberSnap.exists) return;
+    if (!memberSnap.exists) {
+      throw new WalletError("WALLET_NOT_FOUND", "Membre introuvable");
+    }
+    if ((memberSnap.data() as CompanyMemberDoc).status !== "active") {
+      throw new WalletError("CONFLICT", "Ce membre n'est plus actif");
+    }
+    // Le rattachement vidé doit bien être celui de CETTE société.
+    const userSnap = await tx.get(userRef);
+    if ((userSnap.data() as { companyId?: string } | undefined)?.companyId !== ctx.companyId) {
+      throw new WalletError("CONFLICT", "Ce membre n'est pas rattaché à votre société");
+    }
     const companySnap = await tx.get(companyRef);
     const company = companySnap.data() as CompanyDoc;
     tx.update(memberRef, { status: "removed" });

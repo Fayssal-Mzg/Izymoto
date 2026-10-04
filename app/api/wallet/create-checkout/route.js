@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
+import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
 import { getTierById } from "@/lib/wallet/tiers";
 import { getCompanyContextForUser } from "@/lib/wallet/companyServer";
 
@@ -10,20 +11,25 @@ import { getCompanyContextForUser } from "@/lib/wallet/companyServer";
 //   pour ne créditer qu'après confirmation par Stripe (anti-fraude).
 
 export async function POST(request) {
+  let auth;
   try {
-    const { tierId, userId, userEmail } = await request.json();
+    auth = await requireAuth(request);
+  } catch (err) {
+    if (err instanceof AdminAuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json({ error: "Erreur d'authentification" }, { status: 500 });
+  }
+
+  try {
+    const { tierId } = await request.json();
+    const userId = auth.uid;
+    const userEmail = auth.email;
 
     if (!tierId || typeof tierId !== "string") {
       return NextResponse.json(
         { error: "tierId manquant ou invalide" },
         { status: 400 }
-      );
-    }
-
-    if (!userId || typeof userId !== "string") {
-      return NextResponse.json(
-        { error: "userId manquant : l'utilisateur doit être connecté" },
-        { status: 401 }
       );
     }
 
@@ -35,10 +41,8 @@ export async function POST(request) {
       );
     }
 
-    const origin =
-      request.headers.get("origin") ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "https://izymoto.com";
+    // Base URL serveur : jamais l'en-tête Origin (contrôlé par l'appelant).
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ||"https://izymoto.com";
 
     // Recharge entreprise : si le palier est "business" et que l'utilisateur est
     // owner d'une société, le crédit ira sur le portefeuille ENTREPRISE (résolu

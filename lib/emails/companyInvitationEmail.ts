@@ -8,6 +8,15 @@ export interface CompanyInvitationInput {
   invitedByEmail?: string | null;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Email d'invitation d'un collaborateur à rejoindre le portefeuille entreprise.
 // Même pattern que reviewRequestEmail.ts (Resend, template HTML inline).
 export async function sendCompanyInvitationEmail(input: CompanyInvitationInput) {
@@ -20,7 +29,9 @@ export async function sendCompanyInvitationEmail(input: CompanyInvitationInput) 
   }
 
   const resend = new Resend(apiKey);
-  const company = input.companyName || "votre entreprise";
+  const rawCompany = input.companyName || "votre entreprise";
+  const company = escapeHtml(rawCompany);
+  const subjectCompany = rawCompany.replace(/[\r\n]+/g, " ");
   const budgetLine =
     input.monthlyBudgetEur && input.monthlyBudgetEur > 0
       ? `<p style="margin: 0; color: #666; font-size: 13px;">Budget mensuel attribué : <strong>${input.monthlyBudgetEur} €</strong></p>`
@@ -48,7 +59,7 @@ export async function sendCompanyInvitationEmail(input: CompanyInvitationInput) 
         ${budgetLine}
       </div>
       <div style="text-align: center; margin: 28px 0;">
-        <a href="${input.inviteUrl}"
+        <a href="${escapeHtml(input.inviteUrl)}"
            style="display: inline-block; background-color: #2DD4BF; color: #06121A; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px;">
           Rejoindre ${company}
         </a>
@@ -68,7 +79,7 @@ export async function sendCompanyInvitationEmail(input: CompanyInvitationInput) 
   return resend.emails.send({
     from: "IzyMoto <contact@izymoto.com>",
     to: [input.to.trim()],
-    subject: `${company} vous invite sur IzyMoto Entreprises`,
+    subject: `${subjectCompany} vous invite sur IzyMoto Entreprises`,
     replyTo: "contact@izymoto.com",
     html,
   });

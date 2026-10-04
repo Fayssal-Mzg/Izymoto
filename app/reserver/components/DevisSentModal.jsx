@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle, Mail, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DevisSentModal({
   clientEmail,
@@ -10,6 +11,9 @@ export default function DevisSentModal({
   onClose,
 }) {
   const [animateIn, setAnimateIn] = useState(false);
+  // Invité : le devis est transmis à IzyMoto (pas d'email envoyé à l'adresse saisie).
+  const { user } = useAuth();
+  const isGuest = !user;
 
   useEffect(() => {
     setAnimateIn(true);
@@ -31,10 +35,10 @@ export default function DevisSentModal({
             </div>
             <div className="min-w-0">
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-                Devis envoyé !
+                {isGuest ? "Demande transmise !" : "Devis envoyé !"}
               </h3>
               <p className="text-sm text-gray-600 truncate">
-                Consultez votre boîte email
+                {isGuest ? "Nous vous recontactons" : "Consultez votre boîte email"}
               </p>
             </div>
           </div>
@@ -55,12 +59,13 @@ export default function DevisSentModal({
             </div>
 
             <h4 className="text-lg font-semibold text-gray-900 mb-2">
-              Votre devis a été envoyé
+              {isGuest ? "Votre demande a bien été transmise" : "Votre devis a été envoyé"}
             </h4>
 
             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-              Un email contenant votre devis détaillé pour le trajet a été
-              envoyé.
+              {isGuest
+                ? "Votre demande a bien été transmise, nous vous recontactons."
+                : "Un email contenant votre devis détaillé pour le trajet a été envoyé."}
             </p>
 
             <div className="bg-gray-50 rounded-lg p-3 mb-4 text-left">
@@ -98,7 +103,11 @@ export default function DevisSentModal({
                 Prochaines étapes :
               </p>
               <ul className="text-sm text-blue-600 mt-1 space-y-1">
-                <li>• Consultez votre email pour voir le devis détaillé</li>
+                <li>
+                  {isGuest
+                    ? "• Nous vous recontactons avec votre devis détaillé"
+                    : "• Consultez votre email pour voir le devis détaillé"}
+                </li>
                 <li>• Le devis est valable 30 jours</li>
                 <li>• Contactez-nous pour toute question</li>
               </ul>

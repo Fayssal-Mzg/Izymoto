@@ -213,6 +213,10 @@ export async function debitWalletForBooking(
     const existingTxSnap = await tx.get(txRef);
     if (existingTxSnap.exists) {
       const existing = existingTxSnap.data() as WalletTransactionDoc;
+      // Ledger d'un autre appelant : on ne divulgue ni bookingId ni solde.
+      if (existing.userId !== userId) {
+        throw new WalletError("CONFLICT", "Opération déjà enregistrée");
+      }
       return {
         bookingId: existing.bookingId ?? "",
         reservationId: (existing as any).reservationId ?? "",
@@ -284,7 +288,8 @@ export interface DebitWalletForHybridBookingParams {
   cardAmountCents: number;
   paymentIntentId: string;
   bookingData: Record<string, unknown>;
-  clientToken: string;
+  /** Inutilisé : l'idempotence hybride est dérivée du PaymentIntent. */
+  clientToken?: string;
   description?: string;
 }
 
@@ -303,7 +308,6 @@ export async function debitWalletForHybridBooking(
     cardAmountCents,
     paymentIntentId,
     bookingData,
-    clientToken,
     description,
   } = params;
 
@@ -316,7 +320,9 @@ export async function debitWalletForHybridBooking(
 
   const db = getAdminFirestore();
   const walletRef = db.collection(WALLETS).doc(userId);
-  const txRef = db.collection(WALLET_TX).doc(clientToken);
+  // Un PaymentIntent = une seule course : clé de ledger dérivée du PaymentIntent
+  // (jamais d'un jeton client), donc non rejouable avec un autre clientToken.
+  const txRef = db.collection(WALLET_TX).doc(`hybrid_${paymentIntentId}`);
   const bookingRef = db.collection(BOOKINGS).doc();
   const reservationId = `CMD-${Math.random()
     .toString(36)
@@ -328,6 +334,10 @@ export async function debitWalletForHybridBooking(
     const existingTxSnap = await tx.get(txRef);
     if (existingTxSnap.exists) {
       const existing = existingTxSnap.data() as WalletTransactionDoc;
+      // Ledger d'un autre appelant : on ne divulgue ni bookingId ni solde.
+      if (existing.userId !== userId) {
+        throw new WalletError("CONFLICT", "Opération déjà enregistrée");
+      }
       return {
         bookingId: existing.bookingId ?? "",
         reservationId: (existing as any).reservationId ?? "",

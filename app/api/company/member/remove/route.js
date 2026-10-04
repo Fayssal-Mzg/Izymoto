@@ -33,7 +33,8 @@ export async function POST(request) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     if (err instanceof WalletError) {
-      const status = err.code === "FORBIDDEN" ? 403 : 400;
+      const status =
+        err.code === "FORBIDDEN" ? 403 : err.code === "WALLET_NOT_FOUND" ? 404 : err.code === "CONFLICT" ? 409 : 400;
       return NextResponse.json({ error: err.message, code: err.code }, { status });
     }
     console.error("[company/member/remove] erreur:", err);

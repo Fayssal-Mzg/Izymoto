@@ -566,11 +566,14 @@ function WalletPaymentForm({
         email: user.email,
       };
 
+      const idToken = await user.getIdToken();
       const response = await fetch("/api/wallet/debit-for-booking", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
-          userId: user.uid,
           amountCents: Math.round(prixFinal * 100),
           bookingData: fullBookingData,
           clientToken,
@@ -804,11 +807,14 @@ function HybridPaymentForm({
         email: user.email,
       };
 
+      const idToken = await user.getIdToken();
       const response = await fetch("/api/wallet/finalize-hybrid-booking", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
-          userId: user.uid,
           paymentIntentId: paymentIntent.id,
           walletAmountCents: Math.round(walletAmountEur * 100),
           cardAmountCents: Math.round(cardAmountEur * 100),
@@ -1111,10 +1117,12 @@ export default function PaymentModal({
         name: name,
       };
 
+      const idToken = await user.getIdToken();
       const response = await fetch("/api/create-payment-intent", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           amount: prixFinal,
