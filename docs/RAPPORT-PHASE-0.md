@@ -130,3 +130,50 @@ Aucun push, aucun merge, aucun déploiement. Émulateur uniquement (projectId `d
 - **Vérification** : relecture du diff par le chef ; dev-fullstack VALIDÉ ; qa-tests VALIDÉ (nouveaux cas : PI de 3 h / 25 min / 40 min, verrou libéré, webhook tardif).
 - **Tests réellement exécutés (par le chef)** : `npx tsc --noEmit` → code 0 ; `npm test` → `Test Files 8 passed (8)`, `Tests 360 passed | 13 todo (373)`.
 - La MOYENNE « `pi.created` non borné » et les BASSES « verrou hybride » et « webhook tardif » de la liste des réserves ci-dessus sont **fermées**.
+
+---
+
+## Lot 0.5 — Règles Firestore minimales (SENSIBLE) — écrites et testées sur l'émulateur, **jamais déployées**
+
+- **Branche** : `lot/0.5-regles` (part de `lot/0.3-prix-serveur`)
+- **Commit** : voir `git log lot/0.5-regles -1` (message « fix(regles) : lot 0.5 … »)
+- **Contenu** (`firestore.rules` réécrit, refus par défaut en fin de fichier, commentaire de tête « ne pas déployer sans validation de Fayssal ») :
+  - `users` : création en liste blanche (`isAdmin` doit valoir false, rôle `client` ou `driver`, ni `companyId`/`companyRole`/`phoneVerified`) ; mise à jour limitée au profil ; suppression réservée à l'admin (ferme « supprimer puis recréer ») ; tailles bornées.
+  - `drivers` : création seulement en `pending` avec l'email du jeton ; le chauffeur ne touche ni à son statut, ni à ses statistiques, ni aux champs de validation ; disponibilité `online`/`offline` ; documents limités aux 6 types connus avec un chemin `drivers/<uid>/…`.
+  - `bookings` : le client ne crée plus que des **devis** (`status: "devis"`, `userId` = soi, liste blanche, horodatage serveur ; ni argent, ni paiement, ni chauffeur, ni entreprise, ni id `card_`/`hybrid_`) ; aucune mise à jour par le passager ; **pool lisible seulement par un chauffeur validé** ; acceptation seulement par un chauffeur validé **et en ligne**, jamais sa propre course (D-003), commissions entières et cohérentes avec le `prix` du document ; démarrer/terminer réservés au chauffeur assigné et validé ; libérer permis au chauffeur assigné ; plus personne ne peut s'attribuer la course d'un autre.
+  - `companies` : membre **actif** uniquement (un membre retiré ne lit plus rien) ; un collaborateur ne lit pas les fiches des autres ; aucune écriture client.
+  - Collections serveur fermées : `paymentClaims`, `auditLogs`, `companyInvitations` ; `wallets`/`walletTransactions` en lecture du sien ; `factures` admin.
+- **Code modifié pour rester compatible** :
+  - Webhook Stripe : passe du SDK client **non authentifié** (refusé par les règles) à l'Admin SDK, logique inchangée. **Les règles et ce webhook doivent être déployés ensemble.**
+  - Devis **invité** : plus d'écriture depuis le navigateur ; `send-devis` (serveur) enregistre la demande (`status: "devis"`, `accountType: "guest"`, prix serveur). Sans cela, les nouvelles règles cassaient le devis invité.
+  - `dispatch.ts` et `bookings.js` : horodatages `serverTimestamp()` ; retrait de l'écriture client `phoneVerified: true` (champ lu nulle part).
+- **Verdicts** :
+  - dev-fullstack : VALIDÉ AVEC RÉSERVES.
+  - securite-reviewer : 1er passage **BLOQUANT** (1 HAUTE : le pool expose les données perso ; MOYENNES : chauffeur suspendu, D-003, accaparement du pool, devis invité cassé…) → corrections → 2e passage **VALIDÉ AVEC RÉSERVES, sous condition d'une décision écrite de Fayssal sur la HAUTE du pool** (sans elle : BLOQUANT pour la production).
+  - qa-tests : VALIDÉ.
+- **Tests réellement exécutés (par le chef)** : `npx tsc --noEmit` → code 0 ; `npm test` → `Test Files 9 passed (9)`, `Tests 454 passed (454)`. Nouveau `tests/rules/isolation.test.ts` (chaque cas autorisé + refusé : pool, acceptation, D-003, hors ligne, suspendu, commissions, horodatages, devis, users, drivers, documents, entreprises A/B, membre retiré, collections serveur, admin) ; `tests/rules/baseline.test.ts` mis à jour (non-régression de l'espace chauffeur et client) ; tests `send-devis` invité.
+- **BLOCAGE (décision de Fayssal requise avant toute mise en production)** : le pool (`bookings` en `awaiting_driver`) reste lisible **en entier** (nom, téléphone, email, notes du passager) par tout chauffeur validé, contrairement au tableau « Qui voit quoi » (« version sans données perso »). Les règles Firestore ne savent pas masquer des champs : la correction est la collection `ridePool` écrite par le serveur, prévue en phase 2. Fayssal doit soit inscrire dans DECISIONS.md une acceptation temporaire avec échéance, soit avancer `ridePool`. Un test `it.fails` documente cet écart. Rappel : avec les règles actuelles du dépôt, **tout compte connecté** lit ce pool ; ce lot réduit donc déjà fortement l'exposition.
+- **Réserves ouvertes** :
+  - `send-devis` invité : écriture en base + email sans authentification ni limitation de débit (spam/volume) → App Check ou captcha + limitation par IP avant la production.
+  - `documents.*.url` des chauffeurs non contrôlé (l'admin ouvre ce lien) → générer le lien depuis `path` côté admin.
+  - Le chauffeur lit les coordonnées du passager de ses courses même après la fin ; un collaborateur lit tout le document de son entreprise (solde, SIRET) ; le chauffeur peut changer son IBAN sans nouvelle validation ni journal ; un chauffeur suspendu garde ses courses assignées jusqu'à leur libération ; commissions encore écrites par le client (contraintes) ; `prix` client sur un devis connecté (sans effet sur un paiement) ; `reservationId` du devis invité fourni par l'appelant → phase 1/2.
+  - **Avant déploiement** : comparer avec les règles en production ; vérifier en base que les fiches chauffeur existantes respectent les 6 types de documents et ont l'email de leur compte (sinon le chauffeur ne pourra plus mettre à jour sa fiche, même sa disponibilité).
+  - Passage `client → driver` par soi-même autorisé (inscription chauffeur d'un compte existant) : sans effet tant que l'admin n'a pas validé `drivers/{uid}`.
+
+---
+
+## Synthèse finale (porte 2)
+
+| Lot | Branche | Commit(s) | Verdict final | Tests (chef) |
+| --- | --- | --- | --- | --- |
+| 0.1 Outillage | `lot/0.1-outillage` | `d4615d4` | Validé avec réserves | 40 passés |
+| 0.2 Auth des routes | `lot/0.2-auth-routes` | `2fdd989` | Validé avec réserves (après 1 BLOQUANT corrigé) | 97 passés |
+| 0.4 Invitations | `lot/0.4-invitations` | `0c12a36` | Validé avec réserves | 119 passés |
+| 0.3 Prix serveur | `lot/0.3-prix-serveur` | `062af0c`, `e96a01b` | Validé avec réserves (après 1 BLOQUANT corrigé) | 360 passés |
+| 0.5 Règles | `lot/0.5-regles` | voir `git log` | **Bloqué pour la production** tant que Fayssal n'a pas tranché le pool ; sinon validé avec réserves | 454 passés |
+
+Chaque branche contient les précédentes : `lot/0.5-regles` porte toute la phase 0.
+
+**Décisions provisoires à valider par Fayssal** : (0.2) devis invité envoyé à l'admin seulement ; (0.3) hors-forfait payable uniquement sur devis, zones durcies par code postal, priorité obligatoire sous 1 h 15, course carte créée en `awaiting_driver`, libération automatique de l'empreinte en cas d'écart ; (0.5) décision sur le pool.
+
+**À faire par Fayssal** : relire puis merger dans l'ordre (ou seulement `lot/0.5-regles`) ; décision écrite sur le pool ; tester la prévisualisation Vercel **sur un projet Firebase de test** (paiement carte, portefeuille, hybride, devis connecté et invité, hors-forfait → devis, invitation avec vérification d'email, espace chauffeur complet) ; comparer les règles en production avant de déployer règles + webhook ensemble ; lot 0.6 (nouvelle clé de service, révocation de l'ancienne, journaux GCP, retrait de `.secrets/`, règles Storage) ; définir `NEXT_PUBLIC_SITE_URL` sur Vercel ; déployer à un moment creux (PaymentIntents en cours refusés).

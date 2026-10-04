@@ -1,6 +1,6 @@
-// Lot 0.3 : webhook Stripe payment_intent.amount_capturable_updated. Le handler lit
-// Firestore avec le SDK CLIENT (`lib/firebaseConfig`) ; on le branche sur l'émulateur via
-// un shim du module "firebase/firestore" appuyé sur l'Admin SDK (même base d'émulateur).
+// Lots 0.3 / 0.5 : webhook Stripe payment_intent.amount_capturable_updated. Le handler
+// utilise l'Admin SDK (bypass des règles) directement sur l'émulateur Firestore : aucun
+// shim du SDK client n'est nécessaire.
 // `stripe.webhooks.constructEvent` est mocké : l'événement est lu dans le corps de la requête.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,27 +9,6 @@ const constructEvent = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/stripe-server", () => ({
   stripe: { webhooks: { constructEvent } },
 }));
-vi.mock("@/lib/firebaseConfig", () => ({ db: { shim: true } }));
-vi.mock("firebase/firestore", async () => {
-  const admin = await import("firebase-admin/firestore");
-  const { getAdminFirestore } = await import("@/lib/firebase/admin-server");
-  return {
-    Timestamp: admin.Timestamp,
-    collection: (_db: unknown, name: string) => ({ name }),
-    where: (field: string, op: string, value: unknown) => ({ field, op, value }),
-    query: (col: { name: string }, w: { field: string; op: string; value: unknown }) => ({ col, w }),
-    getDocs: async (q: { col: { name: string }; w: { field: string; op: string; value: unknown } }) => {
-      const snap = await getAdminFirestore()
-        .collection(q.col.name)
-        .where(q.w.field, q.w.op as FirebaseFirestore.WhereFilterOp, q.w.value)
-        .get();
-      return { docs: snap.docs };
-    },
-    doc: (_db: unknown, col: string, id: string) => ({ col, id }),
-    updateDoc: (ref: { col: string; id: string }, fields: Record<string, unknown>) =>
-      getAdminFirestore().collection(ref.col).doc(ref.id).update(fields),
-  };
-});
 vi.mock("@/lib/emails/reviewRequestEmail", () => ({ sendReviewRequestEmail: vi.fn() }));
 
 import { POST as webhook } from "@/app/api/webhooks/stripe/route";

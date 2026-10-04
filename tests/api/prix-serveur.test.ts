@@ -969,7 +969,7 @@ describe("finalize-card-booking : verrou paymentClaims/<pi>", () => {
       }
       expect(bookings).toBeLessThanOrEqual(1);
     }
-  });
+  }, 60_000);
 });
 
 describe("finalize-card-booking : rejeu et réservation préexistante", () => {
@@ -1256,6 +1256,39 @@ describe("send-devis : le prix de l'email est le prix serveur", () => {
     const prices = prixEmail();
     expect(prices).toHaveLength(2);
     for (const p of prices) expect(p).toBe("76.00");
+  });
+
+  it("sans jeton : un doc bookings est créé (devis, guest, prix serveur, prix client ignoré)", async () => {
+    const res = await call({ ...validRide(), prix: 1, phone: "+33600000000", notes: "x" });
+    expect(res.status).toBe(200);
+    const snap = await db().collection("bookings").get();
+    expect(snap.size).toBe(1);
+    const b = snap.docs[0].data();
+    expect(b).toMatchObject({ status: "devis", accountType: "guest", prix: 76, email: "invite@test.dev" });
+    expect(String(b.userId)).toMatch(/^guest_/);
+    expect(b.createdAt).toBeTruthy();
+  });
+
+  it("sans jeton : prix client énorme ignoré aussi dans le document (priorité : 96)", async () => {
+    await call({ ...validRide({ prioriteReservation: true }), prix: 99999 });
+    const snap = await db().collection("bookings").get();
+    expect(snap.size).toBe(1);
+    expect(snap.docs[0].data().prix).toBe(96);
+  });
+
+  it("avec jeton : aucun doc bookings créé par la route (pas de doublon avec saveBooking)", async () => {
+    const u = await createVerifiedAuthUser(uniqueEmail("dv-nodup"));
+    const res = await sendDevis(
+      jsonRequest("/api/send-devis", { token: u.idToken, body: { ...validRide(), prix: 1, name: "X", reservationId: "R3" } })
+    );
+    expect(res.status).toBe(200);
+    expect(await countDocs("bookings")).toBe(0);
+  });
+
+  it("requête invalide (400) : aucun doc bookings créé", async () => {
+    const res = await call({ ...hfRide({ distance: 2 }), prix: 1 });
+    expect(res.status).toBe(400);
+    expect(await countDocs("bookings")).toBe(0);
   });
 
   it("hors forfait (devis seulement) : 90.00 ; coordonnées facultatives pour un devis", async () => {

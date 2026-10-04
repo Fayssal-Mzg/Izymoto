@@ -1,7 +1,9 @@
 // app/api/send-devis/route.js
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
+import { randomUUID } from "node:crypto";
+import { FieldValue } from "firebase-admin/firestore";
+import { requireAuth, AdminAuthError, getAdminFirestore } from "@/lib/firebase/admin-server";
 import { quoteOrResponse } from "@/lib/api/pricing";
 import { DEVIS_QUOTE_OPTIONS } from "@/lib/pricing";
 
@@ -108,6 +110,39 @@ export async function POST(request) {
     }
 
     const subjectId = String(reservationId ?? "").replace(/[\r\n]+/g, " ").slice(0, 60);
+
+    // Devis d'un INVITÉ : enregistré ici (Admin SDK), jamais par le navigateur (les règles
+    // Firestore refusent toute écriture non connectée). Prix recalculé serveur, champs en
+    // liste blanche et bornés, createdAt serveur. Un devis connecté reste écrit par le
+    // client (saveBooking) : pas de doublon ici. Un échec n'empêche pas l'email admin.
+    if (!auth) {
+      try {
+        const cut = (v, n) => String(v ?? "").slice(0, n);
+        await getAdminFirestore()
+          .collection("bookings")
+          .add({
+            userId: `guest_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
+            accountType: "guest",
+            status: "devis",
+            depart: cut(depart, 500),
+            arrivee: cut(arrivee, 500),
+            distance: quote.distanceKm,
+            duree: typeof body.duree === "number" && Number.isFinite(body.duree) ? body.duree : null,
+            prix,
+            prioriteReservation,
+            reservationId: subjectId,
+            email: cut(email, 254).trim(),
+            phone: cut(phone, 50),
+            name: cut(name, 200),
+            notes: cut(notes, 2000),
+            reservationDate: quote.reservationDateIso,
+            dateFormatted: dateStr ? `${dateStr} à ${heureStr}` : "",
+            createdAt: FieldValue.serverTimestamp(),
+          });
+      } catch (err) {
+        console.error("Erreur enregistrement devis invité:", err.message);
+      }
+    }
 
     // Envoi email client
     const clientEmail = sendToClient

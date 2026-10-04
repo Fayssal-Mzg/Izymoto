@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
-import { db } from "@/lib/firebaseConfig";
-import { collection, query, where, getDocs, updateDoc, doc, Timestamp } from "firebase/firestore";
+import { Timestamp } from "firebase-admin/firestore";
+import { getAdminFirestore } from "@/lib/firebase/admin-server";
 import {
   creditWallet,
   buildRechargeDescription,
@@ -45,11 +45,10 @@ async function readRawBody(req) {
 }
 
 const findBookingsByPaymentIntent = async (paymentIntentId) => {
-  const q = query(
-    collection(db, "bookings"),
-    where("paymentId", "==", paymentIntentId)
-  );
-  const snap = await getDocs(q);
+  const snap = await getAdminFirestore()
+    .collection("bookings")
+    .where("paymentId", "==", paymentIntentId)
+    .get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
@@ -61,7 +60,7 @@ const updateBookingByPaymentIntent = async (paymentIntentId, fields) => {
   }
   await Promise.all(
     bookings.map((b) =>
-      updateDoc(doc(db, "bookings", b.id), {
+      getAdminFirestore().collection("bookings").doc(b.id).update({
         ...fields,
         paymentUpdatedAt: Timestamp.now(),
       })
@@ -86,7 +85,7 @@ const sendReviewRequestsForBookings = async (bookings) => {
         depart: b.depart,
         arrivee: b.arrivee,
       });
-      await updateDoc(doc(db, "bookings", b.id), {
+      await getAdminFirestore().collection("bookings").doc(b.id).update({
         reviewRequestEmailSentAt: Timestamp.now(),
       });
     } catch (err) {
@@ -231,7 +230,7 @@ export async function POST(request) {
             bookings
               .filter((b) => NOT_YET_AUTHORIZED.has(b.paymentStatus))
               .map((b) =>
-                updateDoc(doc(db, "bookings", b.id), {
+                getAdminFirestore().collection("bookings").doc(b.id).update({
                   paymentStatus: "authorized",
                   amountAuthorized: obj.amount / 100,
                   ...(NOT_YET_DISPATCHED.has(b.status) ? { status: "awaiting_driver" } : {}),

@@ -216,7 +216,6 @@ function PhoneVerification({ onVerified, onCancel, initialPhone }) {
         doc(db, "users", user.uid),
         {
           phoneNumber: formattedPhone,
-          phoneVerified: true,
         },
         { merge: true }
       );

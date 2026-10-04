@@ -221,7 +221,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Mettre à jour le document Firestore
         await setDoc(
           doc(db, "users", user.uid),
-          { phoneNumber, phoneVerified: true },
+          { phoneNumber },
           { merge: true }
         );
       } catch (error) {

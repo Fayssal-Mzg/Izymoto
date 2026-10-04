@@ -16,7 +16,7 @@ import {
   where,
   onSnapshot,
   runTransaction,
-  Timestamp,
+  serverTimestamp,
   Unsubscribe,
   orderBy,
 } from "firebase/firestore";
@@ -167,12 +167,12 @@ export async function acceptRide(
 
     tx.update(rideRef, {
       driverId,
-      driverAcceptedAt: Timestamp.now(),
+      driverAcceptedAt: serverTimestamp(),
       status: "assigned",
       commissionRate: COMMISSION_RATE,
       platformShareCents: platformCents,
       driverShareCents: driverCents,
-      updatedAt: Timestamp.now(),
+      updatedAt: serverTimestamp(),
     });
   });
 }
@@ -192,8 +192,8 @@ export async function startRide(rideId: string, driverId: string): Promise<void>
     }
     tx.update(rideRef, {
       status: "in_progress",
-      driverStartedAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
+      driverStartedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
   });
 }
@@ -217,8 +217,8 @@ export async function completeRide(
     }
     tx.update(rideRef, {
       status: "completed_by_driver",
-      driverCompletedAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
+      driverCompletedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
   });
 }
@@ -248,7 +248,7 @@ export async function releaseRide(
       driverAcceptedAt: null,
       status: "awaiting_driver",
       driverReleaseReason: reason,
-      updatedAt: Timestamp.now(),
+      updatedAt: serverTimestamp(),
     });
   });
 }

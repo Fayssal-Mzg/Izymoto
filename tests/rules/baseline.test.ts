@@ -1,9 +1,7 @@
-// Non-régression fonctionnelle : accès légitimes de l'app (chauffeur, client, entreprise,
-// admin) avec les règles ACTUELLES de firestore.rules. Filet de sécurité pour le lot 0.5 :
-// le PARCOURS fonctionnel doit rester possible ; le CHEMIN (client direct ou route serveur)
-// peut changer. Le bloc « comportement actuel non conforme D-001 » fige des écritures client
-// directes qui doivent migrer côté serveur : à remplacer par le test du parcours équivalent
-// via la route serveur, pas à conserver tels quels.
+// Non-régression fonctionnelle (lot 0.5) : accès légitimes de l'app (chauffeur, client,
+// entreprise, admin) avec les règles de firestore.rules, et refus qui doivent rester vrais.
+// Le PARCOURS fonctionnel doit rester possible ; le bloc « réserve phase 2 » fige les écritures
+// client directes encore autorisées (contraintes) qui devront migrer côté serveur.
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 import {
   assertFails,
@@ -14,8 +12,10 @@ import {
   actors,
   BOOKING,
   COMPANY_A,
+  COMPANY_B,
   createEnv,
   seed,
+  ts,
   UID,
 } from "./helpers";
 
@@ -35,10 +35,8 @@ beforeEach(async () => {
 });
 
 describe("espace chauffeur (validé) — dispatch.ts, drivers.ts, useDriver.ts", () => {
-  // PROVISOIRE : les documents bookings contiennent name/phone du passager, alors que
-  // « Qui voit quoi » (DECISIONS.md) exige une version sans données personnelles pour le pool.
-  // Ce test ne prouve que le parcours fonctionnel « le chauffeur validé voit le pool » ; il
-  // sera adapté au lot 0.5 (voir les it.todo « pool » en bas de fichier).
+  // Réserve phase 2 : les documents bookings contiennent name/phone du passager ; le pool
+  // expose le document complet (voir le it.fails « pool sans données personnelles » plus bas).
   it("lit le pool (bookings status == awaiting_driver, tri createdAt desc)", async () => {
     const db = as.driver().firestore();
     await assertSucceeds(
@@ -66,7 +64,7 @@ describe("espace chauffeur (validé) — dispatch.ts, drivers.ts, useDriver.ts",
     await assertSucceeds(db.collection("drivers").doc(UID.driver).update({ phone: "+33611111111", "moto.brand": "Yamaha" }));
     await assertSucceeds(
       db.collection("drivers").doc(UID.driver).update({
-        "documents.licence": { url: "https://x", path: "drivers/driverOk/licence_1.pdf", filename: "l.pdf", uploadedAt: new Date() },
+        "documents.drivingLicense": { url: "https://x", path: "drivers/driverOk/licence_1.pdf", filename: "l.pdf", uploadedAt: new Date() },
       })
     );
   });
@@ -107,8 +105,8 @@ describe("compte client / particulier — AuthContext, bookings.js, useWallet*",
     await assertSucceeds(db.collection("walletTransactions").where("userId", "==", UID.client).get());
   });
 
-  it("supprime son propre users/{uid}", async () => {
-    await assertSucceeds(as.client2().firestore().collection("users").doc(UID.client2).delete());
+  it("ne peut pas supprimer son propre users/{uid} (delete admin seulement)", async () => {
+    await assertFails(as.client2().firestore().collection("users").doc(UID.client2).delete());
   });
 });
 
@@ -159,10 +157,10 @@ describe("back-office admin — lib/firebase/admin.ts, drivers.ts", () => {
 
 });
 
-describe("comportement actuel non conforme D-001 — à migrer côté serveur (lot 0.5 ou phase 2)", () => {
-  // Écritures sensibles (statut de course, parts commission, rôle, vérification téléphone, prix,
-  // droits admin) faites aujourd'hui directement par le client. Elles passent avec les règles
-  // actuelles mais doivent passer par le serveur : ces tests devront être remplacés, pas conservés.
+describe("non conforme D-001 mais encore autorisé — réserve phase 2 (à migrer côté serveur)", () => {
+  // Écritures encore faites directement par le client, contraintes par les règles du lot 0.5
+  // (commissions : taux 0.2 et parts cohérentes ; rôle : client -> driver seulement).
+  // Réserve phase 2 : à remplacer par le test de la route serveur équivalente.
   it("accepte une course du pool (transaction : lit course + sa fiche, update driverId/status)", async () => {
     const db = as.driver().firestore();
     await assertSucceeds(
@@ -173,12 +171,12 @@ describe("comportement actuel non conforme D-001 — à migrer côté serveur (l
         await tx.get(driverRef);
         tx.update(rideRef, {
           driverId: UID.driver,
-          driverAcceptedAt: new Date(),
+          driverAcceptedAt: ts(),
           status: "assigned",
           commissionRate: 0.2,
           platformShareCents: 1600,
           driverShareCents: 6400,
-          updatedAt: new Date(),
+          updatedAt: ts(),
         });
       })
     );
@@ -190,7 +188,7 @@ describe("comportement actuel non conforme D-001 — à migrer côté serveur (l
       db.runTransaction(async (tx) => {
         const ref = db.collection("bookings").doc(BOOKING.assigned);
         await tx.get(ref);
-        tx.update(ref, { status: "in_progress", driverStartedAt: new Date(), updatedAt: new Date() });
+        tx.update(ref, { status: "in_progress", driverStartedAt: ts(), updatedAt: ts() });
       })
     );
   });
@@ -201,7 +199,7 @@ describe("comportement actuel non conforme D-001 — à migrer côté serveur (l
       db.runTransaction(async (tx) => {
         const ref = db.collection("bookings").doc(BOOKING.inProgress);
         await tx.get(ref);
-        tx.update(ref, { status: "completed_by_driver", driverCompletedAt: new Date(), updatedAt: new Date() });
+        tx.update(ref, { status: "completed_by_driver", driverCompletedAt: ts(), updatedAt: ts() });
       })
     );
   });
@@ -217,14 +215,14 @@ describe("comportement actuel non conforme D-001 — à migrer côté serveur (l
           driverAcceptedAt: null,
           status: "awaiting_driver",
           driverReleaseReason: "imprévu",
-          updatedAt: new Date(),
+          updatedAt: ts(),
         });
       })
     );
   });
 
   it("inscription : marque users/{uid}.role = driver (merge) puis crée drivers/{uid}", async () => {
-    const db = as.client2().firestore();
+    const db = env.authenticatedContext(UID.client2, { email: "client2@test.dev" }).firestore();
     await assertSucceeds(
       db.collection("users").doc(UID.client2).set({ role: "driver", updatedAt: new Date() }, { merge: true })
     );
@@ -233,15 +231,42 @@ describe("comportement actuel non conforme D-001 — à migrer côté serveur (l
     );
   });
 
-  it("client : marque phoneVerified:true lui-même (à migrer côté serveur)", async () => {
+  it("client : ne marque plus phoneVerified:true lui-même (serveur uniquement)", async () => {
     const db = as.client().firestore();
-    await assertSucceeds(db.collection("users").doc(UID.client).set({ phoneVerified: true }, { merge: true }));
+    // Témoin : une mise à jour de profil légitime passe sur le même document.
+    await assertSucceeds(db.collection("users").doc(UID.client).set({ displayName: "Jean" }, { merge: true }));
+    await assertFails(db.collection("users").doc(UID.client).set({ phoneVerified: true }, { merge: true }));
   });
 
-  it("crée une réservation (saveBooking : addDoc bookings avec son userId)", async () => {
+  it("ne crée plus de réservation status pending / prix 80 (courses payées = serveur)", async () => {
+    const db = as.client().firestore();
+    await assertFails(
+      db.collection("bookings").add({ userId: UID.client, status: "pending", accountType: "registered", prix: 80, createdAt: new Date() })
+    );
+  });
+
+  it("crée un devis (saveBooking : status devis, userId = soi, clés de useReservation.js)", async () => {
     const db = as.client().firestore();
     await assertSucceeds(
-      db.collection("bookings").add({ userId: UID.client, status: "pending", accountType: "registered", prix: 80, createdAt: new Date() })
+      db.collection("bookings").add({
+        userId: UID.client,
+        accountType: "registered",
+        depart: "Paris",
+        arrivee: "Orly",
+        distance: 18,
+        duree: 30,
+        prix: 79.99,
+        prioriteReservation: "standard",
+        status: "devis",
+        reservationId: "DEV-ABC12345",
+        email: "client1@test.dev",
+        phone: "+33600000001",
+        name: "Jean",
+        notes: "",
+        reservationDate: new Date(),
+        dateFormatted: "04/10/2026 à 10:00",
+        createdAt: ts(),
+      })
     );
   });
 
@@ -303,23 +328,21 @@ describe("refus qui doivent rester vrais après resserrement", () => {
     );
   });
 
-  // Faille firestore.rules:82 (request.resource.data.driverId == uid), corrigée au lot 0.5 :
-  // un chauffeur peut s'attribuer une course assignée à un autre. Attendu REFUSÉ ; it.fails
-  // tant que la règle n'est pas resserrée (passer en it au lot 0.5).
-  it.fails("chauffeur : ne peut pas s'attribuer la course assignée à un autre chauffeur (faille firestore.rules:82, lot 0.5)", async () => {
+  it("chauffeur : ne peut pas s'attribuer la course assignée à un autre chauffeur", async () => {
     await assertFails(
       as.driver().firestore().collection("bookings").doc(BOOKING.otherDriver).update({ driverId: UID.driver, status: "in_progress" })
     );
   });
 
-  // Faille firestore.rules:45-46 + 54 (create sans contrôle de companyId/companyRole, delete de
-  // son propre doc autorisé), corrigée au lot 0.5 : suppression puis recréation de users/{uid}
-  // avec un rattachement entreprise choisi. Attendu REFUSÉ ; it.fails jusqu'au lot 0.5.
-  it.fails("collaborateur : ne peut pas supprimer puis recréer son users/{uid} avec companyId/companyRole (faille lot 0.5)", async () => {
+  it("collaborateur : ne peut ni supprimer son users/{uid} ni en recréer un avec companyId/companyRole", async () => {
     const db = as.memberA().firestore();
-    await assertSucceeds(db.collection("users").doc(UID.memberA).delete());
+    await assertFails(db.collection("users").doc(UID.memberA).delete());
+    // Document frais : création sans rattachement entreprise OK (témoin), avec companyId/companyRole refusée.
+    const fresh = env.authenticatedContext("freshUser").firestore();
+    await assertSucceeds(fresh.collection("users").doc("freshUser").set({ uid: "freshUser", role: "client", isAdmin: false }));
+    const fresh2 = env.authenticatedContext("freshUser2").firestore();
     await assertFails(
-      db.collection("users").doc(UID.memberA).set({ uid: UID.memberA, role: "client", isAdmin: false, companyId: "companyB", companyRole: "owner" })
+      fresh2.collection("users").doc("freshUser2").set({ uid: "freshUser2", role: "client", isAdmin: false, companyId: "companyB", companyRole: "owner" })
     );
   });
 
@@ -344,18 +367,113 @@ describe("refus qui doivent rester vrais après resserrement", () => {
   });
 });
 
-describe("failles connues à traiter au lot 0.5 (tests à écrire)", () => {
-  it.todo("un client / chauffeur non validé ne lit PAS le pool awaiting_driver");
-  it.todo("le pool exposé au chauffeur validé ne contient pas de données personnelles du passager (name, phone, email)");
-  it.todo("un chauffeur lit une course assignée à lui seul, pas celle des autres, et seulement pendant sa durée");
-  it.todo("un chauffeur non validé (status pending) n'accepte pas de course");
-  it.todo("un chauffeur ne peut pas modifier son propre status (pending -> active) ni sa fiche hors champs autorisés");
-  it.todo("un utilisateur ne peut pas modifier son propre role (client -> driver/admin) hors parcours serveur");
-  it.todo("un utilisateur ne peut pas créer users/{uid} avec companyId / companyRole");
-  it.todo("create booking : userId forcé à request.auth.uid, statut initial restreint, pas d'injection de driverId / prix / paymentStatus");
-  it.todo("update booking par le chauffeur : seuls les champs de transition autorisés (pas prix, userId, paymentStatus)");
-  it.todo("un chauffeur ne peut pas s'affecter une course d'autrui (request.resource.data.driverId == uid)");
-  it.todo("un client n'écrit pas sur une réservation existante (status, prix, paymentStatus)");
-  it.todo("course perso d'un salarié invisible pour son entreprise ; courses pro visibles de l'admin de sa société uniquement");
-  it.todo("un propriétaire d'entreprise A ne lit ni n'écrit rien de l'entreprise B");
+describe("resserrement du lot 0.5 (ex-todo)", () => {
+  it("un client / chauffeur non validé / anonyme ne lit PAS le pool awaiting_driver", async () => {
+    const q = (db: any) => db.collection("bookings").where("status", "==", "awaiting_driver").orderBy("createdAt", "desc").get();
+    await assertSucceeds(q(as.driver().firestore())); // témoin : chauffeur validé
+    await assertFails(q(as.client2().firestore()));
+    await assertFails(q(as.driverPending().firestore()));
+    await assertFails(q(as.anonymous().firestore()));
+  });
+
+  // Réserve phase 2 (en-tête de firestore.rules) : les règles ne filtrent pas les champs, le pool
+  // renvoie encore name/phone. it.fails : devient vert (et doit passer en it) quand le pool sera
+  // une version sans données personnelles.
+  it.fails("le pool exposé au chauffeur validé ne contient pas de données personnelles (name, phone, email) — réserve phase 2", async () => {
+    const snap = await as.driver().firestore().collection("bookings").doc(BOOKING.pool).get();
+    const d = snap.data()!;
+    if ("name" in d || "phone" in d || "email" in d) throw new Error("données personnelles exposées");
+  });
+
+  it("un chauffeur lit sa course assignée, pas celle d'un autre ni une course sans lien", async () => {
+    const db = as.driver().firestore();
+    await assertSucceeds(db.collection("bookings").doc(BOOKING.assigned).get());
+    await assertFails(db.collection("bookings").doc(BOOKING.otherDriver).get());
+    await assertFails(db.collection("bookings").doc(BOOKING.clientOwn).get());
+  });
+
+  it("un chauffeur non validé (pending) n'accepte pas de course", async () => {
+    const db = as.driverPending().firestore();
+    await assertFails(
+      db.collection("bookings").doc(BOOKING.pool).update({
+        driverId: UID.driverPending, driverAcceptedAt: ts(), status: "assigned",
+        commissionRate: 0.2, platformShareCents: 1600, driverShareCents: 6400, updatedAt: ts(),
+      })
+    );
+  });
+
+  it("un chauffeur ne modifie ni son status (pending -> active) ni sa fiche hors champs autorisés", async () => {
+    const db = as.driverPending().firestore();
+    const ref = db.collection("drivers").doc(UID.driverPending);
+    await assertSucceeds(ref.update({ phone: "+33699999999" })); // témoin
+    await assertFails(ref.update({ status: "active" }));
+    await assertFails(ref.update({ stats: { totalRides: 99, totalEarningsCents: 99999 } }));
+    await assertFails(ref.update({ acceptedAt: new Date() }));
+  });
+
+  it("rôle : client -> driver autorisé (réserve phase 2), client -> admin et driver -> client refusés", async () => {
+    await assertSucceeds(as.client2().firestore().collection("users").doc(UID.client2).update({ role: "driver" }));
+    await assertFails(as.client().firestore().collection("users").doc(UID.client).update({ role: "admin" }));
+    await assertFails(as.driver().firestore().collection("users").doc(UID.driver).update({ role: "client" }));
+  });
+
+  it("un utilisateur ne peut pas créer users/{uid} avec companyId / companyRole", async () => {
+    const db = env.authenticatedContext("newU").firestore();
+    await assertFails(db.collection("users").doc("newU").set({ uid: "newU", role: "client", isAdmin: false, companyId: COMPANY_A }));
+    await assertFails(db.collection("users").doc("newU").set({ uid: "newU", role: "client", isAdmin: false, companyRole: "owner" }));
+    await assertSucceeds(db.collection("users").doc("newU").set({ uid: "newU", role: "client", isAdmin: false }));
+  });
+
+  it("create booking : userId forcé à soi, statut devis uniquement, pas de driverId / paymentStatus", async () => {
+    const db = as.client().firestore();
+    const base = { userId: UID.client, accountType: "registered", status: "devis", prix: 80, createdAt: ts() };
+    await assertSucceeds(db.collection("bookings").add(base));
+    await assertFails(db.collection("bookings").add({ ...base, userId: UID.client2 }));
+    await assertFails(db.collection("bookings").add({ ...base, status: "awaiting_driver" }));
+    await assertFails(db.collection("bookings").add({ ...base, driverId: UID.driver }));
+    await assertFails(db.collection("bookings").add({ ...base, paymentStatus: "authorized" }));
+  });
+
+  it("update booking par le chauffeur : seuls les champs de transition (pas prix, userId, paymentStatus)", async () => {
+    const db = as.driver().firestore();
+    const ref = db.collection("bookings").doc(BOOKING.assigned);
+    await assertFails(ref.update({ status: "in_progress", prix: 1 }));
+    await assertFails(ref.update({ status: "in_progress", userId: UID.driver }));
+    await assertFails(ref.update({ status: "in_progress", paymentStatus: "captured" }));
+    await assertSucceeds(ref.update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() })); // témoin
+  });
+
+  it("un chauffeur ne s'affecte pas une course d'autrui (driverId == uid sur course d'un autre)", async () => {
+    await assertFails(
+      as.driver().firestore().collection("bookings").doc(BOOKING.otherDriver).update({ driverId: UID.driver, updatedAt: ts() })
+    );
+  });
+
+  it("un client n'écrit pas sur une réservation existante (status, prix, paymentStatus)", async () => {
+    const ref = as.client().firestore().collection("bookings").doc(BOOKING.clientOwn);
+    await assertFails(ref.update({ status: "awaiting_driver" }));
+    await assertFails(ref.update({ prix: 1 }));
+    await assertFails(ref.update({ paymentStatus: "captured" }));
+  });
+
+  it("course perso d'un salarié invisible pour son entreprise (owner/membre) ; visible du salarié et de l'admin", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().collection("bookings").doc("bkPerso").set({
+        userId: UID.memberA, status: "devis", prix: 50, createdAt: new Date(), companyId: COMPANY_A,
+      });
+    });
+    await assertSucceeds(as.memberA().firestore().collection("bookings").doc("bkPerso").get());
+    await assertSucceeds(as.admin().firestore().collection("bookings").doc("bkPerso").get());
+    await assertFails(as.ownerA().firestore().collection("bookings").doc("bkPerso").get());
+    await assertFails(as.memberB().firestore().collection("bookings").doc("bkPerso").get());
+  });
+
+  it("un propriétaire d'entreprise A ne lit ni n'écrit rien de l'entreprise B", async () => {
+    const db = as.ownerA().firestore();
+    await assertSucceeds(db.collection("companies").doc(COMPANY_A).get()); // témoin
+    await assertFails(db.collection("companies").doc(COMPANY_B).get());
+    await assertFails(db.collection("companies").doc(COMPANY_B).collection("members").get());
+    await assertFails(db.collection("companies").doc(COMPANY_B).update({ walletBalanceCents: 1 }));
+    await assertFails(db.collection("companies").doc(COMPANY_B).collection("members").doc(UID.memberB).update({ monthlyBudgetCents: 1 }));
+  });
 });

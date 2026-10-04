@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import firebase from "firebase/compat/app";
+import "firebase/compat/firestore";
 import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
@@ -7,6 +9,9 @@ import {
 } from "@firebase/rules-unit-testing";
 
 export const PROJECT_ID = "demo-izymoto";
+
+// serverTimestamp() du SDK client : les règles exigent `== request.time` (devis, transitions de course).
+export const ts = () => firebase.firestore.FieldValue.serverTimestamp();
 
 // UIDs fixes des acteurs de test.
 export const UID = {
