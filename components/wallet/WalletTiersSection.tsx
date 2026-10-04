@@ -14,8 +14,15 @@ import TierCard from "@/components/wallet/TierCard";
 
 const PENDING_TIER_KEY = "izymoto_pending_recharge_tier";
 
-export default function WalletTiersSection() {
-  const [audience, setAudience] = useState<WalletAudience>("individual");
+interface WalletTiersSectionProps {
+  /** Audience affichée par défaut (ex. "business" sur /entreprise). */
+  defaultAudience?: WalletAudience;
+}
+
+export default function WalletTiersSection({
+  defaultAudience = "individual",
+}: WalletTiersSectionProps) {
+  const [audience, setAudience] = useState<WalletAudience>(defaultAudience);
   const [loadingTierId, setLoadingTierId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();

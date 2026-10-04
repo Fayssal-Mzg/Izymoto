@@ -29,6 +29,7 @@ import {
   Award,
   Calendar,
   Bike,
+  Building2,
 } from "lucide-react";
 import Head from "next/head";
 import React, { useState, useEffect } from "react";
@@ -248,6 +249,28 @@ export default function Home() {
                 </a>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Bandeau entreprises — passerelle vers /entreprise */}
+        <section className="bg-navy-950 border-t border-white/10">
+          <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-5">
+            <Link
+              href="/entreprise"
+              className="group flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-center sm:text-left"
+            >
+              <span className="inline-flex items-center gap-2 text-mint-300 text-sm font-semibold uppercase tracking-widest">
+                <Building2 className="h-4 w-4" />
+                Vous êtes une entreprise ?
+              </span>
+              <span className="text-white/70 text-sm">
+                Facturation mensuelle, budgets collaborateurs et offres grands comptes.
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-mint-400 text-sm font-semibold group-hover:text-mint-300 transition-colors">
+                Découvrir nos solutions
+                <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform duration-300" />
+              </span>
+            </Link>
           </div>
         </section>
 

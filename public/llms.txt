@@ -36,6 +36,7 @@
 - [Réserver](https://izymoto.com/reserver) : devis et réservation en ligne
 - [Nos tarifs](https://izymoto.com/nos-tarifs) : grille tarifaire complète
 - [Aéroports](https://izymoto.com/aeroports) : transferts aéroports parisiens
+- [Entreprises & grands comptes](https://izymoto.com/entreprise) : compte entreprise, facturation mensuelle consolidée, budgets collaborateurs, offres TPE → grand compte (jusqu'à 20 % de bonus)
 - [À propos](https://izymoto.com/about) : équipe et valeurs
 - [Contact](https://izymoto.com/contact) : nous joindre
 
@@ -70,7 +71,7 @@
 - Chauffeurs expérimentés et formés à la conduite défensive
 - Tarif fixe annoncé avant la course (pas de mauvaise surprise à l'arrivée)
 - Réservation en ligne ou par téléphone, paiement sécurisé
-- Service entreprise / B2B avec facturation pour les comptes professionnels
+- Service entreprise / B2B avec facturation pour les comptes professionnels : compte multi-collaborateurs, facture mensuelle unique, trajets récurrents domicile-bureau (voir https://izymoto.com/entreprise)
 
 ## Questions fréquentes (FAQ)
 

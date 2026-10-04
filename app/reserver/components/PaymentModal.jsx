@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useWallet } from "@/lib/hooks/useWallet";
+import { useSpendableWallet } from "@/lib/hooks/useSpendableWallet";
 import { formatEuro } from "@/lib/wallet/tiers";
 import { handleSuccessfulPayment } from "@/lib/services/paymentService";
 import {
@@ -360,6 +360,10 @@ function CheckoutForm({
 function PaymentMethodChoice({
   prixFinal,
   walletBalanceEur,
+  walletLabel = "Mon portefeuille",
+  isCompanyWallet = false,
+  companyName = null,
+  remainingBudgetEur = null,
   onChooseWallet,
   onChooseHybrid,
   onChooseCard,
@@ -403,7 +407,7 @@ function PaymentMethodChoice({
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold text-gray-900">
-                  Mon portefeuille
+                  {walletLabel}
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                   <Sparkles className="h-3 w-3" />
@@ -411,7 +415,10 @@ function PaymentMethodChoice({
                 </span>
               </div>
               <div className="text-sm text-gray-600 mt-0.5">
-                Solde : {formatEuro(walletBalanceEur)}
+                {isCompanyWallet && remainingBudgetEur !== null
+                  ? `Budget restant : ${formatEuro(walletBalanceEur)}`
+                  : `Solde : ${formatEuro(walletBalanceEur)}`}
+                {isCompanyWallet && companyName ? ` · ${companyName}` : ""}
               </div>
             </div>
           </div>
@@ -509,6 +516,8 @@ function WalletPaymentForm({
   phoneNumber,
   userName,
   walletBalanceEur,
+  walletLabel = "Mon portefeuille",
+  isCompanyWallet = false,
   user,
   reservationDate,
   onSuccess,
@@ -646,11 +655,13 @@ function WalletPaymentForm({
       <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-5">
         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-amber-800 font-semibold mb-3">
           <Wallet className="h-4 w-4" />
-          Paiement par portefeuille
+          Paiement par {walletLabel.toLowerCase()}
         </div>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-700">Solde actuel</span>
+            <span className="text-gray-700">
+              {isCompanyWallet ? "Budget disponible" : "Solde actuel"}
+            </span>
             <span className="font-semibold tabular-nums">
               {formatEuro(walletBalanceEur)}
             </span>
@@ -662,7 +673,9 @@ function WalletPaymentForm({
             </span>
           </div>
           <div className="flex justify-between border-t border-amber-200 pt-2 mt-2">
-            <span className="font-bold text-gray-900">Solde restant</span>
+            <span className="font-bold text-gray-900">
+              {isCompanyWallet ? "Budget restant" : "Solde restant"}
+            </span>
             <span className="font-bold text-lg tabular-nums">
               {formatEuro(balanceAfter)}
             </span>
@@ -980,7 +993,18 @@ export default function PaymentModal({
   const [hybridSplit, setHybridSplit] = useState(null); // { walletCents, cardCents }
 
   const { user } = useAuth();
-  const { balanceEur, loading: walletLoading } = useWallet();
+  // Solde dépensable : portefeuille entreprise (plafonné par le budget mensuel)
+  // si l'utilisateur est membre d'une société, sinon portefeuille perso.
+  const {
+    spendableEur,
+    source: walletSource,
+    companyName,
+    remainingBudgetEur,
+    loading: walletLoading,
+  } = useSpendableWallet();
+  const balanceEur = spendableEur;
+  const isCompanyWallet = walletSource === "company";
+  const walletLabel = isCompanyWallet ? "Portefeuille entreprise" : "Mon portefeuille";
   const router = useRouter();
 
   useEffect(() => {
@@ -1207,6 +1231,10 @@ export default function PaymentModal({
               <PaymentMethodChoice
                 prixFinal={prixFinal}
                 walletBalanceEur={balanceEur ?? 0}
+                walletLabel={walletLabel}
+                isCompanyWallet={isCompanyWallet}
+                companyName={companyName}
+                remainingBudgetEur={remainingBudgetEur}
                 onChooseWallet={() => setPaymentMethod("wallet")}
                 onChooseHybrid={() => setPaymentMethod("hybrid")}
                 onChooseCard={() => setPaymentMethod("card")}
@@ -1220,6 +1248,8 @@ export default function PaymentModal({
               phoneNumber={phoneNumber}
               userName={name}
               walletBalanceEur={balanceEur ?? 0}
+              walletLabel={walletLabel}
+              isCompanyWallet={isCompanyWallet}
               user={user}
               reservationDate={reservationDate}
               onSuccess={onSuccess}

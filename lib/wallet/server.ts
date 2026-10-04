@@ -169,7 +169,13 @@ export interface DebitWalletForBookingResult {
 }
 
 export class WalletError extends Error {
-  code: "INSUFFICIENT_BALANCE" | "WALLET_NOT_FOUND" | "INVALID_AMOUNT";
+  code:
+    | "INSUFFICIENT_BALANCE"
+    | "WALLET_NOT_FOUND"
+    | "INVALID_AMOUNT"
+    | "BUDGET_EXCEEDED"
+    | "FORBIDDEN"
+    | "CONFLICT";
   constructor(code: WalletError["code"], message: string) {
     super(message);
     this.code = code;

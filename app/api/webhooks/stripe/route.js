@@ -8,6 +8,7 @@ import {
   getTierOrThrow,
   refundWalletForBooking,
 } from "@/lib/wallet/server";
+import { creditCompanyWallet } from "@/lib/wallet/companyServer";
 import { sendReviewRequestEmail } from "@/lib/emails/reviewRequestEmail";
 
 // Webhook Stripe — source unique de vérité pour les transitions de statut.
@@ -163,6 +164,7 @@ export async function POST(request) {
         }
         const userId = obj.metadata?.userId;
         const tierId = obj.metadata?.tierId;
+        const companyId = obj.metadata?.companyId;
         if (!userId || !tierId) {
           console.error(
             "[stripe-webhook] metadata wallet incomplète sur la session :",
@@ -172,18 +174,33 @@ export async function POST(request) {
         }
         const tier = getTierOrThrow(tierId);
         const totalCreditCents = tier.totalCredit * 100;
-        const result = await creditWallet({
-          userId,
-          amountCents: totalCreditCents,
-          type: "recharge",
-          description: buildRechargeDescription(tier),
-          tierId,
-          paymentIntentId:
-            typeof obj.payment_intent === "string" ? obj.payment_intent : undefined,
-          checkoutSessionId: obj.id,
-          stripeEventId: event.id,
-          isRecharge: true,
-        });
+        const paymentIntentId =
+          typeof obj.payment_intent === "string" ? obj.payment_intent : undefined;
+
+        // Recharge entreprise → solde société. Sinon → wallet perso.
+        const result = companyId
+          ? await creditCompanyWallet({
+              companyId,
+              amountCents: totalCreditCents,
+              type: "recharge",
+              description: buildRechargeDescription(tier),
+              eventId: event.id,
+              tierId,
+              paymentIntentId,
+              checkoutSessionId: obj.id,
+              isRecharge: true,
+            })
+          : await creditWallet({
+              userId,
+              amountCents: totalCreditCents,
+              type: "recharge",
+              description: buildRechargeDescription(tier),
+              tierId,
+              paymentIntentId,
+              checkoutSessionId: obj.id,
+              stripeEventId: event.id,
+              isRecharge: true,
+            });
         if (!result.credited) {
           console.log(
             `[stripe-webhook] event ${event.id} déjà traité — skip idempotent.`

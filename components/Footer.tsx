@@ -74,6 +74,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  href="/entreprise"
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"
+                >
+                  Entreprises & grands comptes
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="#services"
                   scroll={false}
                   className="text-gray-400 hover:text-white transition-colors duration-300 text-sm"

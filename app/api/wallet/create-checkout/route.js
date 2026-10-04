@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
 import { getTierById } from "@/lib/wallet/tiers";
+import { getCompanyContextForUser } from "@/lib/wallet/companyServer";
 
 // Crée une Stripe Checkout Session pour la recharge d'un wallet.
 // - Capture immédiate (différent du flow booking qui est en manual capture).
@@ -39,6 +40,22 @@ export async function POST(request) {
       process.env.NEXT_PUBLIC_SITE_URL ||
       "https://izymoto.com";
 
+    // Recharge entreprise : si le palier est "business" et que l'utilisateur est
+    // owner d'une société, le crédit ira sur le portefeuille ENTREPRISE (résolu
+    // côté serveur, jamais depuis le body). Sinon, recharge perso classique.
+    let companyId = null;
+    if (tier.audience === "business") {
+      try {
+        const ctx = await getCompanyContextForUser(userId);
+        if (ctx?.isOwner) companyId = ctx.companyId;
+      } catch (e) {
+        console.warn("[wallet/create-checkout] résolution société échouée:", e);
+      }
+    }
+
+    const successPath = companyId ? "/profil/entreprise?recharge=1" : "/portefeuille/merci";
+    const cancelPath = companyId ? "/profil/entreprise?cancelled=1" : "/portefeuille?cancelled=1";
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -55,14 +72,15 @@ export async function POST(request) {
           quantity: 1,
         },
       ],
-      success_url: `${origin}/portefeuille/merci?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/portefeuille?cancelled=1`,
+      success_url: `${origin}${successPath}${successPath.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}${cancelPath}`,
       customer_email: userEmail || undefined,
       client_reference_id: userId,
       metadata: {
         intent: "wallet_recharge",
         tierId: tier.id,
         userId,
+        ...(companyId ? { companyId } : {}),
         rechargeAmountCents: String(tier.rechargeAmount * 100),
         bonusAmountCents: String(tier.bonusAmount * 100),
         totalCreditCents: String(tier.totalCredit * 100),
@@ -72,6 +90,7 @@ export async function POST(request) {
           intent: "wallet_recharge",
           tierId: tier.id,
           userId,
+          ...(companyId ? { companyId } : {}),
         },
       },
     });

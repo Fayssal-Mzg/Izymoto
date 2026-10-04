@@ -72,6 +72,26 @@ export class AdminAuthError extends Error {
   }
 }
 
+// Vérifie l'ID token Firebase et retourne l'identité, SANS exiger isAdmin.
+// Pour les routes "membre connecté" (espace entreprise). Les droits métier
+// (owner d'une société, etc.) sont vérifiés ensuite côté serveur depuis l'uid.
+export async function requireAuth(request: Request): Promise<AdminContext> {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new AdminAuthError("Token manquant", 401);
+  }
+  const token = authHeader.substring("Bearer ".length).trim();
+  if (!token) {
+    throw new AdminAuthError("Token vide", 401);
+  }
+  try {
+    const decoded = await getAdminAuth().verifyIdToken(token);
+    return { uid: decoded.uid, email: decoded.email ?? null };
+  } catch (e) {
+    throw new AdminAuthError("Token invalide ou expiré", 401);
+  }
+}
+
 export async function requireAdmin(
   request: Request
 ): Promise<AdminContext> {

@@ -1,0 +1,132 @@
+rules_version = '2';
+
+// Règles de sécurité Firestore — Izymoto
+// ----------------------------------------------------------------------------
+// IMPORTANT (lecture avant déploiement) :
+// - Ces règles ont été reconstruites à partir des accès CLIENT réels de l'app
+//   (hooks, contexts, pages admin/chauffeur). L'Admin SDK (routes API serveur)
+//   bypasse ces règles : toutes les écritures sensibles (wallets, companies,
+//   walletTransactions, invitations) passent par le serveur et sont donc
+//   volontairement interdites côté client ici.
+// - Avant `firebase deploy --only firestore:rules`, comparer avec les règles
+//   actuellement en place dans la console pour ne pas perdre un accès existant.
+// ----------------------------------------------------------------------------
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function isCompanyMember(companyId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/companies/$(companyId)/members/$(request.auth.uid));
+    }
+
+    function isCompanyOwner(companyId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/companies/$(companyId))
+        && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerUid == request.auth.uid;
+    }
+
+    // --- users : chacun lit/écrit son propre doc ; admin lit/écrit tout ---
+    // Anti-escalade : un user ne peut pas se passer isAdmin, ni modifier son
+    // rattachement société (companyId/companyRole) — géré côté serveur.
+    match /users/{uid} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+
+      allow create: if request.auth.uid == uid
+        && request.resource.data.get('isAdmin', false) == false;
+
+      allow update: if isAdmin()
+        || (request.auth.uid == uid
+            && request.resource.data.get('isAdmin', false) == resource.data.get('isAdmin', false)
+            && request.resource.data.get('companyId', null) == resource.data.get('companyId', null)
+            && request.resource.data.get('companyRole', null) == resource.data.get('companyRole', null));
+
+      allow delete: if isAdmin() || request.auth.uid == uid;
+    }
+
+    // --- drivers : le chauffeur gère sa fiche ; admin lit/gère tout ---
+    match /drivers/{uid} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow create, update: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow delete: if isAdmin();
+    }
+
+    // --- bookings ---
+    // create : utilisateur connecté (le tunnel exige la connexion).
+    // read   : sa propre course, le pool (awaiting_driver) pour les chauffeurs,
+    //          ses courses assignées (driverId), ou admin.
+    // update : chauffeur qui accepte/gère sa course (FCFS) ou admin.
+    match /bookings/{id} {
+      allow read: if isAdmin()
+        || (isSignedIn() && (
+              resource.data.get('userId', '') == request.auth.uid
+              || resource.data.get('driverId', '') == request.auth.uid
+              || resource.data.get('status', '') == 'awaiting_driver'
+            ));
+
+      allow create: if isSignedIn();
+
+      allow update: if isAdmin()
+        || (isSignedIn() && (
+              resource.data.get('driverId', '') == request.auth.uid
+              || request.resource.data.get('driverId', '') == request.auth.uid
+            ));
+
+      allow delete: if isAdmin();
+    }
+
+    // --- wallets : lecture de son solde ; écriture serveur uniquement ---
+    match /wallets/{uid} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow write: if false;
+    }
+
+    // --- walletTransactions : lecture de son historique ; écriture serveur ---
+    match /walletTransactions/{txId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.get('userId', '') == request.auth.uid);
+      allow write: if false;
+    }
+
+    // --- companies : lecture par les membres / l'owner / admin ; écriture serveur ---
+    match /companies/{companyId} {
+      allow read: if isAdmin()
+        || isCompanyOwner(companyId)
+        || isCompanyMember(companyId);
+      allow write: if false;
+
+      // Sous-collection membres : son propre doc, l'owner, ou admin.
+      match /members/{memberUid} {
+        allow read: if isAdmin()
+          || (isSignedIn() && request.auth.uid == memberUid)
+          || isCompanyOwner(companyId);
+        allow write: if false;
+      }
+    }
+
+    // --- companyInvitations : 100% serveur (lecture via route API) ---
+    match /companyInvitations/{token} {
+      allow read, write: if false;
+    }
+
+    // --- factures : back-office admin uniquement ---
+    match /factures/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Tout le reste est refusé par défaut.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

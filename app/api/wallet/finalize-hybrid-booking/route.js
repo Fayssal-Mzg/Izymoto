@@ -4,6 +4,10 @@ import {
   debitWalletForHybridBooking,
   WalletError,
 } from "@/lib/wallet/server";
+import {
+  getCompanyContextForUser,
+  debitCompanyWalletForHybridBooking,
+} from "@/lib/wallet/companyServer";
 
 // Finalise un booking hybride (wallet + CB) après confirmation 3DS côté client.
 // Le PaymentIntent est déjà en hold (status requires_capture). On débite le
@@ -96,21 +100,36 @@ export async function POST(request) {
       );
     }
 
+    // Source de paiement résolue côté serveur : société si membre actif, sinon perso.
+    const company = await getCompanyContextForUser(userId).catch(() => null);
+
     try {
-      const result = await debitWalletForHybridBooking({
-        userId,
-        walletAmountCents,
-        cardAmountCents,
-        paymentIntentId,
-        bookingData,
-        clientToken,
-        description,
-      });
+      const result = company
+        ? await debitCompanyWalletForHybridBooking({
+            companyId: company.companyId,
+            actorUid: userId,
+            actorEmail: company.member.email ?? null,
+            walletAmountCents,
+            cardAmountCents,
+            paymentIntentId,
+            bookingData,
+            clientToken,
+            description,
+          })
+        : await debitWalletForHybridBooking({
+            userId,
+            walletAmountCents,
+            cardAmountCents,
+            paymentIntentId,
+            bookingData,
+            clientToken,
+            description,
+          });
       return NextResponse.json(result);
     } catch (err) {
       if (err instanceof WalletError) {
-        // Solde insuffisant (race condition) : on cancel le PI pour libérer
-        // le hold CB côté Stripe — l'user peut recommencer.
+        // Solde insuffisant / budget dépassé (race) : on cancel le PI pour
+        // libérer le hold CB côté Stripe — l'user peut recommencer.
         try {
           await stripe.paymentIntents.cancel(paymentIntentId);
         } catch (cancelErr) {
@@ -120,10 +139,12 @@ export async function POST(request) {
           );
         }
         const status =
-          err.code === "INSUFFICIENT_BALANCE"
+          err.code === "INSUFFICIENT_BALANCE" || err.code === "BUDGET_EXCEEDED"
             ? 402
             : err.code === "WALLET_NOT_FOUND"
             ? 404
+            : err.code === "FORBIDDEN"
+            ? 403
             : 400;
         return NextResponse.json(
           { error: err.message, code: err.code },

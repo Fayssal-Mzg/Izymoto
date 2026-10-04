@@ -465,6 +465,121 @@ export async function getUserWalletTransactions(
   });
 }
 
+export interface CompanyAdminRow {
+  id: string;
+  name: string;
+  ownerUid: string;
+  billingEmail: string | null;
+  walletBalanceCents: number;
+  cumulativeRechargedCents: number;
+  memberCount: number;
+  updatedAt: Date | null;
+}
+
+export interface CompanyMemberAdminRow {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  role: "owner" | "member";
+  status: "active" | "removed";
+  monthlyBudgetCents: number;
+  spentThisPeriodCents: number;
+}
+
+// Liste toutes les sociétés (back-office). Tri par updatedAt desc côté client.
+export async function getAllCompanies(): Promise<CompanyAdminRow[]> {
+  const snap = await getDocs(collection(db, "companies"));
+  const rows: CompanyAdminRow[] = snap.docs.map((c) => {
+    const data = c.data() as any;
+    return {
+      id: c.id,
+      name: data.name ?? "—",
+      ownerUid: data.ownerUid ?? "",
+      billingEmail: data.billingEmail ?? null,
+      walletBalanceCents: data.walletBalanceCents ?? 0,
+      cumulativeRechargedCents: data.cumulativeRechargedCents ?? 0,
+      memberCount: data.memberCount ?? 0,
+      updatedAt: (data.updatedAt as Timestamp | undefined)?.toDate() ?? null,
+    };
+  });
+  rows.sort(
+    (a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0)
+  );
+  return rows;
+}
+
+export async function getCompanyById(
+  companyId: string
+): Promise<CompanyAdminRow | null> {
+  const snap = await getDoc(doc(db, "companies", companyId));
+  if (!snap.exists()) return null;
+  const data = snap.data() as any;
+  return {
+    id: snap.id,
+    name: data.name ?? "—",
+    ownerUid: data.ownerUid ?? "",
+    billingEmail: data.billingEmail ?? null,
+    walletBalanceCents: data.walletBalanceCents ?? 0,
+    cumulativeRechargedCents: data.cumulativeRechargedCents ?? 0,
+    memberCount: data.memberCount ?? 0,
+    updatedAt: (data.updatedAt as Timestamp | undefined)?.toDate() ?? null,
+  };
+}
+
+export async function getCompanyMembers(
+  companyId: string
+): Promise<CompanyMemberAdminRow[]> {
+  const snap = await getDocs(collection(db, "companies", companyId, "members"));
+  return snap.docs
+    .map((m) => {
+      const data = m.data() as any;
+      return {
+        uid: data.uid ?? m.id,
+        email: data.email ?? null,
+        displayName: data.displayName ?? null,
+        role: data.role ?? "member",
+        status: data.status ?? "active",
+        monthlyBudgetCents: data.monthlyBudgetCents ?? 0,
+        spentThisPeriodCents: data.spentThisPeriodCents ?? 0,
+      };
+    })
+    .filter((m) => m.status === "active");
+}
+
+// Transactions consolidées d'une société (ledger walletTransactions).
+// Index composite requis : (companyId asc, createdAt desc).
+export async function getCompanyTransactions(
+  companyId: string,
+  max: number = 100
+): Promise<WalletTransactionAdminRow[]> {
+  const q = query(
+    collection(db, "walletTransactions"),
+    where("companyId", "==", companyId),
+    orderBy("createdAt", "desc")
+  );
+  const snap = await getDocs(q);
+  return snap.docs.slice(0, max).map((d) => {
+    const data = d.data() as any;
+    return {
+      id: d.id,
+      userId: data.actorUid ?? data.userId ?? "",
+      type: data.type,
+      amountCents: data.amountCents,
+      balanceAfterCents: data.balanceAfterCents,
+      description: data.description,
+      tierId: data.tierId,
+      paymentIntentId: data.paymentIntentId,
+      checkoutSessionId: data.checkoutSessionId,
+      bookingId: data.bookingId,
+      stripeEventId: data.stripeEventId,
+      adminUid: data.adminUid,
+      adminEmail: data.adminEmail ?? data.actorEmail,
+      reason: data.reason,
+      createdAt: (data.createdAt as Timestamp | undefined)?.toDate() ?? null,
+    };
+  });
+}
+
 // Obtenir les statistiques pour le tableau de bord
 export async function getAdminStats(): Promise<AdminStats> {
   try {

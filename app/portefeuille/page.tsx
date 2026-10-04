@@ -47,7 +47,7 @@ const faqItems = [
   },
   {
     q: "Comment sont gérées les factures et la TVA ?",
-    a: "Une facture détaillée est émise à chaque recharge. Pour les entreprises, un récapitulatif mensuel consolidé peut être envoyé automatiquement à votre service comptabilité.",
+    a: "Une facture détaillée est émise à chaque recharge. Pour les entreprises, un récapitulatif consolidé des trajets est disponible sur demande auprès de votre interlocuteur dédié.",
   },
 ];
 
