@@ -26,7 +26,7 @@ const isValidEmail = (v) => typeof v === "string" && v.length <= 254 && EMAIL_RE
 // Authentification FACULTATIVE : le parcours devis existe aussi pour un invité
 // (non connecté, cf. useReservation.js). Si un jeton est présent il doit être
 // valide : le devis part alors à l'email du jeton (email du corps ignoré ; jeton
-// sans email -> 400) et à l'admin.
+// sans email -> 400) et à l'admin, SI l'email du jeton est vérifié (sinon : invité).
 // DÉCISION PROVISOIRE (à valider par Fayssal) : sans jeton (invité), l'email part
 // UNIQUEMENT à l'admin (contact@izymoto.com), avec l'email saisi dans le contenu
 // pour qu'il recontacte l'invité. Aucun email n'est envoyé à une adresse fournie
@@ -64,7 +64,16 @@ export async function POST(request) {
 
     // Email du client : celui du jeton si connecté, sinon (invité) celui saisi,
     // utilisé uniquement dans le contenu de l'email admin.
-    const email = auth ? auth.email : bodyEmail;
+    // Connecté avec email NON vérifié : traité comme un invité (admin seul).
+    const sendToClient = !!auth && auth.emailVerified === true;
+    // (jeton sans email : 400, comme avant).
+    const email = auth
+      ? sendToClient
+        ? auth.email
+        : auth.email && isValidEmail(bodyEmail)
+        ? bodyEmail
+        : auth.email
+      : bodyEmail;
     if (!isValidEmail(email)) {
       return NextResponse.json(
         { error: "Adresse email invalide" },
@@ -91,7 +100,7 @@ export async function POST(request) {
     const subjectId = String(reservationId ?? "").replace(/[\r\n]+/g, " ").slice(0, 60);
 
     // Envoi email client
-    const clientEmail = auth
+    const clientEmail = sendToClient
       ? await resend.emails.send({
       from: "IzyMoto <contact@izymoto.com>",
       to: [email.trim()],

@@ -29,8 +29,11 @@ export async function POST(request) {
   }
 
   try {
-    await removeCompanyMember({ ownerUid: auth.uid, memberUid });
-    return NextResponse.json({ ok: true });
+    const { sessionsRevoked } = await removeCompanyMember({
+      ownerUid: auth.uid,
+      memberUid,
+    });
+    return NextResponse.json({ ok: true, sessionsRevoked });
   } catch (err) {
     if (err instanceof WalletError) {
       const status =

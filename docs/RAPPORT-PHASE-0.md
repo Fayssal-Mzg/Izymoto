@@ -59,3 +59,31 @@ Aucun push, aucun merge, aucun déploiement. Émulateur uniquement (projectId `d
   - Un collaborateur voit toutes ses courses payées par portefeuille débitées sur la société, sans choix perso/pro : contradiction avec « Courses perso d'un salarié : Non » (DECISIONS.md). À trancher (phase 3 ?).
   - CORS `*` avec `Allow-Credentials` sur tout le site (`vercel.json:12-13`).
   - Le webhook Stripe écrit dans `bookings` avec le SDK client non authentifié, alors que `firestore.rules` l'interdit : soit ces mises à jour échouent en prod, soit les règles déployées diffèrent du fichier → à vérifier dans la console (lot 0.6 « comparer les règles déployées »).
+
+---
+
+## Lot 0.4 — Invitations et retrait de membre (SENSIBLE)
+
+- **Branche** : `lot/0.4-invitations` (part de `lot/0.2-auth-routes`)
+- **Commit** : voir `git log lot/0.4-invitations -1` (message « fix(securite) : lot 0.4 … »)
+- **Contenu** :
+  - Acceptation d'invitation : refus 403 `EMAIL_NOT_VERIFIED` si l'email du jeton n'est pas vérifié, puis 403 `EMAIL_MISMATCH` s'il diffère de l'email invité (comparaison trim + minuscules) ; contrôles dans la transaction, avant toute écriture ; l'invitation reste `pending` en cas de refus.
+  - Page d'invitation : messages en français pour ces deux cas, bouton « Recevoir l'email de vérification » (`sendEmailVerification`) puis réessai avec jeton rafraîchi ; token encodé dans l'URL.
+  - Retrait de membre : `revokeRefreshTokens` après la transaction ; la route renvoie `sessionsRevoked: true/false`.
+  - `requireAuth` / `requireAdmin` : `verifyIdToken(token, true)` (sessions révoquées refusées) ; `emailVerified` exposé depuis le jeton ; erreurs de jeton → 401, panne technique d'Auth → 503.
+  - `revokeInvitation` transactionnelle (une invitation acceptée ne repasse plus `revoked`) ; un membre réinvité conserve sa dépense de la période.
+  - `send-devis` : envoi au client uniquement si son email est vérifié, sinon admin seul (prolonge la décision provisoire du lot 0.2).
+- **Verdicts** :
+  - dev-fullstack : VALIDÉ (après 1 aller-retour).
+  - securite-reviewer : VALIDÉ AVEC RÉSERVES (aucun CRITIQUE/HAUTE) ; 6 constats BASSES corrigés au 1er aller-retour (relecture du chef sur la gestion 401/503).
+  - qa-tests : VALIDÉ AVEC RÉSERVES (réserve de couverture : sur l'émulateur, firebase-admin vérifie la révocation d'office ; on ne peut donc pas prouver sur l'émulateur que le `checkRevoked=true` est nécessaire en prod).
+- **Tests réellement exécutés (par le chef)** : `npx tsc --noEmit` → code 0 ; `npm test` → `Test Files 5 passed (5)`, `Tests 119 passed | 13 todo (132)`. Nouveau fichier `tests/api/invitations-revocation.test.ts` (21 tests : bon/mauvais email, non vérifié, casse/espaces, expirée/acceptée/révoquée, acceptation concurrente, ancien jeton du membre retiré refusé sur `company/overview` et `wallet/debit-for-booking`, jeton admin révoqué refusé sur `capture-payment`).
+- **Réserves ouvertes** :
+  - **À corriger au lot 0.5** : `firestore.rules` (`isCompanyMember`) ne vérifie pas `status == "active"` → un membre retiré garde, via le SDK client, la lecture de `companies/{id}` (solde, SIRET, adresse).
+  - Les comptes email/mot de passe existants n'ont jamais reçu d'email de vérification (l'appli n'en envoyait pas) : ils devront vérifier leur email via la page d'invitation, et ne reçoivent plus le devis par email tant que ce n'est pas fait. Les comptes Google sont déjà vérifiés.
+  - Le 401/503 n'est pas testé (pas de simulation de panne Auth).
+  - Révocation à la seconde près (un jeton émis dans la même seconde que le retrait reste valable) : négligeable, l'accès société est coupé en base.
+- **Questions pour Fayssal** :
+  - Retirer un membre le déconnecte de **toutes** ses sessions, y compris son usage personnel du site : voulu ?
+  - Envoyer automatiquement l'email de vérification à l'inscription (changement du parcours d'inscription, non fait) ?
+  - Journal d'audit des actions sur les membres (retrait, acceptation, budget) : maintenant ou en phase 1 ?

@@ -33,13 +33,20 @@ export async function POST(request) {
       token,
       uid: auth.uid,
       email: auth.email,
+      emailVerified: auth.emailVerified,
       displayName: null,
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     if (err instanceof WalletError) {
       const status =
-        err.code === "CONFLICT" ? 409 : err.code === "FORBIDDEN" ? 403 : 400;
+        err.code === "CONFLICT"
+          ? 409
+          : err.code === "FORBIDDEN" ||
+            err.code === "EMAIL_MISMATCH" ||
+            err.code === "EMAIL_NOT_VERIFIED"
+          ? 403
+          : 400;
       return NextResponse.json({ error: err.message, code: err.code }, { status });
     }
     console.error("[company/invitation/accept] erreur:", err);

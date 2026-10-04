@@ -1,5 +1,5 @@
 import { Timestamp, type Transaction } from "firebase-admin/firestore";
-import { getAdminFirestore } from "@/lib/firebase/admin-server";
+import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin-server";
 import { WalletError } from "@/lib/wallet/server";
 
 // Cœur serveur du portefeuille ENTREPRISE (partagé entre collaborateurs).
@@ -725,7 +725,7 @@ export async function getCompanyOverview(
 export async function removeCompanyMember(params: {
   ownerUid: string;
   memberUid: string;
-}): Promise<void> {
+}): Promise<{ sessionsRevoked: boolean }> {
   const { ownerUid, memberUid } = params;
   const ctx = await getCompanyContextForUser(ownerUid);
   assertOwner(ctx);
@@ -764,4 +764,18 @@ export async function removeCompanyMember(params: {
       { merge: true }
     );
   });
+
+  // Retrait déjà acté : on coupe les sessions du membre. Un échec n'annule pas
+  // le retrait (l'accès société est de toute façon coupé côté Firestore :
+  // users/{uid}.companyId vidé), il est seulement journalisé.
+  try {
+    await getAdminAuth().revokeRefreshTokens(memberUid);
+    return { sessionsRevoked: true };
+  } catch (e) {
+    console.error(
+      "[company/member/remove] révocation des sessions échouée:",
+      e instanceof Error ? e.message : "erreur inconnue"
+    );
+    return { sessionsRevoked: false };
+  }
 }

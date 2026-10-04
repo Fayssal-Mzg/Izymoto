@@ -114,9 +114,10 @@ export async function acceptInvitation(params: {
   token: string;
   uid: string;
   email: string | null;
+  emailVerified: boolean;
   displayName: string | null;
 }): Promise<{ companyId: string }> {
-  const { token, uid, email, displayName } = params;
+  const { token, uid, email, emailVerified, displayName } = params;
   const db = getAdminFirestore();
   const inviteRef = db.collection(INVITATIONS).doc(token);
   const userRef = db.collection(USERS).doc(uid);
@@ -132,6 +133,24 @@ export async function acceptInvitation(params: {
     }
     if (invite.expiresAt.toMillis() < Date.now()) {
       throw new WalletError("FORBIDDEN", "Invitation expirée");
+    }
+
+    // Identité : l'email du jeton doit être celui de l'invitation ET vérifié.
+    // Contrôles avant toute écriture ; l'invitation reste "pending" en cas de refus.
+    // Vérification testée AVANT la comparaison : EMAIL_NOT_VERIFIED ne doit pas
+    // révéler si l'adresse du jeton est celle qui a été invitée.
+    if (emailVerified !== true) {
+      throw new WalletError(
+        "EMAIL_NOT_VERIFIED",
+        "Vous devez vérifier votre adresse email avant d'accepter"
+      );
+    }
+    const tokenEmail = (email || "").trim().toLowerCase();
+    if (!tokenEmail || tokenEmail !== (invite.email || "").trim().toLowerCase()) {
+      throw new WalletError(
+        "EMAIL_MISMATCH",
+        "Cette invitation a été envoyée à une autre adresse email"
+      );
     }
 
     const userSnap = await tx.get(userRef);
@@ -151,6 +170,16 @@ export async function acceptInvitation(params: {
 
     const now = Timestamp.now();
     const memberRef = companyRef.collection(MEMBERS).doc(uid);
+    // Membre réinvité : la dépense de la période en cours est conservée.
+    const periodKey = currentPeriodKey();
+    const prevMemberSnap = await tx.get(memberRef);
+    const prevMember = prevMemberSnap.exists
+      ? (prevMemberSnap.data() as CompanyMemberDoc)
+      : null;
+    const keptSpent =
+      prevMember && prevMember.budgetPeriodKey === periodKey
+        ? prevMember.spentThisPeriodCents ?? 0
+        : 0;
     const memberDoc: CompanyMemberDoc = {
       uid,
       email: email || invite.email,
@@ -158,8 +187,8 @@ export async function acceptInvitation(params: {
       role: "member",
       status: "active",
       monthlyBudgetCents: invite.monthlyBudgetCents,
-      spentThisPeriodCents: 0,
-      budgetPeriodKey: currentPeriodKey(),
+      spentThisPeriodCents: keptSpent,
+      budgetPeriodKey: periodKey,
       invitedAt: invite.createdAt,
       joinedAt: now,
     };
@@ -190,13 +219,15 @@ export async function revokeInvitation(params: {
   }
   const db = getAdminFirestore();
   const inviteRef = db.collection(INVITATIONS).doc(params.token);
-  const snap = await inviteRef.get();
-  if (!snap.exists) return;
-  const invite = snap.data() as CompanyInvitationDoc;
-  if (invite.companyId !== ctx.companyId) {
-    throw new WalletError("FORBIDDEN", "Invitation d'une autre société");
-  }
-  if (invite.status === "pending") {
-    await inviteRef.update({ status: "revoked" });
-  }
+  await db.runTransaction(async (tx: Transaction) => {
+    const snap = await tx.get(inviteRef);
+    if (!snap.exists) return;
+    const invite = snap.data() as CompanyInvitationDoc;
+    if (invite.companyId !== ctx.companyId) {
+      throw new WalletError("FORBIDDEN", "Invitation d'une autre société");
+    }
+    if (invite.status === "pending") {
+      tx.update(inviteRef, { status: "revoked" });
+    }
+  });
 }

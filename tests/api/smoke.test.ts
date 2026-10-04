@@ -17,7 +17,7 @@ vi.mock("resend", () => ({
 
 import { POST as capturePayment } from "@/app/api/capture-payment/route";
 import { POST as sendDevis } from "@/app/api/send-devis/route";
-import { createAuthUser, jsonRequest, resetEmulators, seedUserDoc } from "./helpers";
+import { createAuthUser, createVerifiedAuthUser, jsonRequest, resetEmulators, seedUserDoc } from "./helpers";
 
 beforeEach(async () => {
   await resetEmulators();
@@ -112,8 +112,21 @@ describe("POST /api/send-devis (jeton FACULTATIF, lot 0.2)", () => {
     expect(emailSend).not.toHaveBeenCalled();
   });
 
-  it("(c) jeton valide + email d'un tiers dans le corps -> envoi uniquement à l'email du jeton", async () => {
-    const user = await createAuthUser("legit@test.dev");
+  it("(c') jeton valide mais email NON vérifié -> 200, un seul email vers l'admin, rien à l'email du jeton", async () => {
+    const user = await createAuthUser("nonverif@test.dev");
+    const res = await sendDevis(
+      jsonRequest("/api/send-devis", { token: user.idToken, body: { email: "victime@test.dev", name: "NV", reservationId: "R3" } })
+    );
+    expect(res.status).toBe(200);
+    expect(emailSend).toHaveBeenCalledTimes(1);
+    const recipients = emailSend.mock.calls.flatMap((c) => c[0].to as string[]);
+    expect(recipients).toEqual(["contact@izymoto.com"]);
+    expect(recipients).not.toContain("nonverif@test.dev");
+    expect(recipients).not.toContain("victime@test.dev");
+  });
+
+  it("(c) jeton valide (email vérifié) + email d'un tiers dans le corps -> envoi uniquement à l'email du jeton + admin", async () => {
+    const user = await createVerifiedAuthUser("legit@test.dev");
     const res = await sendDevis(
       jsonRequest("/api/send-devis", { token: user.idToken, body: { email: "victime@test.dev", name: "Legit", reservationId: "R2" } })
     );

@@ -175,6 +175,8 @@ export class WalletError extends Error {
     | "INVALID_AMOUNT"
     | "BUDGET_EXCEEDED"
     | "FORBIDDEN"
+    | "EMAIL_MISMATCH"
+    | "EMAIL_NOT_VERIFIED"
     | "CONFLICT";
   constructor(code: WalletError["code"], message: string) {
     super(message);
