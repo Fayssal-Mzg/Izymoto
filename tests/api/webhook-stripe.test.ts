@@ -137,3 +137,35 @@ describe("webhook payment_intent.amount_capturable_updated : ne fait pas reculer
     expect((await db().collection("bookings").doc("b2").get()).data()?.status).toBe("confirmed");
   });
 });
+
+describe("webhook amount_capturable_updated tardif : ne régresse pas l'état du paiement", () => {
+  it("paymentStatus captured conservé (et amountAuthorized inchangé) après un événement tardif", async () => {
+    await db().collection("bookings").doc("b1").set({
+      paymentId: "pi_late", status: "completed", paymentStatus: "captured", amountAuthorized: 76, amountCaptured: 76,
+    });
+    expect((await send(capturableEvent("pi_late", 9999))).status).toBe(200);
+    const b = (await db().collection("bookings").doc("b1").get()).data()!;
+    expect(b.paymentStatus).toBe("captured");
+    expect(b.amountAuthorized).toBe(76);
+    expect(b.status).toBe("completed");
+  });
+
+  it.each(["released", "failed"])("paymentStatus %s conservé", async (paymentStatus) => {
+    await db().collection("bookings").doc("b1").set({ paymentId: "pi_late2", status: "cancelled", paymentStatus, amountAuthorized: 76 });
+    await send(capturableEvent("pi_late2"));
+    const b = (await db().collection("bookings").doc("b1").get()).data()!;
+    expect(b.paymentStatus).toBe(paymentStatus);
+    expect(b.amountAuthorized).toBe(76);
+  });
+
+  it.each(["pending", "authorized", undefined])("paymentStatus %s -> authorized posé avec le montant", async (paymentStatus) => {
+    await db().collection("bookings").doc("b1").set({
+      paymentId: "pi_ok", status: "confirmed", ...(paymentStatus ? { paymentStatus } : {}),
+    });
+    await send(capturableEvent("pi_ok", 7600));
+    const b = (await db().collection("bookings").doc("b1").get()).data()!;
+    expect(b.paymentStatus).toBe("authorized");
+    expect(b.amountAuthorized).toBe(76);
+    expect(b.status).toBe("awaiting_driver");
+  });
+});

@@ -224,15 +224,20 @@ export async function POST(request) {
             console.warn(`[stripe-webhook] aucune réservation trouvée pour paymentId=${obj.id}`);
           }
           const NOT_YET_DISPATCHED = new Set([undefined, null, "", "pending", "confirmed", "awaiting_driver"]);
+          // Un événement tardif ou rejoué ne doit pas faire revenir en arrière un paiement
+          // déjà capturé, annulé, libéré, remboursé, échoué ou autrement avancé.
+          const NOT_YET_AUTHORIZED = new Set([undefined, null, "", "pending", "authorized"]);
           await Promise.all(
-            bookings.map((b) =>
-              updateDoc(doc(db, "bookings", b.id), {
-                paymentStatus: "authorized",
-                amountAuthorized: obj.amount / 100,
-                ...(NOT_YET_DISPATCHED.has(b.status) ? { status: "awaiting_driver" } : {}),
-                paymentUpdatedAt: Timestamp.now(),
-              })
-            )
+            bookings
+              .filter((b) => NOT_YET_AUTHORIZED.has(b.paymentStatus))
+              .map((b) =>
+                updateDoc(doc(db, "bookings", b.id), {
+                  paymentStatus: "authorized",
+                  amountAuthorized: obj.amount / 100,
+                  ...(NOT_YET_DISPATCHED.has(b.status) ? { status: "awaiting_driver" } : {}),
+                  paymentUpdatedAt: Timestamp.now(),
+                })
+              )
           );
         }
         break;

@@ -8,6 +8,7 @@ import {
   checkDisplayedPrice,
   priceChangedBody,
 } from "@/lib/api/pricing";
+import { checkReservationTiming, finalizationReferenceTime } from "@/lib/pricing";
 import {
   PAYMENT_INTENT_ID_RE,
   acquireClaim,
@@ -156,13 +157,23 @@ export async function POST(request) {
     const lostLock = () =>
       conflict("IN_PROGRESS", "Finalisation déjà en cours pour ce paiement. Réessayez dans un instant.");
 
-    // Recalcul à l'instant de création de l'empreinte (source Stripe) : un 3DS lent ne
-    // change ni les majorations « moins de 2 h » ni les règles de délai.
-    const { quote, response: quoteResponse, failure } = quoteOrResponse(
+    // Recalcul à l'instant de création de l'empreinte (source Stripe) si elle date d'au
+    // plus 30 min : un 3DS lent ne change pas le prix. Au-delà : heure actuelle.
+    const { quote, failure: quoteFailure } = quoteOrResponse(
       rawBookingData,
       undefined,
-      new Date(pi.created * 1000)
+      finalizationReferenceTime(pi.created)
     );
+    // Dans tous les cas, les règles de délai sont aussi vérifiées à l'heure actuelle.
+    const failure =
+      quoteFailure ??
+      (quote.reservationDateIso
+        ? checkReservationTiming(
+            new Date(quote.reservationDateIso),
+            quote.prioriteReservation,
+            new Date()
+          )
+        : null);
     if (failure) {
       const released = await rejectAndRelease();
       if (released === null) return lostLock();

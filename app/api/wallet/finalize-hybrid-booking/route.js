@@ -7,6 +7,7 @@ import {
   checkDisplayedPrice,
   priceChangedBody,
 } from "@/lib/api/pricing";
+import { checkReservationTiming, finalizationReferenceTime } from "@/lib/pricing";
 import {
   debitWalletForHybridBooking,
   hybridLedgerExists,
@@ -185,12 +186,23 @@ export async function POST(request) {
       const lostLock = () =>
         conflict("IN_PROGRESS", "Finalisation déjà en cours pour ce paiement. Réessayez dans un instant.");
 
-      // Recalcul à l'instant de création de l'empreinte (source Stripe).
-      const { quote, failure } = quoteOrResponse(
+      // Recalcul à l'instant de création de l'empreinte (source Stripe) si elle date
+      // d'au plus 30 min ; au-delà : heure actuelle.
+      const { quote, failure: quoteFailure } = quoteOrResponse(
         rawBookingData,
         undefined,
-        new Date(pi.created * 1000)
+        finalizationReferenceTime(pi.created)
       );
+      // Dans tous les cas, les règles de délai sont aussi vérifiées à l'heure actuelle.
+      const failure =
+        quoteFailure ??
+        (quote.reservationDateIso
+          ? checkReservationTiming(
+              new Date(quote.reservationDateIso),
+              quote.prioriteReservation,
+              new Date()
+            )
+          : null);
       if (failure) {
         const released = await rejectAndRelease();
         if (released === null) return lostLock();
@@ -283,7 +295,12 @@ export async function POST(request) {
       }
     } catch (err) {
       if (err instanceof WalletError && err.code === "CONFLICT") {
-        // Rejeu : ledger d'un autre appelant.
+        // Rejeu ou reprise : ledger d'un autre appelant. On libère le verrou s'il nous
+        // appartient (sans effet sinon) avant de répondre.
+        if (held) {
+          await abandonClaim(held.paymentIntentId, held.requestId).catch(() => {});
+          held = null;
+        }
         return NextResponse.json({ error: err.message, code: err.code }, { status: 409 });
       }
       throw err;

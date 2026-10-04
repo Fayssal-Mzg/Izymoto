@@ -72,6 +72,45 @@ const fail = (code: string, error: string): QuoteFailure => ({
   error,
 });
 
+// Règles de délai d'une course, évaluées à l'instant `now` (date non dépassée, pas au-delà
+// d'un an, priorité obligatoire sous 1 h 15). Renvoie null si tout est conforme.
+export function checkReservationTiming(
+  reservationDate: Date,
+  prioriteReservation: boolean,
+  now: Date
+): QuoteFailure | null {
+  const diffMs = reservationDate.getTime() - now.getTime();
+  if (diffMs < -PAST_TOLERANCE_MS) {
+    return fail("DATE_IN_PAST", "La date de départ est dépassée. Veuillez en choisir une autre.");
+  }
+  if (diffMs > MAX_ADVANCE_MS) {
+    return fail("DATE_TOO_FAR", "La réservation ne peut pas être programmée plus d'un an à l'avance.");
+  }
+  if (diffMs < PRIORITY_REQUIRED_BELOW_MS && !prioriteReservation) {
+    return fail(
+      "PRIORITY_REQUIRED",
+      "Pour une réservation dans l'heure, l'option priorité est obligatoire."
+    );
+  }
+  return null;
+}
+
+// Un PaymentIntent confirmé longtemps après sa création ne doit pas figer le prix à
+// une date ancienne : au-delà de ce délai, on recalcule à l'heure actuelle.
+export const PI_REFERENCE_MAX_AGE_MS = 30 * 60 * 1000;
+
+// Instant de référence du recalcul à la finalisation : la création de l'empreinte
+// (source Stripe) si elle date d'au plus 30 min, sinon l'heure actuelle.
+export function finalizationReferenceTime(
+  piCreatedSeconds: number,
+  nowMs: number = Date.now()
+): Date {
+  const createdMs = piCreatedSeconds * 1000;
+  return nowMs - createdMs <= PI_REFERENCE_MAX_AGE_MS && createdMs <= nowMs
+    ? new Date(createdMs)
+    : new Date(nowMs);
+}
+
 const asNumber = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
@@ -113,19 +152,8 @@ export function computeServerQuote(
   }
 
   if (reservationDate && options.enforceTimingRules) {
-    const diffMs = reservationDate.getTime() - now.getTime();
-    if (diffMs < -PAST_TOLERANCE_MS) {
-      return fail("DATE_IN_PAST", "La date de départ est dépassée. Veuillez en choisir une autre.");
-    }
-    if (diffMs > MAX_ADVANCE_MS) {
-      return fail("DATE_TOO_FAR", "La réservation ne peut pas être programmée plus d'un an à l'avance.");
-    }
-    if (diffMs < PRIORITY_REQUIRED_BELOW_MS && !prioriteReservation) {
-      return fail(
-        "PRIORITY_REQUIRED",
-        "Pour une réservation dans l'heure, l'option priorité est obligatoire."
-      );
-    }
+    const timing = checkReservationTiming(reservationDate, prioriteReservation, now);
+    if (timing) return timing;
   }
 
   const horsForfait = estHorsForfait(identifierZone(depart), identifierZone(arrivee));

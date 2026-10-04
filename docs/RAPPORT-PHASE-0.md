@@ -122,3 +122,11 @@ Aucun push, aucun merge, aucun déploiement. Émulateur uniquement (projectId `d
   - BASSES : verrou hybride non libéré après un refus `CONFLICT` (bail 2 min) ; webhook en retard pouvant repasser `paymentStatus` de `captured` à `authorized` ; empreinte orpheline possible si le client ferme l'onglet avant la finalisation (aucune réconciliation automatique) ; jours fériés non gérés (comme avant).
   - Les devis restent écrits par le navigateur avec un `prix` client (`saveBooking`) : affichage back-office seulement, à cadrer au lot 0.5.
   - Incohérence d'affichage public : `CLAUDE.md` §1 annonce Paris↔Paris 65 € et aéroport dès 80 €, la grille applique 46 / 76 / 99 € (non modifié).
+
+### Lot 0.3 — complément (2e commit sur la même branche)
+
+- **Pourquoi** : MOYENNE et BASSES restantes de la 2e relecture (lot déjà validé avec réserves, pas de BLOQUANT).
+- **Contenu** : instant de référence du recalcul = création de l'empreinte seulement si elle date d'au plus 30 min, sinon heure actuelle ; règles de délai (date passée, priorité < 1 h 15) toujours revérifiées à l'heure actuelle ; verrou hybride libéré après un refus `CONFLICT` ; webhook `amount_capturable_updated` n'écrase plus un `paymentStatus` déjà `captured`/`released`/`failed`…
+- **Vérification** : relecture du diff par le chef ; dev-fullstack VALIDÉ ; qa-tests VALIDÉ (nouveaux cas : PI de 3 h / 25 min / 40 min, verrou libéré, webhook tardif).
+- **Tests réellement exécutés (par le chef)** : `npx tsc --noEmit` → code 0 ; `npm test` → `Test Files 8 passed (8)`, `Tests 360 passed | 13 todo (373)`.
+- La MOYENNE « `pi.created` non borné » et les BASSES « verrou hybride » et « webhook tardif » de la liste des réserves ci-dessus sont **fermées**.

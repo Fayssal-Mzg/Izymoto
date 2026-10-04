@@ -1015,24 +1015,85 @@ describe("finalize-card-booking : rejeu et réservation préexistante", () => {
     expect((await res.json()).code).toBe("BOOKING_INCONSISTENT");
   });
 
-  it("now = pi.created : PI créé 2 h 30 avant la course, finalisé à 1 h 50 -> pas de majoration « < 2 h », succès", async () => {
+  // Instant de référence du recalcul : pi.created s'il date d'au plus 30 min, sinon l'heure actuelle.
+  const MIN = 60 * 1000;
+  const refTest = (ageMin: number, leftMin: number, priorite = false) => {
+    const nowMs = Date.now();
+    const departMs = nowMs + leftMin * MIN;
+    const created = Math.floor((nowMs - ageMin * MIN) / 1000);
+    const ride = validRide({ reservationDate: new Date(departMs).toISOString(), prioriteReservation: priorite });
+    const base = {
+      depart: String(ride.depart),
+      arrivee: String(ride.arrivee),
+      distanceKm: 20,
+      reservationDate: new Date(departMs),
+      prioriteReservation: priorite,
+    };
+    return {
+      ride,
+      created,
+      atCreation: calculerPrixCourse(base, new Date(created * 1000)),
+      atFinalization: calculerPrixCourse(base, new Date(nowMs)),
+    };
+  };
+  const tardive = (r: { majorations: Array<{ type: string }> }) => r.majorations.some((m) => m.type.includes("moins de 2h"));
+
+  it("now = pi.created (PI de 20 min) : course à 2 h 10 à la création, 1 h 50 à la finalisation -> pas de majoration « < 2 h », succès", async () => {
     const u = await createAuthUser(uniqueEmail("rp-created"));
-    const departMs = Date.now() + 110 * 60 * 1000; // il reste 1 h 50
-    const created = Math.floor((departMs - 150 * 60 * 1000) / 1000); // PI créé 2 h 30 avant
-    const ride = validRide({ reservationDate: new Date(departMs).toISOString() });
-    const base = { depart: String(ride.depart), arrivee: String(ride.arrivee), distanceKm: 20, reservationDate: new Date(departMs), prioriteReservation: false };
-    const atCreation = calculerPrixCourse(base, new Date(created * 1000));
-    const atFinalization = calculerPrixCourse(base, new Date());
-    expect(atCreation.majorations.some((m) => m.type.includes("moins de 2h"))).toBe(false);
-    expect(atFinalization.totalCents).toBe(atCreation.totalCents + 2000); // garde-fou : l'horloge réelle ajouterait +20 €
+    const t = refTest(20, 110);
+    expect(tardive(t.atCreation)).toBe(false);
+    expect(t.atFinalization.totalCents).toBe(t.atCreation.totalCents + 2000); // garde-fou : l'horloge réelle ajouterait +20 €
     stripeMock.paymentIntents.retrieve.mockResolvedValue(
-      cardPi(u.uid, "pi_crt", { created }, atCreation.totalCents, ride)
+      cardPi(u.uid, "pi_crt", { created: t.created }, t.atCreation.totalCents, t.ride)
     );
-    const res = await call(u.idToken, { paymentIntentId: "pi_crt", bookingData: ride });
+    const res = await call(u.idToken, { paymentIntentId: "pi_crt", bookingData: t.ride });
     expect(res.status).toBe(200);
     const b = (await db().collection("bookings").doc("card_pi_crt").get()).data()!;
-    expect(Math.round(b.prix * 100)).toBe(atCreation.totalCents);
+    expect(Math.round(b.prix * 100)).toBe(t.atCreation.totalCents);
     expect(stripeMock.paymentIntents.cancel).not.toHaveBeenCalled();
+  });
+
+  it("PI de 3 h, course dans 40 min sans priorité -> 400 PRIORITY_REQUIRED, holdReleased true, cancel, aucune réservation", async () => {
+    const u = await createAuthUser(uniqueEmail("rp-old"));
+    const t = refTest(180, 40);
+    stripeMock.paymentIntents.retrieve.mockResolvedValue(cardPi(u.uid, "pi_old3h", { created: t.created }, TOTAL, t.ride));
+    const res = await call(u.idToken, { paymentIntentId: "pi_old3h", bookingData: t.ride });
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("PRIORITY_REQUIRED");
+    expect(json.holdReleased).toBe(true);
+    expect(stripeMock.paymentIntents.cancel).toHaveBeenCalledWith("pi_old3h");
+    expect(await countDocs("bookings")).toBe(0);
+  });
+
+  it("PI de 25 min, course passée sous 1 h 15 entre-temps (départ dans 60 min, sans priorité) -> 400 PRIORITY_REQUIRED, cancel, aucune réservation", async () => {
+    const u = await createAuthUser(uniqueEmail("rp-25"));
+    const t = refTest(25, 60);
+    stripeMock.paymentIntents.retrieve.mockResolvedValue(cardPi(u.uid, "pi_25", { created: t.created }, t.atCreation.totalCents, t.ride));
+    const res = await call(u.idToken, { paymentIntentId: "pi_25", bookingData: t.ride });
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("PRIORITY_REQUIRED");
+    expect(json.holdReleased).toBe(true);
+    expect(stripeMock.paymentIntents.cancel).toHaveBeenCalledWith("pi_25");
+    expect(await countDocs("bookings")).toBe(0);
+  });
+
+  it("PI de 40 min (> 30 min) : la majoration « < 2 h » devient applicable -> 409 PRICE_CHANGED avec le nouveau total, cancel, aucune réservation", async () => {
+    const u = await createAuthUser(uniqueEmail("rp-40"));
+    const t = refTest(40, 110);
+    expect(tardive(t.atCreation)).toBe(false);
+    expect(tardive(t.atFinalization)).toBe(true);
+    stripeMock.paymentIntents.retrieve.mockResolvedValue(cardPi(u.uid, "pi_40", { created: t.created }, t.atCreation.totalCents, t.ride));
+    const res = await call(u.idToken, { paymentIntentId: "pi_40", bookingData: t.ride });
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.code).toBe("PRICE_CHANGED");
+    expect(json.newTotalCents).toBe(t.atFinalization.totalCents);
+    expect(json.previousTotalCents).toBe(t.atCreation.totalCents);
+    expect(json.holdReleased).toBe(true);
+    expect(stripeMock.paymentIntents.cancel).toHaveBeenCalledWith("pi_40");
+    expect(await countDocs("bookings")).toBe(0);
   });
 
   it("RIDE_MISMATCH : arrivée différente de pi.metadata à prix égal -> 409, holdReleased true, cancel, aucune réservation", async () => {
@@ -1125,7 +1186,7 @@ describe("finalize-hybrid-booking : verrou, identifiant et ledger d'un autre", (
     expect(await balanceOf(u.uid)).toBe(10000);
   });
 
-  it("ledger hybrid_<pi> d'un autre (CONFLICT) : 409 sans divulgation, aucun effet, PI intact ; état du verrou documenté", async () => {
+  it("ledger hybrid_<pi> d'un autre (CONFLICT) : 409 sans divulgation, aucun effet, PI intact, verrou libéré", async () => {
     const other = await createAuthUser(uniqueEmail("fh-led-other"));
     const u = await createAuthUser(uniqueEmail("fh-led-me"));
     await seedWallet(u.uid, 10000);
@@ -1140,13 +1201,14 @@ describe("finalize-hybrid-booking : verrou, identifiant et ledger d'un autre", (
     expect(await balanceOf(u.uid)).toBe(10000);
     expect(await countDocs("bookings")).toBe(0);
     expect(stripeMock.paymentIntents.cancel).not.toHaveBeenCalled();
-    // Comportement constaté : voir le rapport (état du verrou après ce refus).
-    const claim = (await claimsCol().doc("pi_led").get()).data();
+    // Le verrou est libéré (abandonClaim) : un second appel reçoit de nouveau CONFLICT, pas IN_PROGRESS.
+    expect((await claimsCol().doc("pi_led").get()).exists).toBe(false);
     const second = await call(u.idToken, { paymentIntentId: "pi_led", bookingData: validRide() });
     expect(second.status).toBe(409);
+    expect((await second.json()).code).toBe("CONFLICT");
     expect(await countDocs("bookings")).toBe(0);
     expect(await balanceOf(u.uid)).toBe(10000);
-    console.log("[doc-lock] état du verrou après CONFLICT ledger :", claim?.state ?? "(absent)", "-> 2e appel :", (await second.clone().json()).code);
+    expect(stripeMock.paymentIntents.cancel).not.toHaveBeenCalled();
   });
 });
 
