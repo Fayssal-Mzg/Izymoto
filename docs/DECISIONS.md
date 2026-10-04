@@ -75,6 +75,13 @@ Les rapports à Fayssal font 10 lignes au maximum. Les rapports détaillés des 
 
 **Pourquoi** : le « VALIDÉ » d'un agent reste un avis ; un test qui passe est une preuve.
 
+## D-009 — Lanceur de tests : Vitest
+**Date** : 2026-10-04 · **Statut** : validée
+
+Vitest, avec `@firebase/rules-unit-testing` pour les règles Firestore sur l'émulateur (projectId `demo-izymoto`). Les tests vivent dans `tests/`.
+
+**Pourquoi** : léger, compatible TypeScript sans configuration lourde, adapté aux tests des règles et des routes API.
+
 ---
 
 ## Qui voit quoi (référence d'isolation)
