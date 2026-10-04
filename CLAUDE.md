@@ -29,7 +29,7 @@ Garder concis : uniquement ce qui n'est pas trivialement déductible du code.
 | Hébergement | **Vercel** (`vercel.json`, build via `next build`) |
 | Node | >= 18.x |
 
-**Ne pas ajouter sans demander** : nouvelle lib UI, ORM, state manager global, framework de tests (rien en place actuellement).
+**Ne pas ajouter sans demander** : nouvelle lib UI, ORM, state manager global, autre framework de tests (Vitest en place, D-009).
 
 ## 3. Arborescence haut niveau
 
@@ -86,7 +86,7 @@ public/
 - **Client vs Server components** : par défaut Server. Mettre `"use client"` uniquement si le composant utilise hooks, contexts, ou listeners. La landing `app/page.tsx` est `"use client"` à cause de `useAuth` et `useInView`.
 - **Imports** : alias `@/` mappé sur la racine (voir `tsconfig.json`).
 - **Tailwind** : pas de CSS custom dans `globals.css` sauf utilités globales. Utiliser `cn()` de `lib/utils.ts` pour la composition de classes.
-- **Pas de tests** dans le repo aujourd'hui — ne pas en ajouter sans demander.
+- **Tests** : Vitest dans `tests/` (`tests/rules/` sur l'émulateur Firestore, `tests/api/` pour les routes), lancés par `npm test` (émulateur `demo-izymoto`, Java 17+). Voir DECISIONS.md D-009.
 - **Langue** : tout le contenu utilisateur en **français** (le site cible la France).
 
 ## 5. Variables d'environnement attendues (à confirmer côté `.env.local`)
