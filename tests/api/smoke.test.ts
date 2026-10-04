@@ -17,7 +17,7 @@ vi.mock("resend", () => ({
 
 import { POST as capturePayment } from "@/app/api/capture-payment/route";
 import { POST as sendDevis } from "@/app/api/send-devis/route";
-import { createAuthUser, createVerifiedAuthUser, jsonRequest, resetEmulators, seedUserDoc } from "./helpers";
+import { createAuthUser, createVerifiedAuthUser, jsonRequest, resetEmulators, seedUserDoc, validRide } from "./helpers";
 
 beforeEach(async () => {
   await resetEmulators();
@@ -73,7 +73,7 @@ describe("POST /api/send-devis (jeton FACULTATIF, lot 0.2)", () => {
   // (envoi d'email vers un tiers / relais de spam possible).
   it("(a) sans jeton -> 200, UN seul email, vers contact@izymoto.com avec l'email saisi ; rien à l'adresse saisie", async () => {
     const res = await sendDevis(
-      jsonRequest("/api/send-devis", { body: { email: "invite@test.dev", name: "Invité", reservationId: "R1" } })
+      jsonRequest("/api/send-devis", { body: { ...validRide(), email: "invite@test.dev", name: "Invité", reservationId: "R1" } })
     );
     expect(res.status).toBe(200);
     expect(emailSend).toHaveBeenCalledTimes(1);
@@ -115,7 +115,7 @@ describe("POST /api/send-devis (jeton FACULTATIF, lot 0.2)", () => {
   it("(c') jeton valide mais email NON vérifié -> 200, un seul email vers l'admin, rien à l'email du jeton", async () => {
     const user = await createAuthUser("nonverif@test.dev");
     const res = await sendDevis(
-      jsonRequest("/api/send-devis", { token: user.idToken, body: { email: "victime@test.dev", name: "NV", reservationId: "R3" } })
+      jsonRequest("/api/send-devis", { token: user.idToken, body: { ...validRide(), email: "victime@test.dev", name: "NV", reservationId: "R3" } })
     );
     expect(res.status).toBe(200);
     expect(emailSend).toHaveBeenCalledTimes(1);
@@ -128,7 +128,7 @@ describe("POST /api/send-devis (jeton FACULTATIF, lot 0.2)", () => {
   it("(c) jeton valide (email vérifié) + email d'un tiers dans le corps -> envoi uniquement à l'email du jeton + admin", async () => {
     const user = await createVerifiedAuthUser("legit@test.dev");
     const res = await sendDevis(
-      jsonRequest("/api/send-devis", { token: user.idToken, body: { email: "victime@test.dev", name: "Legit", reservationId: "R2" } })
+      jsonRequest("/api/send-devis", { token: user.idToken, body: { ...validRide(), email: "victime@test.dev", name: "Legit", reservationId: "R2" } })
     );
     expect(res.status).toBe(200);
     const recipients = emailSend.mock.calls.flatMap((c) => c[0].to as string[]);
@@ -143,11 +143,14 @@ describe("POST /api/send-devis (jeton FACULTATIF, lot 0.2)", () => {
     const res = await sendDevis(
       jsonRequest("/api/send-devis", {
         body: {
+          ...validRide(),
           email: "invite@test.dev",
           name: SCRIPT,
           notes: LINK,
-          depart: SCRIPT,
-          arrivee: LINK,
+          // lot 0.3 : les adresses servent au calcul du prix (zone Paris / Orly) ; le HTML
+          // est préfixé à une adresse valide et doit ressortir échappé.
+          depart: `${SCRIPT} 75001 Paris`,
+          arrivee: `${LINK} Aéroport d'Orly, 94390 Orly`,
           reservationId: SCRIPT,
           phone: LINK,
           prix: SCRIPT,
@@ -165,7 +168,7 @@ describe("POST /api/send-devis (jeton FACULTATIF, lot 0.2)", () => {
 
   it("sujet : retours à la ligne neutralisés (pas d'injection d'en-tête)", async () => {
     await sendDevis(
-      jsonRequest("/api/send-devis", { body: { email: "invite@test.dev", name: "X", reservationId: "R\r\nBcc: x@evil.test" } })
+      jsonRequest("/api/send-devis", { body: { ...validRide(), email: "invite@test.dev", name: "X", reservationId: "R\r\nBcc: x@evil.test" } })
     );
     expect(emailSend).toHaveBeenCalled();
     for (const c of emailSend.mock.calls) expect(String(c[0].subject)).not.toMatch(/[\r\n]/);

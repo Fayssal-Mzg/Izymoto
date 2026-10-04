@@ -5,11 +5,20 @@ import {
   sendClientConfirmationEmail, // On l'importe mais on ne l'utilisera pas encore
 } from "@/lib/emails/confirmationEmail";
 // Ajout du @ pour les chemins absolus
-import { saveBooking } from "@/lib/firebase/bookings";
-// Ajout du @ pour les chemins absolus
 import { User } from "firebase/auth";
 import { doc, getFirestore, setDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
+
+// Le serveur a recalculé un prix différent de celui affiché (409 PRICE_CHANGED) et
+// libéré l'empreinte carte : aucune réservation n'a été créée.
+export class PriceChangedError extends Error {
+  data: any;
+  constructor(data: any) {
+    super(data?.error || "Le prix de la course a changé.");
+    this.name = "PriceChangedError";
+    this.data = data;
+  }
+}
 
 export async function handleSuccessfulPayment({
   user,
@@ -21,6 +30,7 @@ export async function handleSuccessfulPayment({
   reservationDate,
   notes,
   prioriteReservation,
+  rideParams,
   onSuccess,
 }: {
   user: User;
@@ -32,6 +42,8 @@ export async function handleSuccessfulPayment({
   reservationDate: string;
   notes?: string;
   prioriteReservation?: boolean;
+  /** Paramètres de la course (adresses, distance, coordonnées, date brute, priorité) : le serveur recalcule le prix. */
+  rideParams: Record<string, unknown>;
   onSuccess?: (booking: any) => void;
 }) {
   try {
@@ -44,12 +56,6 @@ export async function handleSuccessfulPayment({
       paymentId,
       reservationDate,
     });
-
-    // Générer un ID de réservation unique
-    const reservationId = `CMD-${Math.random()
-      .toString(36)
-      .substring(2, 10)
-      .toUpperCase()}`;
 
     // Formater la date de réservation
     const date = new Date(reservationDate);
@@ -66,6 +72,36 @@ export async function handleSuccessfulPayment({
       { merge: true }
     );
     console.log("Profil utilisateur mis à jour avec phoneNumber:", phone);
+
+    // lot 0.3 : la réservation est créée par le SERVEUR (prix et amountAuthorized
+    // recalculés, un PaymentIntent = une course). Aucune écriture client.
+    const idToken = await user.getIdToken();
+    const response = await fetch("/api/finalize-card-booking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        paymentIntentId: paymentId,
+        displayedTotalCents: Math.round(prixFinal * 100),
+        bookingData: {
+          ...rideParams,
+          name,
+          phone,
+          notes: notes || "",
+          dateFormatted: formattedDate,
+        },
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.status === 409 && result?.code === "PRICE_CHANGED") {
+      throw new PriceChangedError(result);
+    }
+    if (!response.ok) {
+      throw new Error(result?.error || "Erreur lors de la finalisation de la réservation");
+    }
+    const reservationId: string = result.reservationId;
 
     // Préparer les données de réservation
     // En manual capture : le client a autorisé les fonds (hold actif), mais
@@ -103,9 +139,8 @@ export async function handleSuccessfulPayment({
       reservationId: fullBookingData.reservationId,
     });
 
-    // Sauvegarder la réservation
-    const savedBooking = await saveBooking(fullBookingData, user.uid);
-    console.log("Réservation sauvegardée avec ID:", savedBooking.id);
+    const savedBooking = { id: result.bookingId, ...fullBookingData };
+    console.log("Réservation créée par le serveur avec ID:", savedBooking.id);
 
     // Préparer les données pour les emails
     const emailData = {
@@ -160,6 +195,7 @@ export async function handleSuccessfulPayment({
     console.log("=== FIN PROCESSUS DE PAIEMENT ===");
     return savedBooking;
   } catch (error) {
+    if (error instanceof PriceChangedError) throw error;
     console.error(
       "Erreur globale lors de la finalisation de la réservation:",
       error

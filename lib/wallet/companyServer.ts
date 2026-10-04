@@ -1,6 +1,6 @@
 import { Timestamp, type Transaction } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin-server";
-import { WalletError } from "@/lib/wallet/server";
+import { WalletError, getWalletBalance } from "@/lib/wallet/server";
 
 // Cœur serveur du portefeuille ENTREPRISE (partagé entre collaborateurs).
 // Calqué sur lib/wallet/server.ts : runTransaction + idempotence via docId.
@@ -593,6 +593,17 @@ export async function getCompanyContextForUser(
     member,
     isOwner: member.role === "owner",
   };
+}
+
+// Montant réellement dépensable par l'appelant (centimes), calculé côté serveur :
+// société (solde plafonné par le budget mensuel restant du membre) si membre actif,
+// sinon portefeuille personnel. Même règle que useSpendableWallet côté écran.
+export async function getSpendableCentsForUser(uid: string): Promise<number> {
+  const ctx = await getCompanyContextForUser(uid).catch(() => null);
+  if (!ctx) return getWalletBalance(uid);
+  const balance = ctx.company.walletBalanceCents ?? 0;
+  const remaining = remainingBudgetCents(ctx.member);
+  return Math.max(0, remaining === null ? balance : Math.min(balance, remaining));
 }
 
 function assertOwner(ctx: CompanyContext | null): asserts ctx is CompanyContext {

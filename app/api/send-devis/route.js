@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
+import { quoteOrResponse } from "@/lib/api/pricing";
+import { DEVIS_QUOTE_OPTIONS } from "@/lib/pricing";
 
 // Échappement HTML de toute valeur provenant de l'appelant avant insertion.
 function esc(value) {
@@ -53,11 +55,9 @@ export async function POST(request) {
       email: bodyEmail,
       depart,
       arrivee,
-      prix,
       distance,
       reservationId,
       notes,
-      prioriteReservation,
       phone,
       reservationDate,
     } = body;
@@ -81,17 +81,27 @@ export async function POST(request) {
       );
     }
 
+    // lot 0.3 : le prix du devis est recalculé par le serveur (adresses, distance,
+    // date, priorité). Le `prix` envoyé dans le corps est ignoré.
+    const { quote, response: quoteError } = quoteOrResponse(body, DEVIS_QUOTE_OPTIONS);
+    if (quoteError) return quoteError;
+    const prix = quote.total;
+    const prioriteReservation = quote.prioriteReservation;
+
     // Formatage de la date
     let dateStr = "";
     let heureStr = "";
-    if (reservationDate) {
-      const date = new Date(reservationDate);
+    if (quote.reservationDateIso) {
+      // Heure affichée à Paris, quel que soit le fuseau du serveur (UTC sur Vercel).
+      const date = new Date(quote.reservationDateIso);
       dateStr = date.toLocaleDateString("fr-FR", {
+        timeZone: "Europe/Paris",
         year: "numeric",
         month: "long",
         day: "numeric",
       });
       heureStr = date.toLocaleTimeString("fr-FR", {
+        timeZone: "Europe/Paris",
         hour: "2-digit",
         minute: "2-digit",
       });

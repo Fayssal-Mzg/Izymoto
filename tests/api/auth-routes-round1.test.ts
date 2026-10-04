@@ -23,10 +23,24 @@ import { POST as createPaymentIntent } from "@/app/api/create-payment-intent/rou
 import { POST as companyInvite } from "@/app/api/company/invite/route";
 import { POST as companyMemberRemove } from "@/app/api/company/member/remove/route";
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
-import { createAuthUser, jsonRequest, resetEmulators, seedUserDoc, type TestUser } from "./helpers";
+import {
+  createAuthUser,
+  jsonRequest,
+  resetEmulators,
+  seedUserDoc,
+  piCreatedNow,
+  rideMeta,
+  validRide,
+  VALID_RIDE_TOTAL_CENTS,
+  type TestUser,
+} from "./helpers";
 
 const db = () => getAdminFirestore();
-const bookingBase = { depart: "A", arrivee: "B", prix: 50 };
+// Lot 0.3 : prix recalculé par le serveur (Paris -> Orly = 76 €) ; les montants des corps sont ignorés.
+const bookingBase = validRide();
+const TOTAL = VALID_RIDE_TOTAL_CENTS; // 7600
+const WALLET_PART = 2000;
+const CARD_PART = TOTAL - WALLET_PART; // 5600
 
 async function seedWallet(uid: string, balanceCents: number) {
   await db().collection("wallets").doc(uid).set({ userId: uid, balanceCents, cumulativeRechargedCents: balanceCents, currency: "EUR" });
@@ -58,12 +72,13 @@ async function seedCompany(
     await seedUserDoc(m.user.uid, { email: m.user.email, companyId, companyRole: m.role });
   }
 }
-// Metadata telle que posée par create-payment-intent : hybride 2000 (wallet) + 3000 (CB).
+// Metadata telle que posée par create-payment-intent : hybride 2000 (wallet) + 5600 (CB) = total serveur 7600.
 const hybridMeta = (uid: string, over: Record<string, string> = {}) => ({
-  userId: uid, paymentMode: "hybrid", walletAmountCents: "2000", totalAmountCents: "5000", ...over,
+  userId: uid, paymentMode: "hybrid", walletAmountCents: String(WALLET_PART), totalAmountCents: String(TOTAL), ...rideMeta(bookingBase), ...over,
 });
+// walletAmountCents / cardAmountCents du corps sont arbitraires : le serveur les ignore.
 const hybridBody = (paymentIntentId: string, clientToken: string) => ({
-  paymentIntentId, walletAmountCents: 2000, cardAmountCents: 3000, clientToken, bookingData: bookingBase,
+  paymentIntentId, walletAmountCents: 1, cardAmountCents: 1, clientToken, bookingData: bookingBase,
 });
 
 let n = 0;
@@ -92,23 +107,31 @@ describe("finalize-hybrid-booking : cohérence du PaymentIntent et idempotence p
   it("paymentMode != hybrid -> 409, aucun débit, cancel non appelé", async () => {
     const u = await createAuthUser(uniqueEmail("h-mode"));
     await seedWallet(u.uid, 10000);
-    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_card", status: "requires_capture", amount: 3000, metadata: hybridMeta(u.uid, { paymentMode: "card" }) });
+    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_card", status: "requires_capture", created: piCreatedNow(), amount: CARD_PART, metadata: hybridMeta(u.uid, { paymentMode: "card" }) });
     expect((await call(u.idToken, hybridBody("pi_card", "tok-m"))).status).toBe(409);
     await expectNoEffect(u.uid);
   });
 
-  it("walletAmountCents du PI incohérent avec la demande -> 409, aucun débit", async () => {
+  // Le corps est ignoré : l'incohérence porte sur les métadonnées serveur du PI (part wallet
+  // 500 + CB 5600 = 6100) face au total recalculé par le serveur (7600). Aucun débit, aucune
+  // course ; l'empreinte devenue invalide est libérée (cancel appelé une fois).
+  it("parts du PI (metadata) ≠ total serveur -> 409 PRICE_CHANGED, aucun débit, empreinte libérée", async () => {
     const u = await createAuthUser(uniqueEmail("h-wal"));
     await seedWallet(u.uid, 10000);
-    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_w", status: "requires_capture", amount: 3000, metadata: hybridMeta(u.uid, { walletAmountCents: "500", totalAmountCents: "3500" }) });
-    expect((await call(u.idToken, hybridBody("pi_w", "tok-w"))).status).toBe(409);
-    await expectNoEffect(u.uid);
+    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_w", status: "requires_capture", created: piCreatedNow(), amount: CARD_PART, metadata: hybridMeta(u.uid, { walletAmountCents: "500", totalAmountCents: String(500 + CARD_PART) }) });
+    const res = await call(u.idToken, hybridBody("pi_w", "tok-w"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("PRICE_CHANGED");
+    expect(await balanceOf(u.uid)).toBe(10000);
+    expect(await countDocs("bookings")).toBe(0);
+    expect(await countDocs("walletTransactions")).toBe(0);
+    expect(stripeMock.paymentIntents.cancel).toHaveBeenCalledWith("pi_w");
   });
 
   it("totalAmountCents incohérent -> 409, aucun débit", async () => {
     const u = await createAuthUser(uniqueEmail("h-tot"));
     await seedWallet(u.uid, 10000);
-    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_t", status: "requires_capture", amount: 3000, metadata: hybridMeta(u.uid, { totalAmountCents: "9999" }) });
+    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_t", status: "requires_capture", created: piCreatedNow(), amount: CARD_PART, metadata: hybridMeta(u.uid, { totalAmountCents: "9999" }) });
     expect((await call(u.idToken, hybridBody("pi_t", "tok-t"))).status).toBe(409);
     await expectNoEffect(u.uid);
   });
@@ -116,7 +139,7 @@ describe("finalize-hybrid-booking : cohérence du PaymentIntent et idempotence p
   it("même PI avec deux clientToken différents -> une seule course, un seul débit", async () => {
     const u = await createAuthUser(uniqueEmail("h-reuse"));
     await seedWallet(u.uid, 10000);
-    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_once", status: "requires_capture", amount: 3000, metadata: hybridMeta(u.uid) });
+    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_once", status: "requires_capture", created: piCreatedNow(), amount: CARD_PART, metadata: hybridMeta(u.uid) });
     const r1 = await call(u.idToken, hybridBody("pi_once", "tok-a"));
     const r2 = await call(u.idToken, hybridBody("pi_once", "tok-b"));
     expect(r1.status).toBe(200);
@@ -136,7 +159,7 @@ describe("finalize-hybrid-booking : cohérence du PaymentIntent et idempotence p
     await db().collection("walletTransactions").doc("hybrid_pi_shared").set({
       userId: other.uid, type: "debit", amountCents: 2000, balanceAfterCents: 424242, bookingId: "BK-SECRET", reservationId: "CMD-SECRET",
     });
-    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_shared", status: "requires_capture", amount: 3000, metadata: hybridMeta(u.uid) });
+    stripeMock.paymentIntents.retrieve.mockResolvedValue({ id: "pi_shared", status: "requires_capture", created: piCreatedNow(), amount: CARD_PART, metadata: hybridMeta(u.uid) });
     const res = await call(u.idToken, hybridBody("pi_shared", "tok-z"));
     expect(res.status).toBe(409);
     const text = await res.text();
@@ -183,33 +206,34 @@ describe("debit-for-booking : clientToken, ledger étranger, liste blanche", () 
     expect(await countDocs("bookings")).toBe(0);
   });
 
-  it("liste blanche : champs inconnus ignorés ; email = jeton ; prix = montant débité", async () => {
+  it("liste blanche : champs inconnus ignorés ; email = jeton ; prix = total serveur", async () => {
     const u = await createAuthUser("wl@test.dev");
     await seedWallet(u.uid, 10000);
     const res = await call(u.idToken, {
       amountCents: 4200,
       clientToken: "tok-wl",
-      bookingData: {
-        depart: "Gare", arrivee: "Orly", prix: 1, email: "autre@test.dev", paymentId: "pi_fake", amountAuthorized: 9999,
+      bookingData: validRide({
+        depart: "Gare de Lyon, 75012 Paris", arrivee: "Aéroport d'Orly, 94390 Orly",
+        prix: 1, email: "autre@test.dev", paymentId: "pi_fake", amountAuthorized: 9999,
         amountCaptured: 9999, status: "completed", isPaid: false, paymentStatus: "x", paymentMethod: "card", reservationId: "FAKE",
         walletAmountCents: 1, rating: 5, internalFlag: true,
-      },
+      }),
     });
     expect(res.status).toBe(200);
     const b = (await db().collection("bookings").doc((await res.json()).bookingId).get()).data()!;
-    expect(b.depart).toBe("Gare");
-    expect(b.arrivee).toBe("Orly");
+    expect(b.depart).toBe("Gare de Lyon, 75012 Paris");
+    expect(b.arrivee).toBe("Aéroport d'Orly, 94390 Orly");
     expect(b.email).toBe("wl@test.dev");
-    expect(b.prix).toBe(42);
+    expect(b.prix).toBe(76);
     expect(b.status).toBe("awaiting_driver");
     expect(b.paymentMethod).toBe("wallet");
     expect(b.paymentStatus).toBe("paid_wallet");
     expect(b.isPaid).toBe(true);
-    expect(b.walletAmountCents).toBe(4200);
+    expect(b.walletAmountCents).toBe(TOTAL);
     expect(b.reservationId).not.toBe("FAKE");
     for (const k of ["paymentId", "rating", "internalFlag"]) expect(b).not.toHaveProperty(k);
-    expect(b.amountAuthorized).not.toBe(9999);
-    expect(b.amountCaptured).not.toBe(9999);
+    expect(b.amountAuthorized).toBe(76);
+    expect(b.amountCaptured).toBe(76);
   });
 });
 
@@ -222,9 +246,9 @@ describe("create-payment-intent : metadata en liste blanche", () => {
         body: {
           amount: 50,
           metadata: {
+            ...validRide({ arrivee: "Aéroport Paris-Charles de Gaulle (CDG), 95700 Roissy-en-France", distance: 30 }),
             intent: "wallet_recharge", tierId: "business-enterprise", paymentMode: "hybrid", walletAmountCents: "4999",
             totalAmountCents: "1", userId: "victime", name: "Jean Dupont", phone: "0600000000", notes: "secret", email: "a@b.c",
-            depart: "Paris", arrivee: "CDG", distance: 30,
           },
         },
       })
@@ -236,30 +260,32 @@ describe("create-payment-intent : metadata en liste blanche", () => {
     expect(m.userId).toBe(u.uid);
     expect(m.paymentMode).toBe("card");
     expect(m.walletAmountCents).toBe("0");
-    expect(m.totalAmountCents).toBe("5000");
+    expect(m.totalAmountCents).toBe("9900"); // Paris -> Roissy = 99 € (calcul serveur)
+    expect(stripeMock.paymentIntents.create.mock.calls[0][0].amount).toBe(9900);
     for (const k of ["name", "phone", "notes", "email"]) expect(m).not.toHaveProperty(k);
-    expect(m.depart).toBe("Paris");
+    expect(m.depart).toBe(bookingBase.depart);
     expect(m.distance).toBe("30");
   });
 
   it("hybride : paymentMode/wallet/total calculés par le serveur", async () => {
     const u = await createAuthUser(uniqueEmail("pi-hyb"));
+    await seedWallet(u.uid, 5000);
     const res = await createPaymentIntent(
       jsonRequest("/api/create-payment-intent", {
         token: u.idToken,
-        body: { amount: 50, walletAmountCents: 2000, metadata: { paymentMode: "card", walletAmountCents: "0" } },
+        body: { amount: 50, walletAmountCents: WALLET_PART, metadata: { ...bookingBase, paymentMode: "card", walletAmountCents: "0" } },
       })
     );
     expect(res.status).toBe(200);
     const arg = stripeMock.paymentIntents.create.mock.calls[0][0];
-    expect(arg.amount).toBe(3000);
-    expect(arg.metadata).toMatchObject({ paymentMode: "hybrid", walletAmountCents: "2000", totalAmountCents: "5000", userId: u.uid });
+    expect(arg.amount).toBe(CARD_PART);
+    expect(arg.metadata).toMatchObject({ paymentMode: "hybrid", walletAmountCents: "2000", totalAmountCents: String(TOTAL), userId: u.uid });
   });
 
   it("erreur Stripe -> message générique, sans error.message", async () => {
     const u = await createAuthUser(uniqueEmail("pi-err"));
     stripeMock.paymentIntents.create.mockRejectedValue(new Error("SECRET_STRIPE_DETAIL sk_live_xxx"));
-    const res = await createPaymentIntent(jsonRequest("/api/create-payment-intent", { token: u.idToken, body: { amount: 50 } }));
+    const res = await createPaymentIntent(jsonRequest("/api/create-payment-intent", { token: u.idToken, body: { amount: 50, metadata: bookingBase } }));
     expect(res.status).toBe(500);
     expect(await res.text()).not.toContain("SECRET_STRIPE_DETAIL");
   });

@@ -1,4 +1,5 @@
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
+import { parseReservationDate } from "@/lib/pricing";
 
 const authHost = () => process.env.FIREBASE_AUTH_EMULATOR_HOST ?? "127.0.0.1:9099";
 
@@ -84,3 +85,48 @@ export function jsonRequest(
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
 }
+
+// ---------------------------------------------------------------- lot 0.3 : prix serveur
+
+// Prochaine date (au moins `minDaysAhead` jours dans le futur) tombant un des jours
+// demandés (0 = dimanche … 6 = samedi), à l'heure murale de Paris "HH:MM" (sans fuseau :
+// c'est le format d'un <input type="datetime-local">, interprété à Paris par le serveur).
+export function futureParisDate(weekdays: number[], time: string, minDaysAhead = 10): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + minDaysAhead);
+  while (!weekdays.includes(d.getUTCDay())) d.setUTCDate(d.getUTCDate() + 1);
+  return `${d.toISOString().slice(0, 10)}T${time}`;
+}
+
+// Paramètres de course réalistes : Paris -> Orly (forfait 76 €), un jour de semaine
+// à 14h (aucune majoration), sans priorité. Prix serveur attendu : 76 € = 7600 centimes.
+export const VALID_RIDE_TOTAL_CENTS = 7600;
+export function validRide(over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    depart: "10 Rue de Rivoli, 75001 Paris",
+    arrivee: "Aéroport d'Orly, 94390 Orly",
+    distance: 20,
+    originLat: 48.8556,
+    originLng: 2.3606,
+    destLat: 48.7262,
+    destLng: 2.3652,
+    reservationDate: futureParisDate([1, 2, 3, 4], "14:00"),
+    prioriteReservation: false,
+    ...over,
+  };
+}
+
+// Métadonnées de course telles que create-payment-intent les pose sur le PaymentIntent
+// (les routes de finalisation exigent qu'elles correspondent à la course finalisée).
+export function rideMeta(ride: Record<string, unknown> = validRide()): Record<string, string> {
+  const date = parseReservationDate(ride.reservationDate);
+  return {
+    depart: String(ride.depart).trim(),
+    arrivee: String(ride.arrivee).trim(),
+    ...(date ? { reservationDate: date.toISOString() } : {}),
+    prioriteReservation: String(ride.prioriteReservation === true),
+  };
+}
+
+// Champ `created` d'un PaymentIntent Stripe (secondes) : instant de référence du recalcul.
+export const piCreatedNow = (): number => Math.floor(Date.now() / 1000);

@@ -27,6 +27,11 @@ interface ReservationDetails {
   distance: number | null;
   duree: number | null;
   prix: number | null;
+  // Coordonnées de l'itinéraire (lot 0.3) : transmises au serveur pour vérifier la distance.
+  originLat?: number;
+  originLng?: number;
+  destLat?: number;
+  destLng?: number;
 }
 
 export type UserRole = "client" | "driver" | "admin";

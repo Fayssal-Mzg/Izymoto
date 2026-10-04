@@ -2,11 +2,8 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
 import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
 import { pickPaymentIntentMetadata } from "@/lib/api/identity";
-
-// Fourchette acceptable pour un trajet moto-taxi (en €). Bloque les tentatives
-// de manipulation côté client (ex: amount=0.50€).
-const MIN_AMOUNT_EUR = 30;
-const MAX_AMOUNT_EUR = 1000;
+import { quoteOrResponse, checkDisplayedPrice } from "@/lib/api/pricing";
+import { getSpendableCentsForUser } from "@/lib/wallet/companyServer";
 
 // Stripe minimum pour une charge EUR : 0.50€ = 50 centimes.
 const STRIPE_MIN_CHARGE_CENTS = 50;
@@ -23,23 +20,19 @@ export async function POST(request) {
   }
 
   try {
-    const { amount, metadata, walletAmountCents } = await request.json();
+    // lot 0.3 : le montant est recalculé par le serveur à partir des paramètres de
+    // la course (metadata : adresses, distance, coordonnées, date, priorité). Tout
+    // montant envoyé par le client (amount, amountCents, prix...) est ignoré ;
+    // displayedTotalCents (prix affiché) sert uniquement à détecter un écart (409).
+    const body = await request.json();
+    const { metadata, walletAmountCents } = body;
 
-    if (
-      typeof amount !== "number" ||
-      !Number.isFinite(amount) ||
-      amount < MIN_AMOUNT_EUR ||
-      amount > MAX_AMOUNT_EUR
-    ) {
-      return NextResponse.json(
-        {
-          error: `Montant invalide. Doit être un nombre compris entre ${MIN_AMOUNT_EUR}€ et ${MAX_AMOUNT_EUR}€.`,
-        },
-        { status: 400 }
-      );
-    }
+    const { quote, response } = quoteOrResponse(metadata);
+    if (response) return response;
+    const mismatch = checkDisplayedPrice(body, quote);
+    if (mismatch) return mismatch;
 
-    const totalCents = Math.round(amount * 100);
+    const totalCents = quote.totalCents;
     const walletCents =
       typeof walletAmountCents === "number" &&
       Number.isFinite(walletAmountCents) &&
@@ -52,9 +45,25 @@ export async function POST(request) {
         {
           error:
             "walletAmountCents >= total : utiliser /api/wallet/debit-for-booking",
+          code: "WALLET_COVERS_TOTAL",
+          totalAmountCents: totalCents,
         },
         { status: 400 }
       );
+    }
+    if (walletCents > 0) {
+      // La part portefeuille annoncée ne peut pas dépasser le solde dépensable réel
+      // (société plafonnée par le budget, sinon portefeuille personnel).
+      const spendableCents = await getSpendableCentsForUser(auth.uid);
+      if (walletCents > spendableCents) {
+        return NextResponse.json(
+          {
+            error: "Solde portefeuille insuffisant pour la part annoncée.",
+            code: "INSUFFICIENT_BALANCE",
+          },
+          { status: 402 }
+        );
+      }
     }
     if (walletCents > 0 && totalCents - walletCents < STRIPE_MIN_CHARGE_CENTS) {
       return NextResponse.json(
@@ -82,7 +91,15 @@ export async function POST(request) {
       // APRÈS la copie, donc non écrasables : propriétaire, mode, parts wallet/total.
       metadata: {
         ...Object.fromEntries(
-          Object.entries(pickPaymentIntentMetadata(metadata)).map(([k, v]) => [k, String(v)])
+          Object.entries({
+            ...pickPaymentIntentMetadata(metadata),
+            // Valeurs validées par le serveur (priment sur celles du client).
+            depart: quote.depart,
+            arrivee: quote.arrivee,
+            ...(quote.distanceKm !== null ? { distance: quote.distanceKm } : {}),
+            ...(quote.reservationDateIso ? { reservationDate: quote.reservationDateIso } : {}),
+            prioriteReservation: quote.prioriteReservation,
+          }).map(([k, v]) => [k, String(v)])
         ),
         userId: auth.uid,
         paymentMode: isHybrid ? "hybrid" : "card",

@@ -4,14 +4,13 @@
 // amountAuthorized, amountCaptured, status, email, etc.
 
 // Champs descriptifs de la course lus par le back-office et l'espace chauffeur
-// (lib/firebase/dispatch.ts, admin.ts). `prix` reste accepté TEMPORAIREMENT :
-// lot 0.3 = recalcul serveur du prix.
+// (lib/firebase/dispatch.ts, admin.ts). `prix` n'est plus accepté du client (lot 0.3) :
+// il est posé par le serveur à partir du calcul de lib/pricing.
 const BOOKING_FIELDS = [
   "depart",
   "arrivee",
   "distance",
   "duree",
-  "prix", // lot 0.3 : à recalculer côté serveur
   "name",
   "phone",
   "notes",

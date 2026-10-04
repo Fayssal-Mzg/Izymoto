@@ -34,6 +34,7 @@ export default function DevisModal({
   prixBase,
   prix,
   prixFinal,
+  requiresQuote = false,
   detailsMajorations = [],
   prioriteReservation,
   setPrioriteReservation,
@@ -113,6 +114,7 @@ export default function DevisModal({
 
   // Fonction de validation pour le bouton Réserver
   const handleProceed = () => {
+    if (requiresQuote) return;
     console.log("handleProceed appelé");
     if (!reservationDate) {
       setValidationError(
@@ -307,11 +309,28 @@ export default function DevisModal({
             </div>
           )}
 
+          {requiresQuote && (
+            <div
+              className="bg-amber-50 border-l-4 border-amber-400 text-amber-900 p-4 rounded mb-6 flex items-start space-x-2"
+              role="note"
+            >
+              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+              <span className="text-sm">
+                Ce trajet n'est pas au forfait : le prix ci-dessous est une
+                estimation indicative et ne peut pas être réglé en ligne.
+                Cliquez sur « Demander un devis » : nous revenons vers vous avec
+                un tarif ferme.
+              </span>
+            </div>
+          )}
+
           {/* Récapitulatif des prix */}
           <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
             <div className="p-4 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Prix de base</span>
+                <span className="text-gray-600 text-sm">
+                  {requiresQuote ? "Prix de base (estimation)" : "Prix de base"}
+                </span>
                 <span className="text-gray-900">
                   {prixBase ? Math.round(prixBase) : 0}€
                 </span>
@@ -374,6 +393,7 @@ export default function DevisModal({
 
           {/* Boutons d'action */}
           <div className="flex flex-col space-y-3">
+            {!requiresQuote && (
             <button
               onClick={handleProceed}
               disabled={isLoading}
@@ -391,6 +411,7 @@ export default function DevisModal({
                 </>
               )}
             </button>
+            )}
 
             {onRequestDevis && (
               <button

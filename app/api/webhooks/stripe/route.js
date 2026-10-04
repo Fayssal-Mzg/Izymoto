@@ -215,11 +215,26 @@ export async function POST(request) {
         // proposée au pool des chauffeurs (FCFS). Au stade "amount_capturable_updated"
         // la course n'a jamais pu être acceptée (booking encore en "pending"),
         // donc pas de conflit avec un éventuel statut assigned.
-        await updateBookingByPaymentIntent(obj.id, {
-          paymentStatus: "authorized",
-          amountAuthorized: obj.amount / 100,
-          status: "awaiting_driver",
-        });
+        // lot 0.3 : l'événement peut être redélivré / arriver après l'acceptation par
+        // un chauffeur : on ne repasse en "awaiting_driver" que les réservations qui
+        // n'ont pas encore avancé (jamais assigned, in_progress, completed...).
+        {
+          const bookings = await findBookingsByPaymentIntent(obj.id);
+          if (bookings.length === 0) {
+            console.warn(`[stripe-webhook] aucune réservation trouvée pour paymentId=${obj.id}`);
+          }
+          const NOT_YET_DISPATCHED = new Set([undefined, null, "", "pending", "confirmed", "awaiting_driver"]);
+          await Promise.all(
+            bookings.map((b) =>
+              updateDoc(doc(db, "bookings", b.id), {
+                paymentStatus: "authorized",
+                amountAuthorized: obj.amount / 100,
+                ...(NOT_YET_DISPATCHED.has(b.status) ? { status: "awaiting_driver" } : {}),
+                paymentUpdatedAt: Timestamp.now(),
+              })
+            )
+          );
+        }
         break;
 
       case "payment_intent.succeeded": {

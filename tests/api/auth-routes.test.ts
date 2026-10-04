@@ -25,7 +25,17 @@ import { POST as incrementAuthorization } from "@/app/api/increment-authorizatio
 import { GET as companyOverview } from "@/app/api/company/overview/route";
 import { GET as getInvitationRoute } from "@/app/api/company/invitation/[token]/route";
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
-import { createAuthUser, jsonRequest, resetEmulators, seedUserDoc, type TestUser } from "./helpers";
+import {
+  createAuthUser,
+  jsonRequest,
+  piCreatedNow,
+  resetEmulators,
+  rideMeta,
+  seedUserDoc,
+  validRide,
+  VALID_RIDE_TOTAL_CENTS,
+  type TestUser,
+} from "./helpers";
 
 const db = () => getAdminFirestore();
 
@@ -74,7 +84,10 @@ async function countDocs(col: string) {
   return (await db().collection(col).get()).size;
 }
 
-const bookingBase = { depart: "A", arrivee: "B", prix: 50 };
+// Lot 0.3 : le serveur recalcule le prix à partir de la course (Paris -> Orly = 76 €).
+// Tout `amountCents` / `prix` des corps ci-dessous est un montant arbitraire du client : ignoré.
+const bookingBase = validRide();
+const TOTAL = VALID_RIDE_TOTAL_CENTS; // 7600
 
 beforeEach(async () => {
   await resetEmulators();
@@ -178,7 +191,7 @@ describe("identité injectée ignorée", () => {
   it("debit-for-booking : débite l'appelant, pas la victime ; booking sans identité injectée", async () => {
     const caller = await createAuthUser("caller@test.dev");
     const victim = await createAuthUser("victim@test.dev");
-    await seedWallet(caller.uid, 10000);
+    await seedWallet(caller.uid, 20000);
     await seedWallet(victim.uid, 10000);
 
     const res = await debitForBooking(
@@ -205,7 +218,7 @@ describe("identité injectée ignorée", () => {
     );
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(await balanceOf(caller.uid)).toBe(6000);
+    expect(await balanceOf(caller.uid)).toBe(20000 - TOTAL);
     expect(await balanceOf(victim.uid)).toBe(10000);
     const booking = (await db().collection("bookings").doc(json.bookingId).get()).data()!;
     expect(booking.userId).toBe(caller.uid);
@@ -238,7 +251,7 @@ describe("identité injectée ignorée", () => {
         token: caller.idToken,
         body: {
           amount: 50,
-          metadata: { userId: "victime", UserID: "victime", companyId: "societe-victime", driverId: "d", depart: "Paris" },
+          metadata: { ...bookingBase, userId: "victime", UserID: "victime", companyId: "societe-victime", driverId: "d" },
         },
       })
     );
@@ -249,8 +262,8 @@ describe("identité injectée ignorée", () => {
     expect(arg.metadata).not.toHaveProperty("UserID");
     expect(arg.metadata).not.toHaveProperty("companyId");
     expect(arg.metadata).not.toHaveProperty("driverId");
-    expect(arg.metadata.depart).toBe("Paris");
-    expect(arg.amount).toBe(5000);
+    expect(arg.metadata.depart).toBe(bookingBase.depart);
+    expect(arg.amount).toBe(TOTAL);
   });
 
   it("create-checkout : metadata/client_reference_id = appelant ; tierId inconnu -> 400", async () => {
@@ -299,8 +312,15 @@ describe("identité injectée ignorée", () => {
     stripeMock.paymentIntents.retrieve.mockResolvedValue({
       id: "pi_mine",
       status: "requires_capture",
-      amount: 3000,
-      metadata: { userId: caller.uid, paymentMode: "hybrid", walletAmountCents: "2000", totalAmountCents: "5000" },
+      created: piCreatedNow(),
+      amount: TOTAL - 2000,
+      metadata: {
+        userId: caller.uid,
+        paymentMode: "hybrid",
+        walletAmountCents: "2000",
+        totalAmountCents: String(TOTAL),
+        ...rideMeta(bookingBase),
+      },
     });
     const res = await finalizeHybrid(
       jsonRequest("/api/wallet/finalize-hybrid-booking", {
@@ -412,7 +432,7 @@ describe("entreprise : cloisonnement et budget", () => {
       })
     );
     expect(res.status).toBe(200);
-    expect(await companyBalance("coA")).toBe(15000);
+    expect(await companyBalance("coA")).toBe(20000 - TOTAL);
     expect(await companyBalance("coB")).toBe(20000);
     const json = await res.json();
     const booking = (await db().collection("bookings").doc(json.bookingId).get()).data()!;
@@ -468,7 +488,7 @@ describe("entreprise : cloisonnement et budget", () => {
     const mem = await createAuthUser("memBud@test.dev");
     await seedCompany("coA", 50000, [
       { user: owner, role: "owner" },
-      { user: mem, role: "member", budget: 6000 },
+      { user: mem, role: "member", budget: 10000 },
     ]);
     const call = (tok: string, amount: number) =>
       debitForBooking(
@@ -478,11 +498,11 @@ describe("entreprise : cloisonnement et budget", () => {
         })
       );
     expect((await call("b1", 4000)).status).toBe(200);
-    expect(await companyBalance("coA")).toBe(46000);
+    expect(await companyBalance("coA")).toBe(50000 - TOTAL);
     const over = await call("b2", 4000);
     expect(over.status).toBe(402);
     expect((await over.json()).code).toBe("BUDGET_EXCEEDED");
-    expect(await companyBalance("coA")).toBe(46000);
+    expect(await companyBalance("coA")).toBe(50000 - TOTAL);
     expect(await countDocs("bookings")).toBe(1);
   });
 });
@@ -508,7 +528,7 @@ describe("idempotence debit-for-booking", () => {
     const j1 = await r1.json();
     const j2 = await r2.json();
     expect(j2.bookingId).toBe(j1.bookingId);
-    expect(await balanceOf(u.uid)).toBe(7000);
+    expect(await balanceOf(u.uid)).toBe(10000 - TOTAL);
     expect(await countDocs("bookings")).toBe(1);
     expect(await countDocs("walletTransactions")).toBe(1);
   });
@@ -519,7 +539,7 @@ describe("idempotence debit-for-booking", () => {
     const call = mk(u.idToken, "tok-par");
     const [a, b] = await Promise.all([call(), call()]);
     expect([a.status, b.status]).toEqual([200, 200]);
-    expect(await balanceOf(u.uid)).toBe(7000);
+    expect(await balanceOf(u.uid)).toBe(10000 - TOTAL);
     expect(await countDocs("bookings")).toBe(1);
   });
 });

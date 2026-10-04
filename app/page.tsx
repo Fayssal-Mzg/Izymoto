@@ -1047,6 +1047,7 @@ function HomeReservationSection() {
     prioriteReservation,
     setPrioriteReservation,
     prixFinal,
+    requiresQuote,
     setPrixFinal,
     reservationDate,
     setReservationDate,
@@ -1088,6 +1089,7 @@ function HomeReservationSection() {
           prixBase={prixBase}
           prix={prix}
           prixFinal={prixFinal}
+          requiresQuote={requiresQuote}
           detailsMajorations={detailsMajorations}
           prioriteReservation={prioriteReservation}
           setPrioriteReservation={setPrioriteReservation}

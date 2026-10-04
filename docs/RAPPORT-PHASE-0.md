@@ -87,3 +87,38 @@ Aucun push, aucun merge, aucun déploiement. Émulateur uniquement (projectId `d
   - Retirer un membre le déconnecte de **toutes** ses sessions, y compris son usage personnel du site : voulu ?
   - Envoyer automatiquement l'email de vérification à l'inscription (changement du parcours d'inscription, non fait) ?
   - Journal d'audit des actions sur les membres (retrait, acceptation, budget) : maintenant ou en phase 1 ?
+
+---
+
+## Lot 0.3 — Prix calculé par le serveur (SENSIBLE, tunnel Stripe — accord de Fayssal pour le code ; rien de modifié côté Stripe)
+
+- **Branche** : `lot/0.3-prix-serveur` (part de `lot/0.4-invitations`)
+- **Commit** : voir `git log lot/0.3-prix-serveur` (message « fix(paiement) : lot 0.3 … »)
+- **Contenu** :
+  - Module unique `lib/pricing/` (grille, majorations, zones, distance, devis), utilisé par le client et le serveur ; `app/reserver/utils/constants.js` et `pricingUtils.js` deviennent des ré-exports. Grille inchangée (comparaison ancien/nouveau sur ~16 000 combinaisons par le développeur ; 16 forfaits dans les deux sens + majorations testés).
+  - Majorations calculées à l'heure de **Paris** (`Intl`, `Europe/Paris`) côté client et serveur (le serveur Vercel tourne en UTC). La règle « moins de 2 h » était auparavant évaluée dans le fuseau du navigateur.
+  - Le serveur recalcule le montant dans `create-payment-intent`, `wallet/debit-for-booking`, `wallet/finalize-hybrid-booking`, `send-devis` ; tout montant du client est ignoré ; écart avec le prix affiché → 409 `PRICE_CHANGED` + écran « Le prix de votre course a changé » côté client. Part portefeuille contrôlée contre le solde réel (et le budget collaborateur).
+  - **Nouvelle route `app/api/finalize-card-booking`** : la course payée par carte seule est créée par le serveur (doc `bookings/card_<pi>`, `serverFinalized: true`) et non plus par le navigateur ; contrôle de propriété du PaymentIntent, statut `requires_capture`, prix et course identiques à ceux de l'empreinte.
+  - Verrou par PaymentIntent (`paymentClaims/<pi>`, `lib/payments/claims.ts`) contre les requêtes concurrentes ; l'empreinte n'est libérée que par le détenteur du verrou ; réponses 409 avec `holdReleased`.
+  - Recalcul de finalisation à l'heure de création de l'empreinte (`pi.created`) pour qu'un 3DS lent ne change pas le prix.
+  - Webhook Stripe : `amount_capturable_updated` ne rétrograde plus une course déjà acceptée (modification minimale).
+  - Bouton « Réessayer la finalisation » si le paiement est autorisé mais la réservation pas encore créée.
+- **Verdicts** :
+  - dev-fullstack : VALIDÉ AVEC RÉSERVES.
+  - securite-reviewer : 1er passage **BLOQUANT** (3 HAUTES : distance/coordonnées falsifiables → hors-forfait à 35 € ; zone lue dans le texte libre de l'adresse ; course de condition permettant d'annuler une empreinte déjà rattachée) → 2e passage **VALIDÉ AVEC RÉSERVES** (HAUTES fermées ; zone ramenée à MOYENNE résiduelle).
+  - qa-tests : VALIDÉ AVEC RÉSERVES (351 tests verts).
+- **Tests réellement exécutés (par le chef)** : `npx tsc --noEmit` → code 0 ; `npm test` → `Test Files 8 passed (8)`, `Tests 351 passed | 13 todo (364)`. Nouveaux fichiers : `tests/api/pricing.test.ts` (grille, majorations, fuseaux UTC/Los Angeles/Auckland/Paris, heure d'été, zones durcies), `tests/api/prix-serveur.test.ts` (montant client ignoré sur 4 routes, `PRICE_CHANGED`, `QUOTE_REQUIRED`, solde, verrou, concurrence A/B, rejeu, `RIDE_MISMATCH`, `holdReleased`, identifiants invalides), `tests/api/webhook-stripe.test.ts` (13 tests).
+- **Non vérifié** : aucun test dans un navigateur (écrans « Demander un devis », nouveau prix, réessai) ; `next build` non lancé (il chargerait les fichiers `.env*`, interdits) — seuls `tsc` et une analyse syntaxique des `.jsx` par le développeur.
+- **DÉCISIONS PROVISOIRES — à valider par Fayssal** :
+  1. **Trajet hors forfait (ou zone indéterminée) non payable en ligne** : 400 `QUOTE_REQUIRED`, l'interface propose « Demander un devis ». Raison : sans clé Google côté serveur, la distance et les coordonnées viennent du navigateur et sont falsifiables (un trajet de 100 km payable 35 €). Pour rouvrir : calcul d'itinéraire / géocodage côté serveur.
+  2. **Zones** : l'adresse doit contenir exactement un code postal ; un pôle (CDG, Orly, Le Bourget, Beauvais, Disneyland, La Défense) n'est retenu que si le mot-clé ET le code postal du pôle concordent (liste `POLES` dans `lib/pricing/compute.ts`). Effet de bord voulu : « Place Charles de Gaulle, 75008 Paris » n'est plus facturée comme Roissy. Une adresse Google sans code postal bascule en devis (à surveiller pour la conversion). **À tester en prévisualisation** : les adresses Google réelles des aéroports et de La Défense doivent être reconnues.
+  3. **Risque résiduel accepté provisoirement** : une adresse saisie à la main avec un code postal mensonger mais cohérent (ex. « Gare de Versailles-Chantiers, 75015 ») obtient encore un forfait Paris. Visible par le chauffeur et l'admin ; l'admin peut capturer moins ou annuler. Consigne à donner : signaler une incohérence code postal / ville avant d'accepter. Correction durable : validation serveur des adresses (phase 1).
+  4. Priorité obligatoire sous **1 h 15** (aligné sur l'écran) ; date passée de plus de 30 min ou à plus d'un an refusée au paiement.
+  5. Course carte créée directement au statut `awaiting_driver` (au lieu de `confirmed` puis passage par le webhook), pour ne pas dépendre de l'ordre d'arrivée du webhook.
+  6. En cas d'écart de prix ou de course différente de l'empreinte, l'empreinte est libérée automatiquement (le client repaie au bon prix).
+- **Réserves ouvertes** :
+  - **Prérequis de mise en production : lot 0.5** (`firestore.rules`). Sans lui, un client peut toujours écrire directement dans `bookings` (création libre avec `prix`, `paymentStatus`… ; modification en s'attribuant `driverId`), ce qui contourne tout le prix serveur.
+  - MOYENNE (2e relecture) : le recalcul avec `pi.created` n'est pas borné dans le temps — un PaymentIntent créé longtemps avant et confirmé au dernier moment échappe à la majoration « < 2 h » et à la priorité obligatoire (≤ 40 €). Voir le complément ci-dessous.
+  - BASSES : verrou hybride non libéré après un refus `CONFLICT` (bail 2 min) ; webhook en retard pouvant repasser `paymentStatus` de `captured` à `authorized` ; empreinte orpheline possible si le client ferme l'onglet avant la finalisation (aucune réconciliation automatique) ; jours fériés non gérés (comme avant).
+  - Les devis restent écrits par le navigateur avec un `prix` client (`saveBooking`) : affichage back-office seulement, à cadrer au lot 0.5.
+  - Incohérence d'affichage public : `CLAUDE.md` §1 annonce Paris↔Paris 65 € et aéroport dès 80 €, la grille applique 46 / 76 / 99 € (non modifié).

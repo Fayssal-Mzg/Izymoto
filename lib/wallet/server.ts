@@ -46,6 +46,15 @@ export async function getWalletBalance(userId: string): Promise<number> {
   return (snap.data() as WalletDoc).balanceCents ?? 0;
 }
 
+// Vrai si un PaymentIntent hybride a déjà été finalisé (ledger `hybrid_<pi>`). Permet
+// à finalize-hybrid-booking de répondre de façon idempotente à un rejeu sans
+// ré-évaluer le prix ni annuler un PaymentIntent déjà rattaché à une course.
+export async function hybridLedgerExists(paymentIntentId: string): Promise<boolean> {
+  const db = getAdminFirestore();
+  const snap = await db.collection(WALLET_TX).doc(`hybrid_${paymentIntentId}`).get();
+  return snap.exists;
+}
+
 export interface CreditWalletParams {
   userId: string;
   amountCents: number;

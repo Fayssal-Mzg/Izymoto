@@ -3,7 +3,10 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useSpendableWallet } from "@/lib/hooks/useSpendableWallet";
 import { formatEuro } from "@/lib/wallet/tiers";
-import { handleSuccessfulPayment } from "@/lib/services/paymentService";
+import {
+  handleSuccessfulPayment,
+  PriceChangedError,
+} from "@/lib/services/paymentService";
 import {
   sendClientConfirmationEmail,
   sendAdminNotificationEmail,
@@ -35,6 +38,81 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+// lot 0.3 : paramètres de la course envoyés au serveur, qui RECALCULE le prix.
+// Aucun montant n'est une source de vérité : `displayedTotalCents` (prix affiché)
+// sert uniquement à détecter un écart (409 PRICE_CHANGED).
+// `reservationDate` = valeur brute du champ date (heure de Paris, sans fuseau).
+function buildRideParams(bookingData, reservationDate) {
+  return {
+    depart: bookingData.depart,
+    arrivee: bookingData.arrivee,
+    distance: bookingData.distance,
+    duree: bookingData.duree,
+    reservationDate,
+    prioriteReservation: bookingData.prioriteReservation || false,
+    originLat: bookingData.originLat,
+    originLng: bookingData.originLng,
+    destLat: bookingData.destLat,
+    destLng: bookingData.destLng,
+  };
+}
+
+// Paiement autorisé mais réservation non finalisée : le client peut réessayer sans
+// repayer (la route est idempotente) ; sinon il nous contacte avec la référence.
+const finalizeHint = (paymentIntentId) =>
+  `Votre paiement a bien été autorisé, mais votre réservation n'a pas pu être finalisée. Vous pouvez réessayer sans payer à nouveau. Si le problème persiste, contactez-nous au +33 6 49 50 25 25 en indiquant la référence ${paymentIntentId} : votre paiement est en attente.`;
+
+const isPriceChanged = (response, data) =>
+  response.status === 409 && data?.code === "PRICE_CHANGED";
+
+// Écran affiché quand le serveur a recalculé un prix différent de celui affiché.
+function PriceChangeNotice({ change, onAccept, onCancel }) {
+  const previous =
+    typeof change.previousTotalCents === "number"
+      ? change.previousTotalCents / 100
+      : null;
+  const next = change.newTotalCents / 100;
+  return (
+    <div className="p-6 space-y-5" role="alertdialog" aria-labelledby="price-change-title">
+      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-gray-800 space-y-1">
+          <h3 id="price-change-title" className="font-bold text-gray-900">
+            Le prix de votre course a changé
+          </h3>
+          <p>
+            {previous !== null
+              ? `Le tarif a été recalculé : il passe de ${formatEuro(previous)} à ${formatEuro(next)}.`
+              : `Le tarif a été recalculé : il est de ${formatEuro(next)}.`}
+          </p>
+          {change.holdReleased && (
+            <p>
+              L'empreinte sur votre carte a été libérée : aucun montant n'a été débité.
+            </p>
+          )}
+          <p>Souhaitez-vous continuer avec le nouveau prix ?</p>
+        </div>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="py-3 px-4 border border-gray-300 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex-1 min-w-0"
+        >
+          Retour
+        </button>
+        <button
+          type="button"
+          onClick={onAccept}
+          className="py-3 px-4 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex-1 min-w-0"
+        >
+          Accepter le nouveau prix ({formatEuro(next)})
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Composant de connexion redesigné
 function LoginRedirect({ bookingData }) {
   const router = useRouter();
@@ -53,6 +131,10 @@ function LoginRedirect({ bookingData }) {
       distance: bookingData.distance,
       duree: bookingData.duree,
       prix: bookingData.prix,
+      originLat: bookingData.originLat,
+      originLng: bookingData.originLng,
+      destLat: bookingData.destLat,
+      destLng: bookingData.destLng,
     };
 
     setReservationDetails(reservationInfo);
@@ -238,6 +320,8 @@ function CheckoutForm({
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  // PaymentIntent déjà confirmé dont la finalisation a échoué (réessai sans repayer).
+  const [retryId, setRetryId] = useState(null);
   const router = useRouter();
   const [animateIn, setAnimateIn] = useState(false);
 
@@ -245,8 +329,28 @@ function CheckoutForm({
     setAnimateIn(true);
   }, []);
 
+  const finalize = async (paymentIntentId) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const ok = await onSuccess(paymentIntentId);
+      if (ok === false) {
+        setRetryId(paymentIntentId);
+        setError(finalizeHint(paymentIntentId));
+        return;
+      }
+      router.push("/paiement-reussi");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (retryId) {
+      await finalize(retryId);
+      return;
+    }
     if (!stripe || !elements) return;
 
     setIsLoading(true);
@@ -288,8 +392,7 @@ function CheckoutForm({
           paymentIntent.status
         );
 
-        await onSuccess(paymentIntent.id);
-        router.push("/paiement-reussi");
+        await finalize(paymentIntent.id);
       }
     } catch (err) {
       setError("Une erreur est survenue lors du traitement du paiement.");
@@ -346,7 +449,13 @@ function CheckoutForm({
           ) : (
             <CreditCard className="mr-2 h-5 w-5" />
           )}
-          <span>{isLoading ? "Traitement..." : `Payer ${Math.round(prixFinal)}€`}</span>
+          <span>
+            {isLoading
+              ? "Traitement..."
+              : retryId
+              ? "Réessayer la finalisation"
+              : `Payer ${Math.round(prixFinal)}€`}
+          </span>
         </button>
       </div>
     </form>
@@ -523,6 +632,7 @@ function WalletPaymentForm({
   onSuccess,
   onCancel,
   onBack,
+  onPriceChanged,
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -549,6 +659,7 @@ function WalletPaymentForm({
       const date = new Date(reservationDate);
       const formattedDate = `${date.toLocaleDateString()} à ${date.toLocaleTimeString()}`;
 
+      // Affichage / emails uniquement : le serveur pose lui-même prix et montants.
       const fullBookingData = {
         depart: bookingData.depart,
         arrivee: bookingData.arrivee,
@@ -574,14 +685,24 @@ function WalletPaymentForm({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          amountCents: Math.round(prixFinal * 100),
-          bookingData: fullBookingData,
+          displayedTotalCents: Math.round(prixFinal * 100),
+          bookingData: {
+            ...buildRideParams(bookingData, reservationDate),
+            name: fullBookingData.name,
+            phone: fullBookingData.phone,
+            notes: fullBookingData.notes,
+            dateFormatted: formattedDate,
+          },
           clientToken,
           description: `Course du ${formattedDate} (${bookingData.depart} → ${bookingData.arrivee})`,
         }),
       });
 
       const data = await response.json();
+      if (isPriceChanged(response, data)) {
+        onPriceChanged(data);
+        return;
+      }
       if (!response.ok) {
         throw new Error(data.error || "Erreur lors du paiement par portefeuille");
       }
@@ -734,12 +855,15 @@ function HybridPaymentForm({
   reservationDate,
   onSuccess,
   onBack,
+  onPriceChanged,
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  // PaymentIntent déjà confirmé dont la finalisation a échoué (réessai sans repayer).
+  const [retryId, setRetryId] = useState(null);
   const [animateIn, setAnimateIn] = useState(false);
 
   useEffect(() => {
@@ -748,6 +872,10 @@ function HybridPaymentForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (retryId) {
+      await finalizeHybrid(retryId);
+      return;
+    }
     if (!stripe || !elements) return;
 
     setIsLoading(true);
@@ -785,6 +913,19 @@ function HybridPaymentForm({
         return;
       }
 
+      await finalizeHybrid(paymentIntent.id);
+    } catch (err) {
+      console.error("Erreur paiement hybride:", err);
+      setError(err.message || "Une erreur est survenue.");
+      setIsLoading(false);
+    }
+  };
+
+  // Finalisation côté serveur après confirmation Stripe ; relançable sans repayer.
+  const finalizeHybrid = async (paymentIntentId) => {
+    setIsLoading(true);
+    setError(null);
+    try {
       const clientToken =
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
@@ -806,6 +947,14 @@ function HybridPaymentForm({
         dateFormatted: formattedDate,
         email: user.email,
       };
+      // Corps envoyé au serveur : paramètres de la course (le prix est recalculé).
+      const rideBooking = {
+        ...buildRideParams(bookingData, reservationDate),
+        name: fullBookingData.name,
+        phone: fullBookingData.phone,
+        notes: fullBookingData.notes,
+        dateFormatted: formattedDate,
+      };
 
       const idToken = await user.getIdToken();
       const response = await fetch("/api/wallet/finalize-hybrid-booking", {
@@ -815,16 +964,21 @@ function HybridPaymentForm({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          paymentIntentId: paymentIntent.id,
-          walletAmountCents: Math.round(walletAmountEur * 100),
-          cardAmountCents: Math.round(cardAmountEur * 100),
-          bookingData: fullBookingData,
+          paymentIntentId: paymentIntentId,
+          displayedTotalCents: Math.round(prixFinal * 100),
+          bookingData: rideBooking,
           clientToken,
           description: `Course du ${formattedDate} (${bookingData.depart} → ${bookingData.arrivee})`,
         }),
       });
 
       const data = await response.json();
+      if (isPriceChanged(response, data)) {
+        // Le serveur indique (holdReleased) si l'empreinte CB a été libérée.
+        setIsLoading(false);
+        onPriceChanged(data);
+        return;
+      }
       if (!response.ok) {
         throw new Error(
           data.error ||
@@ -855,7 +1009,7 @@ function HybridPaymentForm({
         clientName: userName || user.displayName || user.email,
         paymentMethod: "hybrid",
         paymentStatus: "authorized",
-        paymentId: paymentIntent.id,
+        paymentId: paymentIntentId,
         walletAmountCents: Math.round(walletAmountEur * 100),
         cardAmountCents: Math.round(cardAmountEur * 100),
         amountAuthorized: cardAmountEur,
@@ -884,7 +1038,8 @@ function HybridPaymentForm({
       router.push("/paiement-reussi");
     } catch (err) {
       console.error("Erreur paiement hybride:", err);
-      setError(err.message || "Une erreur est survenue.");
+      setRetryId(paymentIntentId);
+      setError(`${err.message || "Une erreur est survenue."} ${finalizeHint(paymentIntentId)}`);
       setIsLoading(false);
     }
   };
@@ -960,7 +1115,7 @@ function HybridPaymentForm({
         </button>
         <button
           type="submit"
-          disabled={!stripe || !elements || isLoading}
+          disabled={(!retryId && (!stripe || !elements)) || isLoading}
           className="py-3 px-4 bg-amber-400 text-black rounded-lg font-bold hover:bg-amber-300 transition-colors flex-1 min-w-0 flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {isLoading ? (
@@ -969,7 +1124,11 @@ function HybridPaymentForm({
             <Sparkles className="h-5 w-5" />
           )}
           <span className="truncate">
-            {isLoading ? "Traitement…" : `Payer ${Math.round(prixFinal)}€`}
+            {isLoading
+              ? "Traitement…"
+              : retryId
+              ? "Réessayer la finalisation"
+              : `Payer ${Math.round(prixFinal)}€`}
           </span>
         </button>
       </div>
@@ -997,6 +1156,12 @@ export default function PaymentModal({
   const [paymentMethod, setPaymentMethod] = useState(null);
   // Pour le mode hybride : montants split (en cents).
   const [hybridSplit, setHybridSplit] = useState(null); // { walletCents, cardCents }
+  // lot 0.3 : total recalculé par le serveur (centimes). Il remplace le prix du
+  // navigateur dès que le serveur l'a communiqué ; priceChange = écart à confirmer.
+  const [serverTotalCents, setServerTotalCents] = useState(null);
+  const [priceChange, setPriceChange] = useState(null);
+  const effectivePrix =
+    serverTotalCents !== null ? serverTotalCents / 100 : prixFinal;
 
   const { user } = useAuth();
   // Solde dépensable : portefeuille entreprise (plafonné par le budget mensuel)
@@ -1062,10 +1227,10 @@ export default function PaymentModal({
     if (!user || !phoneVerified) return;
     if (walletLoading) return;
     if (paymentMethod !== null) return;
-    if (balanceEur === null || balanceEur < prixFinal) {
+    if (balanceEur === null || balanceEur < effectivePrix) {
       setPaymentMethod("card");
     }
-  }, [user, phoneVerified, walletLoading, balanceEur, prixFinal, paymentMethod]);
+  }, [user, phoneVerified, walletLoading, balanceEur, effectivePrix, paymentMethod]);
 
   // Crée le PaymentIntent Stripe quand l'user choisit CB ou hybrid.
   // Pour hybrid : on passe walletAmountCents au backend pour que le PI soit
@@ -1075,7 +1240,8 @@ export default function PaymentModal({
       user &&
       phoneVerified &&
       (paymentMethod === "card" || paymentMethod === "hybrid") &&
-      !clientSecret
+      !clientSecret &&
+      !priceChange
     ) {
       const walletCents =
         paymentMethod === "hybrid" && balanceEur
@@ -1083,7 +1249,7 @@ export default function PaymentModal({
           : 0;
       createPaymentIntent(walletCents);
     }
-  }, [phoneVerified, prixFinal, user, paymentMethod, clientSecret, balanceEur]);
+  }, [phoneVerified, effectivePrix, user, paymentMethod, clientSecret, balanceEur, priceChange]);
 
   const handlePaymentSuccess = async (paymentIntentId) => {
     try {
@@ -1093,19 +1259,27 @@ export default function PaymentModal({
         paymentId: paymentIntentId,
         name: name || user.displayName || "",
         phone: phoneNumber,
-        prixFinal,
+        prixFinal: effectivePrix,
         reservationDate,
         notes: bookingData.notes || "",
         prioriteReservation: bookingData.prioriteReservation || false,
+        rideParams: buildRideParams(bookingData, reservationDate),
         onSuccess: (savedBooking) => {
           onSuccess(savedBooking);
         },
       });
 
       toast.success("Réservation confirmée !");
+      return true;
     } catch (error) {
+      if (error instanceof PriceChangedError) {
+        // holdReleased (serveur) : empreinte libérée ou non ; on repart du choix du paiement.
+        handlePriceChanged(error.data);
+        return false;
+      }
       console.error("Erreur lors de la finalisation de la réservation", error);
       toast.error("Une erreur est survenue lors de la confirmation.");
+      return false;
     }
   };
 
@@ -1125,20 +1299,40 @@ export default function PaymentModal({
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          amount: prixFinal,
-          metadata: bookingWithPhone,
+          displayedTotalCents: Math.round(effectivePrix * 100),
+          metadata: buildRideParams(bookingWithPhone, reservationDate),
           walletAmountCents: walletAmountCents || undefined,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (isPriceChanged(response, errorData)) {
+          setPriceChange(errorData);
+          return;
+        }
+        if (
+          errorData.code === "WALLET_COVERS_TOTAL" ||
+          errorData.code === "INSUFFICIENT_BALANCE"
+        ) {
+          if (typeof errorData.totalAmountCents === "number") {
+            setServerTotalCents(errorData.totalAmountCents);
+          }
+          setError(
+            errorData.code === "WALLET_COVERS_TOTAL"
+              ? "Votre solde couvre désormais l'intégralité de la course. Veuillez choisir à nouveau votre mode de paiement."
+              : "Votre solde a changé. Veuillez choisir à nouveau votre mode de paiement."
+          );
+          goBackToChoice();
+          return;
+        }
         throw new Error(
           errorData.error || "Erreur lors de la création du paiement"
         );
       }
 
       const data = await response.json();
+      setServerTotalCents(data.totalAmountCents);
       setClientSecret(data.clientSecret);
       if (data.isHybrid) {
         setHybridSplit({
@@ -1176,6 +1370,26 @@ export default function PaymentModal({
     setPaymentMethod(null);
     setClientSecret("");
     setHybridSplit(null);
+  };
+
+  // Le serveur a recalculé un prix différent : on affiche le nouveau prix et on
+  // demande confirmation avant tout paiement (jamais de débit silencieux).
+  const handlePriceChanged = (change) => {
+    setClientSecret("");
+    setHybridSplit(null);
+    setPriceChange(change);
+  };
+
+  const acceptPriceChange = () => {
+    setServerTotalCents(priceChange.newTotalCents);
+    setPriceChange(null);
+    setError(null);
+    goBackToChoice();
+  };
+
+  const cancelPriceChange = () => {
+    setPriceChange(null);
+    onCancel();
   };
 
   return (
@@ -1229,6 +1443,12 @@ export default function PaymentModal({
               onCancel={onCancel}
               initialPhone={phoneNumber}
             />
+          ) : priceChange ? (
+            <PriceChangeNotice
+              change={priceChange}
+              onAccept={acceptPriceChange}
+              onCancel={cancelPriceChange}
+            />
           ) : paymentMethod === null ? (
             walletLoading ? (
               <div className="flex flex-col items-center justify-center py-12">
@@ -1237,7 +1457,7 @@ export default function PaymentModal({
               </div>
             ) : (
               <PaymentMethodChoice
-                prixFinal={prixFinal}
+                prixFinal={effectivePrix}
                 walletBalanceEur={balanceEur ?? 0}
                 walletLabel={walletLabel}
                 isCompanyWallet={isCompanyWallet}
@@ -1251,7 +1471,7 @@ export default function PaymentModal({
             )
           ) : paymentMethod === "wallet" ? (
             <WalletPaymentForm
-              prixFinal={prixFinal}
+              prixFinal={effectivePrix}
               bookingData={bookingData}
               phoneNumber={phoneNumber}
               userName={name}
@@ -1263,6 +1483,7 @@ export default function PaymentModal({
               onSuccess={onSuccess}
               onCancel={onCancel}
               onBack={goBackToChoice}
+              onPriceChanged={handlePriceChanged}
             />
           ) : clientSecret ? (
             <Elements
@@ -1281,7 +1502,7 @@ export default function PaymentModal({
             >
               {paymentMethod === "hybrid" && hybridSplit ? (
                 <HybridPaymentForm
-                  prixFinal={prixFinal}
+                  prixFinal={effectivePrix}
                   walletAmountEur={hybridSplit.walletCents / 100}
                   cardAmountEur={hybridSplit.cardCents / 100}
                   bookingData={bookingData}
@@ -1291,11 +1512,12 @@ export default function PaymentModal({
                   reservationDate={reservationDate}
                   onSuccess={onSuccess}
                   onBack={goBackToChoice}
+                  onPriceChanged={handlePriceChanged}
                 />
               ) : (
                 <CheckoutForm
                   clientSecret={clientSecret}
-                  prixFinal={prixFinal}
+                  prixFinal={effectivePrix}
                   onSuccess={handlePaymentSuccess}
                   onCancel={
                     balanceEur && balanceEur > 0 ? goBackToChoice : onCancel
