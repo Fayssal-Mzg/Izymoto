@@ -82,6 +82,37 @@ Vitest, avec `@firebase/rules-unit-testing` pour les règles Firestore sur l'ém
 
 **Pourquoi** : léger, compatible TypeScript sans configuration lourde, adapté aux tests des règles et des routes API.
 
+## D-010 — Pool visible en entier par les chauffeurs validés (acceptation temporaire)
+**Date** : 2026-10-05 · **Statut** : validée (porte 2, phase 0) · **Échéance** : 2026-10-31
+
+Les courses à prendre (`bookings` en `awaiting_driver`) restent lisibles en entier, données personnelles du passager comprises, par les chauffeurs validés. C'est un écart temporaire au tableau « Qui voit quoi » (« version sans données perso »). La collection `ridePool` (version sans données personnelles, écrite par le serveur) est le premier lot de la phase 2.
+
+**Pourquoi** : les règles Firestore ne savent pas masquer des champs ; les règles du lot 0.5 réduisent déjà l'exposition (avant : tout compte connecté lisait le pool).
+
+## D-011 — Décisions provisoires de la phase 0 validées
+**Date** : 2026-10-05 · **Statut** : validée (porte 2, phase 0)
+
+Validées telles quelles :
+- devis d'un invité (non connecté) envoyé à l'admin seulement, jamais à l'adresse saisie ;
+- trajet hors forfait payable uniquement sur devis ;
+- zone tarifaire déterminée par le code postal (un seul code postal exigé ; un pôle n'est retenu que si mot-clé et code postal concordent) ;
+- option priorité obligatoire pour une course à moins de 1 h 15 ;
+- course payée par carte créée directement au statut `awaiting_driver` ;
+- libération automatique de l'empreinte carte en cas d'écart de prix ou de course ;
+- retrait d'un membre d'entreprise = révocation de toutes ses sessions.
+
+**Pourquoi** : options les plus prudentes retenues pendant la phase 0 (voir `docs/RAPPORT-PHASE-0.md`).
+
+## D-012 — Suites à planifier issues de la phase 0
+**Date** : 2026-10-05 · **Statut** : validée (porte 2, phase 0)
+
+- Phase 1, prioritaire : envoi de l'email de vérification à l'inscription.
+- Phase 1 : distance calculée côté serveur, pour rouvrir le paiement en ligne du hors forfait.
+- Phase 1 : journal d'audit des actions sensibles.
+- Phase 1 : restriction du CORS de `vercel.json`.
+- Phase 1 : mise en cohérence des prix affichés avec la grille tarifaire.
+- Phase 3 : choix perso/pro du collaborateur au moment de réserver.
+
 ---
 
 ## Qui voit quoi (référence d'isolation)
