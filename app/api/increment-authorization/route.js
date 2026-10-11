@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe-server";
+import { requireAdmin, AdminAuthError } from "@/lib/firebase/admin-server";
 
 // Augmente le montant autorisé d'un PaymentIntent confirmé avant capture.
 // Utilisé pour ajouter des frais d'attente, péages, suppléments tardifs.
@@ -8,8 +9,22 @@ import { stripe } from "@/lib/stripe-server";
 // `amount` = nouveau montant TOTAL autorisé (pas l'incrément). Stripe Inc auth
 // API attend la nouvelle valeur cible, pas un delta.
 //
-// TODO commit suivant : protéger l'endpoint par vérif Firebase ID token admin.
+// Opération back-office : aucun appelant côté client dans le dépôt (cf. capture-payment).
+// Auth : ID token Firebase + users/{uid}.isAdmin === true.
 export async function POST(request) {
+  try {
+    await requireAdmin(request);
+  } catch (err) {
+    if (err instanceof AdminAuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    console.error("[increment-authorization] erreur auth:", err);
+    return NextResponse.json(
+      { error: "Erreur d'authentification" },
+      { status: 500 }
+    );
+  }
+
   try {
     const { paymentIntentId, amount } = await request.json();
 
