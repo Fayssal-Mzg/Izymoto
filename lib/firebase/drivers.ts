@@ -252,10 +252,16 @@ export async function uploadDriverDocument(
 ): Promise<DriverDocument> {
   const storage = getStorage();
   const ts = Date.now();
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  // storage.rules limite le nom à 200 caractères et n'accepte que ces types.
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
   const path = `drivers/${uid}/${kind}_${ts}_${safeName}`;
   const ref = storageRef(storage, path);
-  const snap = await uploadBytes(ref, file, { contentType: file.type });
+  // file.type est souvent vide (HEIC sous Windows) ou non standard (image/jpg) : on déduit de l'extension.
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const contentType =
+    { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", heic: "image/heic", heif: "image/heic" }[ext] ??
+    file.type;
+  const snap = await uploadBytes(ref, file, { contentType });
   const url = await getDownloadURL(snap.ref);
 
   const docData: DriverDocument = {
