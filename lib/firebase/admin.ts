@@ -255,7 +255,9 @@ export async function getAllBookings(): Promise<Booking[]> {
     return querySnapshot.docs.map((docSnapshot) => {
       const data = docSnapshot.data() as Partial<Booking>;
 
+      // Le spread passe en premier : placé après, il écrasait les dates converties par les Timestamp bruts.
       return {
+        ...(data as any), // Permet de conserver les champs additionnels
         id: docSnapshot.id,
         userId: data.userId ?? "",
         name: data.name ?? "",
@@ -268,7 +270,6 @@ export async function getAllBookings(): Promise<Booking[]> {
         status: data.status ?? "pending",
         createdAt: coerceDate(data.createdAt) ?? new Date(),
         reservationDate: coerceDate(data.reservationDate) ?? new Date(),
-        ...(data as any), // Permet de conserver les champs additionnels
       } as Booking;
     });
   } catch (error) {
