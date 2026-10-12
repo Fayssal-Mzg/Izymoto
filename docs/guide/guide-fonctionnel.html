@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Guide fonctionnel Izymoto</title>
+<link rel="stylesheet" href="guide.css">
+</head>
+<body>
+
+<section class="couverture">
+  <div>
+    <p class="meta">IZYMOTO · GUIDE FONCTIONNEL</p>
+    <h1>Le site Izymoto,<br><span class="accent">écran par écran</span></h1>
+    <p>Réservation de moto-taxi à Paris et en Île-de-France : ce que font les clients, les chauffeurs, les entreprises et l'équipe Izymoto sur izymoto.com.</p>
+  </div>
+  <div class="meta">
+    <p>Version du 13 octobre 2026 — décrit le site <strong>après la mise en production de la phase 0</strong> (sécurité, grille tarifaire, espace entreprise).</p>
+    <p>Toutes les captures proviennent de l'environnement de test (staging) avec des comptes et des données <strong>fictifs</strong> : aucune donnée réelle de client ou de chauffeur n'apparaît dans ce document.</p>
+  </div>
+</section>
+
+<section class="chapitre sommaire">
+  <h1>Sommaire</h1>
+  <ol>
+    <li>Présentation et tarifs</li>
+    <li>Réserver une course</li>
+    <li>Mon compte</li>
+    <li>Espace chauffeur</li>
+    <li>Back-office Izymoto</li>
+    <li>Entreprises</li>
+    <li>Sécurité et données personnelles</li>
+    <li>Bientôt disponible</li>
+    <li>Annexe — corrections à prévoir</li>
+  </ol>
+  <div class="encadre">
+    <strong>Comment ce guide a été vérifié.</strong> Chaque écran a été ouvert sur la prévisualisation staging avec un compte fictif par rôle (client, chauffeur validé, chauffeur en attente, administrateur, responsable et collaborateur d'entreprise). Les règles de calcul (prix, majorations, paiement, accès aux données) sont en plus couvertes par les tests automatiques du projet. Ce qui n'existe pas encore est regroupé au chapitre 8, et les défauts constatés en annexe.
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="chapitre">
+  <h1>1. Présentation et tarifs</h1>
+  <p>Izymoto est un service de moto-taxi avec chauffeur à Paris et en Île-de-France : transferts vers les aéroports (Roissy-CDG, Orly, Le Bourget, Beauvais), trajets en ville, La Défense et Disneyland Paris. Le client réserve et paie en ligne ; la course est ensuite proposée aux chauffeurs partenaires.</p>
+  <figure>
+    <img src="captures/01-accueil-bureau.png" alt="Page d'accueil">
+    <figcaption>Page d'accueil (ordinateur).</figcaption>
+  </figure>
+
+  <h3>Forfaits par trajet</h3>
+  <p>Le prix est un <strong>forfait fixe</strong> par couple de zones, valable dans les deux sens, quel que soit le trafic. Ce sont les montants réellement appliqués par le site au moment du paiement.</p>
+  <table>
+    <tr><th>Trajet</th><th class="num">Forfait</th></tr>
+    <tr><td>Paris ↔ Paris</td><td class="num">46 €</td></tr>
+    <tr><td>Paris ↔ La Défense</td><td class="num">50 €</td></tr>
+    <tr><td>Paris ↔ Le Bourget</td><td class="num">65 €</td></tr>
+    <tr><td>Paris ↔ Petite couronne (92, 93, 94)</td><td class="num">70 €</td></tr>
+    <tr><td>Paris ↔ Orly</td><td class="num">76 €</td></tr>
+    <tr><td>Paris ↔ Roissy-CDG</td><td class="num">99 €</td></tr>
+    <tr><td>La Défense ↔ Roissy-CDG ou Orly</td><td class="num">99 €</td></tr>
+    <tr><td>La Défense ↔ Le Bourget</td><td class="num">80 €</td></tr>
+    <tr><td>Roissy-CDG ↔ Le Bourget</td><td class="num">60 €</td></tr>
+    <tr><td>Paris ↔ Disneyland Paris</td><td class="num">110 €</td></tr>
+    <tr><td>Roissy-CDG ↔ Disneyland Paris</td><td class="num">120 €</td></tr>
+    <tr><td>Orly ↔ Disneyland Paris</td><td class="num">130 €</td></tr>
+    <tr><td>Roissy-CDG ↔ Orly</td><td class="num">139 €</td></tr>
+    <tr><td>Beauvais ↔ La Défense</td><td class="num">170 €</td></tr>
+    <tr><td>Beauvais ↔ Paris</td><td class="num">180 €</td></tr>
+  </table>
+
+  <h3>Suppléments (montants fixes)</h3>
+  <table>
+    <tr><th>Situation</th><th class="num">Supplément</th></tr>
+    <tr><td>Départ le soir ou tôt le matin (20 h–23 h ou 6 h–7 h)</td><td class="num">+20 €</td></tr>
+    <tr><td>Départ de nuit (23 h–6 h)</td><td class="num">+40 €</td></tr>
+    <tr><td>Départ le samedi ou le dimanche</td><td class="num">+20 €</td></tr>
+    <tr><td>Départ dans moins de 2 heures</td><td class="num">+20 €</td></tr>
+    <tr><td>Option « priorité » (obligatoire pour un départ dans moins de 1 h 15)</td><td class="num">+20 €</td></tr>
+  </table>
+  <p>Les heures s'entendent à l'heure de Paris. Les suppléments se cumulent et sont affichés en détail avant le paiement.</p>
+
+  <h3>Trajets hors forfait</h3>
+  <p>Si le couple de zones ne figure pas dans la grille (grande couronne, adresse imprécise…), le site ne propose <strong>pas de paiement en ligne</strong> : le client envoie une demande de devis et l'équipe Izymoto le recontacte. La mise à disposition à l'heure (95 € l'heure, 320 € les 4 heures, 580 € la journée) se réserve aussi sur demande.</p>
+
+  <figure>
+    <img src="captures/01-nos-tarifs-bureau.png" alt="Page Nos tarifs">
+    <figcaption>Page « Nos tarifs » : la grille des forfaits. Voir l'annexe pour les quelques montants de cette page à harmoniser.</figcaption>
+  </figure>
+</section>
+
+<!-- 2 -->
+<section class="chapitre">
+  <h1>2. Réserver une course</h1>
+  <p>La réservation se fait depuis la section « Réservez votre taxi moto » de la page d'accueil.</p>
+  <div class="duo">
+    <figure><img src="captures/02-reservation-bureau.png" alt="Formulaire de réservation"><figcaption>Formulaire de réservation (ordinateur).</figcaption></figure>
+    <figure class="mobile"><img src="captures/02-reservation-mobile.png" alt="Formulaire de réservation mobile"><figcaption>Sur téléphone.</figcaption></figure>
+  </div>
+
+  <h3>Les étapes</h3>
+  <ol>
+    <li><strong>Adresses.</strong> Le client saisit le départ et l'arrivée (raccourcis aéroports, gares et « ma position »). L'itinéraire s'affiche sur la carte.</li>
+    <li><strong>Devis instantané.</strong> Le site indique le forfait, les suppléments éventuels et le total. La date et l'heure de départ sont obligatoires (au moins 15 minutes à l'avance, au plus un an). Pour un départ dans moins de 1 h 15, l'option priorité est obligatoire.</li>
+    <li><strong>Connexion.</strong> Pour réserver, il faut un compte. Un visiteur non connecté peut seulement <strong>demander un devis</strong> : sa demande est transmise à l'équipe Izymoto, qui le recontacte.</li>
+    <li><strong>Téléphone.</strong> Si le compte n'a pas encore de numéro de téléphone, le site le demande avant le paiement (le chauffeur en a besoin).</li>
+    <li><strong>Paiement</strong> (voir ci-dessous), puis page de confirmation. La réservation apparaît aussitôt dans « Mon compte ».</li>
+  </ol>
+
+  <h3>Moyens de paiement</h3>
+  <ul>
+    <li><strong>Carte bancaire.</strong> Le montant est <strong>réservé</strong> sur la carte (empreinte), pas débité. Il n'est encaissé qu'après la course, par l'équipe Izymoto. Si la course est annulée, l'empreinte est levée sans frais. Le paiement passe par Stripe, y compris la validation 3-D Secure de la banque.</li>
+    <li><strong>Portefeuille Izymoto</strong> (forfaits prépayés, voir ci-dessous) : proposé quand le solde couvre la course ; le montant est débité du solde.</li>
+    <li><strong>Portefeuille entreprise</strong> : pour un collaborateur rattaché à une société, la course est débitée du solde de l'entreprise, dans la limite de son budget mensuel (chapitre 6).</li>
+  </ul>
+  <p>Le prix payé est toujours recalculé par le serveur à partir des adresses et de la date : un montant modifié dans le navigateur n'est jamais accepté.</p>
+
+  <h3>Les forfaits prépayés (portefeuille)</h3>
+  <p>Le client peut recharger son portefeuille et recevoir un bonus. La recharge est payée par carte via Stripe ; le crédit (recharge + bonus) est disponible dès la confirmation du paiement.</p>
+  <table>
+    <tr><th>Palier</th><th class="num">Vous payez</th><th class="num">Bonus</th><th class="num">Crédit total</th></tr>
+    <tr><td>Essai</td><td class="num">100 €</td><td class="num">+5 €</td><td class="num">105 €</td></tr>
+    <tr><td>Régulier</td><td class="num">250 €</td><td class="num">+25 €</td><td class="num">275 €</td></tr>
+    <tr><td>Habitué</td><td class="num">500 €</td><td class="num">+75 €</td><td class="num">575 €</td></tr>
+    <tr><td>Premium</td><td class="num">1 000 €</td><td class="num">+200 €</td><td class="num">1 200 €</td></tr>
+  </table>
+  <figure>
+    <img src="captures/03-portefeuille-paliers-bureau.png" alt="Paliers de recharge">
+    <figcaption>Page « Forfaits » : choix du palier de recharge.</figcaption>
+  </figure>
+
+  <h3>Annuler une course</h3>
+  <p>Le client ne peut pas annuler lui-même depuis son compte : il contacte Izymoto (téléphone ou e-mail), et l'équipe annule la réservation depuis le back-office, ce qui lève l'empreinte bancaire.</p>
+</section>
+
+<!-- 3 -->
+<section class="chapitre">
+  <h1>3. Mon compte</h1>
+  <h3>Créer un compte et se connecter</h3>
+  <p>Inscription par e-mail et mot de passe, ou connexion avec Google.</p>
+  <div class="duo">
+    <figure><img src="captures/03-inscription-bureau.png" alt="Inscription"><figcaption>Inscription.</figcaption></figure>
+    <figure><img src="captures/03-connexion-bureau.png" alt="Connexion"><figcaption>Connexion.</figcaption></figure>
+  </div>
+
+  <h3>Mon profil</h3>
+  <p>La page « Mon profil » regroupe :</p>
+  <ul>
+    <li>les coordonnées (nom, e-mail, téléphone), modifiables ;</li>
+    <li>le solde du portefeuille, avec un lien vers son historique ;</li>
+    <li>l'accès à l'espace entreprise ;</li>
+    <li><strong>Mes réservations</strong>, avec pour chacune le trajet, la date, le moyen de paiement, le prix et l'état : devis, recherche chauffeur, chauffeur trouvé, terminée, annulée ;</li>
+    <li>la suppression du compte (confirmation par mot de passe).</li>
+  </ul>
+  <figure class="haute">
+    <img src="captures/03-profil-bureau.png" alt="Mon profil">
+    <figcaption>« Mon profil » d'un client fictif : coordonnées, portefeuille et réservations.</figcaption>
+  </figure>
+
+  <h3>Mon portefeuille</h3>
+  <p>Solde disponible, total rechargé et historique de chaque mouvement (recharge, course payée) avec le solde après opération.</p>
+  <div class="duo">
+    <figure><img src="captures/03-forfaits-bureau.png" alt="Mon portefeuille"><figcaption>Historique du portefeuille.</figcaption></figure>
+    <figure class="mobile"><img src="captures/03-forfaits-mobile.png" alt="Mon portefeuille mobile"><figcaption>Sur téléphone.</figcaption></figure>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="chapitre">
+  <h1>4. Espace chauffeur</h1>
+  <p>Les chauffeurs sont des professionnels indépendants (auto-entrepreneur, SASU, EURL…). Leur espace « Izymoto Pro » est séparé de l'espace client.</p>
+
+  <h3>Devenir chauffeur</h3>
+  <p>L'inscription se fait en 5 étapes : compte, identité et structure (SIRET, permis), moto, coordonnées bancaires, documents. Documents obligatoires : pièce d'identité, permis A/A2, carte grise, attestation d'assurance et RIB (PDF, JPEG, PNG ou HEIC, 10 Mo maximum). La photo de la moto est facultative.</p>
+  <figure>
+    <img src="captures/04-chauffeur-inscription-bureau.png" alt="Inscription chauffeur">
+    <figcaption>Inscription chauffeur, étape 1 sur 5.</figcaption>
+  </figure>
+  <p>Le dossier est ensuite <strong>vérifié manuellement</strong> par l'équipe Izymoto. Tant qu'il n'est pas validé, le chauffeur voit un bandeau « Dossier en cours de validation » et n'a pas accès aux courses.</p>
+  <figure>
+    <img src="captures/04-chauffeur-en-attente-bureau.png" alt="Chauffeur en attente">
+    <figcaption>Tableau de bord d'un chauffeur dont le dossier est en attente.</figcaption>
+  </figure>
+
+  <h3>Recevoir des courses</h3>
+  <p>Un chauffeur validé passe « En service » pour voir les courses disponibles en temps réel. <strong>Le premier qui accepte une course l'obtient</strong> ; elle disparaît alors pour les autres. Chaque course indique la date, le trajet, la distance et la part du chauffeur.</p>
+  <figure>
+    <img src="captures/04-chauffeur-accueil-bureau.png" alt="Tableau de bord chauffeur">
+    <figcaption>Tableau de bord : statut, courses disponibles, en cours, terminées et gains.</figcaption>
+  </figure>
+  <figure>
+    <img src="captures/04-chauffeur-courses-bureau.png" alt="Courses disponibles">
+    <figcaption>Courses disponibles.</figcaption>
+  </figure>
+
+  <h3>Réaliser la course</h3>
+  <p>Dans « Mes courses », le chauffeur retrouve le téléphone du client, puis :</p>
+  <ul>
+    <li><strong>Démarrer</strong> au début de la course ;</li>
+    <li><strong>Terminer</strong> à l'arrivée ;</li>
+    <li><strong>Libérer</strong> s'il ne peut plus l'assurer : il indique un motif et la course retourne aux autres chauffeurs.</li>
+  </ul>
+  <figure>
+    <img src="captures/04-chauffeur-mes-courses-bureau.png" alt="Mes courses">
+    <figcaption>« Mes courses » : course à démarrer et historique.</figcaption>
+  </figure>
+
+  <h3>Rémunération</h3>
+  <p>Le chauffeur perçoit <strong>80 % du prix de la course</strong>. Izymoto conserve 20 % de commission. Le cumul des gains bruts est affiché sur le tableau de bord. Les versements aux chauffeurs ne sont pas gérés dans l'application (chapitre 8).</p>
+
+  <h3>Mon profil chauffeur</h3>
+  <p>Le chauffeur met à jour ses informations, sa moto, ses coordonnées bancaires et ses documents. Une modification peut nécessiter une nouvelle validation.</p>
+  <figure class="haute">
+    <img src="captures/04-chauffeur-profil-bureau.png" alt="Profil chauffeur">
+    <figcaption>Profil d'un chauffeur fictif.</figcaption>
+  </figure>
+</section>
+
+<!-- 5 -->
+<section class="chapitre">
+  <h1>5. Back-office Izymoto</h1>
+  <p>Réservé aux administrateurs Izymoto. Il est accessible depuis le site une fois connecté avec un compte administrateur.</p>
+
+  <h3>Tableau de bord</h3>
+  <p>Nombre de réservations, de comptes et volume total, solde en circulation dans les portefeuilles, dernières réservations.</p>
+  <figure>
+    <img src="captures/05-admin-accueil-bureau.png" alt="Tableau de bord admin">
+    <figcaption>Tableau de bord administrateur.</figcaption>
+  </figure>
+
+  <h3>Réservations</h3>
+  <p>Liste de toutes les réservations : client, téléphone, trajet, état, moyen de paiement et prix. Depuis la fiche détaillée d'une réservation payée par carte, l'administrateur peut :</p>
+  <ul>
+    <li><strong>Capturer</strong> le paiement, c'est-à-dire encaisser l'empreinte après la course ;</li>
+    <li><strong>Annuler l'empreinte</strong>, ce qui annule la course sans frais pour le client.</li>
+  </ul>
+  <figure>
+    <img src="captures/05-admin-reservations-bureau.png" alt="Réservations admin">
+    <figcaption>Gestion des réservations.</figcaption>
+  </figure>
+
+  <h3>Chauffeurs</h3>
+  <p>Liste filtrable (en attente, validés, suspendus, refusés). La fiche d'un chauffeur présente son identité, sa moto, ses coordonnées bancaires et ses documents, consultables en un clic. Elle permet de valider le compte, de le refuser ou de le suspendre (avec un motif), puis de le réactiver.</p>
+  <figure class="haute">
+    <img src="captures/05-admin-chauffeur-dossier-bureau.png" alt="Dossier chauffeur">
+    <figcaption>Dossier d'un chauffeur en attente de validation (documents fictifs).</figcaption>
+  </figure>
+
+  <h3>Utilisateurs, portefeuilles et sociétés</h3>
+  <ul>
+    <li><strong>Utilisateurs</strong> : recherche et attribution du rôle administrateur.</li>
+    <li><strong>Portefeuilles</strong> : soldes des clients, historique et ajustement manuel du solde (crédit ou débit).</li>
+    <li><strong>Sociétés</strong> : solde, collaborateurs et leur budget, historique consolidé, et bouton « Créditer le solde » pour enregistrer une recharge par virement ou un geste commercial.</li>
+  </ul>
+  <div class="duo">
+    <figure><img src="captures/05-admin-chauffeurs-bureau.png" alt="Chauffeurs"><figcaption>Liste des chauffeurs.</figcaption></figure>
+    <figure><img src="captures/05-admin-forfaits-bureau.png" alt="Portefeuilles"><figcaption>Portefeuilles clients.</figcaption></figure>
+  </div>
+  <figure>
+    <img src="captures/05-admin-entreprise-detail-bureau.png" alt="Fiche société">
+    <figcaption>Fiche d'une société fictive vue par l'administrateur.</figcaption>
+  </figure>
+</section>
+
+<!-- 6 -->
+<section class="chapitre">
+  <h1>6. Entreprises</h1>
+  <p>Une entreprise dispose d'un <strong>portefeuille partagé</strong> que ses collaborateurs utilisent pour réserver, chacun avec un budget mensuel.</p>
+
+  <h3>Le responsable du compte</h3>
+  <ul>
+    <li>crée l'espace entreprise depuis « Mon profil » ;</li>
+    <li>recharge le portefeuille de la société avec un palier entreprise (tableau ci-dessous), ou par virement enregistré par Izymoto ;</li>
+    <li>invite des collaborateurs par e-mail ; le lien d'invitation est valable 14 jours ;</li>
+    <li>fixe pour chacun un budget mensuel (ou illimité), le modifie, ou retire un collaborateur.</li>
+  </ul>
+  <figure>
+    <img src="captures/06-entreprise-proprietaire-bureau.png" alt="Espace entreprise responsable">
+    <figcaption>Espace entreprise vu par le responsable.</figcaption>
+  </figure>
+
+  <h3>Le collaborateur</h3>
+  <p>Il accepte l'invitation avec un compte dont l'e-mail est vérifié et identique à celui invité. Il voit le solde de la société et son budget restant pour le mois, puis réserve normalement : la course est payée par l'entreprise. Une course qui dépasserait son budget est refusée. Le budget repart à zéro chaque mois.</p>
+  <figure>
+    <img src="captures/06-entreprise-collaborateur-bureau.png" alt="Espace entreprise collaborateur">
+    <figcaption>Espace entreprise vu par un collaborateur (budget 200 €/mois).</figcaption>
+  </figure>
+
+  <h3>Paliers entreprise</h3>
+  <table>
+    <tr><th>Palier</th><th class="num">Recharge</th><th class="num">Bonus</th><th class="num">Crédit total</th></tr>
+    <tr><td>TPE</td><td class="num">1 000 €</td><td class="num">+50 €</td><td class="num">1 050 €</td></tr>
+    <tr><td>PME</td><td class="num">2 500 €</td><td class="num">+250 €</td><td class="num">2 750 €</td></tr>
+    <tr><td>Business</td><td class="num">5 000 €</td><td class="num">+750 €</td><td class="num">5 750 €</td></tr>
+    <tr><td>Premium</td><td class="num">10 000 €</td><td class="num">+1 800 €</td><td class="num">11 800 €</td></tr>
+    <tr><td>Enterprise</td><td class="num">25 000 €</td><td class="num">+5 000 €</td><td class="num">30 000 €</td></tr>
+  </table>
+  <p class="petit">Seul le responsable du compte peut recharger le portefeuille de la société depuis le site.</p>
+</section>
+
+<!-- 7 -->
+<section class="chapitre">
+  <h1>7. Sécurité et données personnelles</h1>
+  <h3>Qui voit quoi</h3>
+  <table>
+    <tr><th>Donnée</th><th>Accès</th></tr>
+    <tr><td>Réservations d'un client</td><td>le client concerné et les administrateurs</td></tr>
+    <tr><td>Courses disponibles</td><td>les chauffeurs validés et en service uniquement</td></tr>
+    <tr><td>Course acceptée (téléphone du client)</td><td>le chauffeur qui l'a acceptée</td></tr>
+    <tr><td>Documents d'un chauffeur</td><td>le chauffeur lui-même et les administrateurs</td></tr>
+    <tr><td>Portefeuille et historique</td><td>son titulaire (ou les membres de la société) et les administrateurs</td></tr>
+  </table>
+  <p>Ces règles sont appliquées par la base de données elle-même, pas seulement par l'affichage, et elles sont vérifiées par plusieurs centaines de tests automatiques à chaque modification.</p>
+
+  <h3>Paiement</h3>
+  <ul>
+    <li>Les données de carte sont saisies dans le formulaire sécurisé de Stripe : Izymoto ne les voit ni ne les stocke.</li>
+    <li>Le montant est calculé par le serveur, jamais repris du navigateur.</li>
+    <li>Les opérations sensibles (encaissement, remboursement, crédit d'un portefeuille) passent par le serveur et sont réservées aux administrateurs ou confirmées par Stripe.</li>
+  </ul>
+
+  <h3>Documents des chauffeurs</h3>
+  <p>Les pièces sont stockées dans un espace privé. Un document déposé ne peut pas être écrasé, et seuls les types et tailles autorisés sont acceptés.</p>
+
+  <h3>Données personnelles (RGPD)</h3>
+  <ul>
+    <li>Données collectées : identité, e-mail et téléphone des clients ; trajets et dates ; pour les chauffeurs, identité, structure, moto, IBAN et pièces justificatives.</li>
+    <li>La suppression du compte depuis « Mon profil » ferme l'accès. Les réservations et les mouvements de portefeuille sont conservés : ce sont des pièces comptables.</li>
+    <li>Une demande d'accès, de rectification ou de suppression complète se fait par e-mail à contact@izymoto.com.</li>
+  </ul>
+</section>
+
+<!-- 8 -->
+<section class="chapitre">
+  <h1>8. Bientôt disponible</h1>
+  <p>Ces fonctions sont prévues ou annoncées mais <strong>pas encore disponibles</strong> sur le site :</p>
+  <ul>
+    <li><strong>Application mobile</strong> iOS et Android.</li>
+    <li><strong>Facturation</strong> : facture téléchargeable par le client, facture mensuelle consolidée pour les entreprises.</li>
+    <li><strong>Entreprises</strong> : trajets récurrents, interlocuteur dédié, reporting et export des dépenses, historique consolidé visible par le responsable.</li>
+    <li><strong>Réservation en ligne de la mise à disposition</strong> à l'heure (aujourd'hui sur demande).</li>
+    <li><strong>Annulation par le client</strong> depuis son compte.</li>
+    <li><strong>Versement automatique</strong> des gains aux chauffeurs.</li>
+    <li><strong>Notifications</strong> : e-mail au chauffeur lors de la validation de son dossier, SMS.</li>
+    <li><strong>Export de ses données</strong> par le client, depuis son compte.</li>
+  </ul>
+</section>
+
+<!-- Annexe -->
+<section class="chapitre">
+  <h1>Annexe — corrections à prévoir</h1>
+  <p class="petit">Constats faits lors de la préparation de ce guide (12–13 octobre 2026). Ils ne sont pas présentés comme des fonctions dans les chapitres précédents.</p>
+
+  <h3>Pages et liens</h3>
+  <ul>
+    <li><code>/reserver</code> renvoie une erreur 404, alors que des pages (SEO, blog, Nos tarifs) y mènent.</li>
+    <li>Le formulaire de <code>/contact</code> et l'inscription à la newsletter (pied de page) ne fonctionnent pas.</li>
+    <li>Le menu admin « Paramètres » mène à une page 404.</li>
+    <li>Le lien de la page « paiement annulé » est cassé.</li>
+    <li>Le filtre « Tous les statuts » de la page admin Réservations ne filtre rien.</li>
+  </ul>
+
+  <h3>Prix et textes</h3>
+  <ul>
+    <li>Plusieurs prix affichés ne correspondent pas à la grille appliquée : cartes « à partir de 80 € / 50 € / 80 €/h » de Nos tarifs, page d'accueil, Aéroports, pages SEO, <code>llms.txt</code>, base de connaissances du chatbot.</li>
+    <li>Les jours fériés sont annoncés comme majorés, mais le supplément n'est pas appliqué.</li>
+    <li>La validité de 24 mois du portefeuille et le remboursement sous 14 jours sont annoncés mais pas appliqués.</li>
+    <li>La page d'accueil annonce l'application pour l'« été 2026 ».</li>
+    <li>La page Entreprises promet une facturation mensuelle, une prise en charge prioritaire, des trajets récurrents et un interlocuteur dédié, qui n'existent pas encore.</li>
+    <li>Le formulaire invité annonce « Vous recevrez votre devis par e-mail », mais seul Izymoto reçoit la demande.</li>
+    <li>L'écran de fin d'inscription chauffeur annonce un e-mail de validation qui n'est pas envoyé.</li>
+    <li>La politique de confidentialité contient des passages à compléter et des affirmations inexactes (bandeau cookies, IBAN chez Stripe, export JSON, hébergement de fichiers).</li>
+  </ul>
+
+  <h3>Fonctionnement</h3>
+  <ul>
+    <li>Dans la liste admin, le bouton ✗ change seulement l'état de la réservation : il ne lève pas l'empreinte bancaire et ne rembourse pas le portefeuille. Il faut passer par « Annuler l'empreinte » dans la fiche détaillée.</li>
+    <li>Une course payée par portefeuille puis annulée n'est pas remboursée automatiquement (ajustement manuel du solde).</li>
+    <li>La « Capture » encaisse toujours le montant total autorisé.</li>
+    <li>La facture PDF générée par l'admin ajoute 20 % de TVA à un prix déjà TTC, et le SIRET n'est pas renseigné.</li>
+    <li>Le chiffre d'affaires du tableau de bord admin inclut les devis et les courses annulées. La date affichée dans la liste est celle de la création, pas celle de la course.</li>
+    <li>Le paiement « portefeuille + carte » existe côté serveur mais n'est pas accessible à l'écran. Ses e-mails indiquent à tort « à régler au chauffeur ».</li>
+    <li>L'e-mail de confirmation après un paiement par carte indique « Payé en ligne », alors que le montant est seulement réservé.</li>
+    <li>La suppression du compte ne supprime que l'accès : le profil reste en base. Un compte connecté avec Google ne peut pas confirmer la suppression, faute de mot de passe.</li>
+    <li>Le nom modifié dans « Mon profil » peut sembler perdu après un rechargement.</li>
+    <li>Pour les réservations payées par portefeuille, la date de course est mal lue côté chauffeur.</li>
+    <li>Un chauffeur validé voit un bouton de suppression de ses documents, que les règles de sécurité refusent.</li>
+  </ul>
+
+  <h3>Mise en production</h3>
+  <ul>
+    <li>Le stockage de fichiers (Firebase Storage) n'est pas encore activé en production : l'inscription chauffeur ne peut pas aboutir tant qu'il ne l'est pas (procédure dans <code>docs/RECETTE-PHASE-0.md</code>).</li>
+    <li>Le webhook Stripe de production n'a encore reçu aucun événement. Il faudra le vérifier lors du premier paiement réel (empreinte puis annulation).</li>
+  </ul>
+</section>
+
+</body>
+</html>
