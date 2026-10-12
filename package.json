@@ -10,6 +10,7 @@
     "vercel-build": "next build",
     "test": "firebase emulators:exec --only firestore,auth,storage --project demo-izymoto \"vitest run\"",
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-izymoto \"vitest run tests/rules\"",
+    "seed:staging": "node scripts/seed-staging.mjs",
     "test:api": "firebase emulators:exec --only firestore,auth --project demo-izymoto \"vitest run tests/api\""
   },
   "engines": {
