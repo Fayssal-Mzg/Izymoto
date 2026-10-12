@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getStatusMeta } from "./ReservationsTable";
 import {
   X,
   User,
@@ -58,7 +59,7 @@ export default function ReservationDetailsModal({
       default:
         return (
           <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-            {status}
+            {getStatusMeta(status).label}
           </span>
         );
     }
