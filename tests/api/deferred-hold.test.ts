@@ -839,3 +839,29 @@ describe("tâche quotidienne : arrêt des tentatives après la course", () => {
     expect((await bookingOf("faite")).paymentStatus).toBe("failed");
   });
 });
+
+// ================================================================ e-mail : lien et erreurs Resend
+describe("e-mail « action requise »", () => {
+  it("lien correct même si NEXT_PUBLIC_SITE_URL est saisie avec des guillemets et une barre finale", async () => {
+    process.env.NEXT_PUBLIC_SITE_URL = '"https://staging.exemple.test/" ';
+    await seedSavedBooking("lien", "uid-1");
+    stripeMock.setupIntents.retrieve.mockResolvedValue({ id: "seti_saved", status: "succeeded", customer: "cus_1", payment_method: "pm_1" });
+    stripeMock.paymentIntents.create.mockRejectedValue(cardError("pi_lien"));
+    await cronDeferredHolds(cronRequest(CRON_SECRET));
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    const html = emailSend.mock.calls.find(([m]) => m.to?.includes("client@test.dev"))?.[0].html as string;
+    expect(html).toContain('href="https://staging.exemple.test/paiement/confirmer/lien"');
+  });
+
+  it("refus de Resend ({ error }) : l'e-mail n'est pas marqué envoyé", async () => {
+    emailSend.mockResolvedValue({ data: null, error: { name: "validation_error", message: "domain not verified" } });
+    await seedSavedBooking("resend", "uid-1");
+    stripeMock.setupIntents.retrieve.mockResolvedValue({ id: "seti_saved", status: "succeeded", customer: "cus_1", payment_method: "pm_1" });
+    stripeMock.paymentIntents.create.mockRejectedValue(cardError("pi_resend"));
+    await cronDeferredHolds(cronRequest(CRON_SECRET));
+    const b = await bookingOf("resend");
+    expect(b.paymentStatus).toBe("action_required");
+    expect(b.holdActionEmailSentAt).toBeUndefined();
+    expect(b.holdAdminAlertSentAt).toBeUndefined();
+  });
+});

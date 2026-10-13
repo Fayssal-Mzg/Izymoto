@@ -14,6 +14,28 @@ export interface HoldActionRequiredInput {
   amountEur: number;
 }
 
+// Resend ne lève pas d'erreur en cas de refus (domaine non vérifié, clé invalide…) :
+// il renvoie `{ error }`. On le transforme en exception pour ne pas marquer l'e-mail
+// comme envoyé à tort.
+async function checked<T extends { error: unknown }>(sending: Promise<T>): Promise<T> {
+  const result = await sending;
+  if (result.error) throw new Error(`Resend : ${JSON.stringify(result.error)}`);
+  return result;
+}
+
+// Origine du site pour les liens des e-mails. Tolère une variable saisie avec des
+// guillemets, des espaces ou une barre finale ; repli sur izymoto.com si invalide.
+function siteOrigin(): string {
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/^["'<]+|["'>]+$/g, "");
+  try {
+    const url = new URL(raw);
+    if (url.protocol === "https:" || url.protocol === "http:") return url.origin;
+  } catch {
+    // valeur absente ou invalide
+  }
+  return "https://izymoto.com";
+}
+
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -28,7 +50,7 @@ export async function sendHoldAdminAlertEmail(input: Omit<HoldActionRequiredInpu
     : "date inconnue";
   const ref = escapeHtml(input.reservationId || input.bookingId);
   const trajet = input.depart && input.arrivee ? `${escapeHtml(input.depart)} → ${escapeHtml(input.arrivee)}` : "";
-  return new Resend(apiKey).emails.send({
+  return checked(new Resend(apiKey).emails.send({
     from: "IzyMoto <contact@izymoto.com>",
     to: ["contact@izymoto.com"],
     subject: input.abandoned
@@ -41,14 +63,13 @@ export async function sendHoldAdminAlertEmail(input: Omit<HoldActionRequiredInpu
       : `<p>L'empreinte de ${input.amountEur.toFixed(2).replace(".", ",")} € n'a pas pu être posée sur la carte enregistrée.</p>
 <p>Référence : ${ref}<br/>${trajet}<br/>${escapeHtml(when)}</p>
 <p>Le client a reçu un e-mail pour confirmer le paiement ; une nouvelle tentative a lieu chaque matin. Sans confirmation avant le départ, la course n'est pas payée : contactez le client ou annulez la course depuis le back-office.</p>`,
-  });
+  }));
 }
 
 export async function sendHoldActionRequiredEmail(input: HoldActionRequiredInput) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY manquant");
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://izymoto.com";
-  const link = `${siteUrl}/paiement/confirmer/${encodeURIComponent(input.bookingId)}`;
+  const link = `${siteOrigin()}/paiement/confirmer/${encodeURIComponent(input.bookingId)}`;
   const name = escapeHtml(input.clientName?.trim() || "Bonjour");
   const when = input.reservationDate
     ? input.reservationDate.toLocaleString("fr-FR", {
@@ -94,11 +115,11 @@ export async function sendHoldActionRequiredEmail(input: HoldActionRequiredInput
 </body>
 </html>`;
 
-  return new Resend(apiKey).emails.send({
+  return checked(new Resend(apiKey).emails.send({
     from: "IzyMoto <contact@izymoto.com>",
     to: [input.to.trim()],
     subject: "Action requise : confirmez le paiement de votre course IzyMoto",
     replyTo: "contact@izymoto.com",
     html,
-  });
+  }));
 }
