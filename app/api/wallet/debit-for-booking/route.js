@@ -1,12 +1,32 @@
 import { NextResponse } from "next/server";
 import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
 import { pickBookingFields } from "@/lib/api/identity";
+import { quoteOrResponse, checkDisplayedPrice } from "@/lib/api/pricing";
 import { debitWalletForBooking, WalletError } from "@/lib/wallet/server";
+import {
+  getCompanyContextForUser,
+  debitCompanyWalletForBooking,
+} from "@/lib/wallet/companyServer";
+
+function walletErrorStatus(code) {
+  switch (code) {
+    case "INSUFFICIENT_BALANCE":
+    case "BUDGET_EXCEEDED":
+      return 402;
+    case "WALLET_NOT_FOUND":
+      return 404;
+    case "FORBIDDEN":
+      return 403;
+    case "CONFLICT":
+      return 409;
+    default:
+      return 400;
+  }
+}
 
 // Débite le wallet d'un user pour payer une course (cas "tout wallet").
 // Crée le booking dans la même transaction Firestore atomique.
 // Idempotent via clientToken (UUID généré côté front).
-// L'utilisateur débité est toujours celui du jeton Firebase, jamais du corps.
 
 export async function POST(request) {
   let auth;
@@ -21,31 +41,38 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { amountCents, bookingData: rawBookingData, clientToken, description } = body;
+    // lot 0.3 : amountCents / prix / amountAuthorized envoyés par le client sont
+    // IGNORÉS. Le montant débité est recalculé ici à partir des paramètres de la
+    // course (bookingData : adresses, distance, coordonnées, date, priorité).
+    const { bookingData: rawBookingData, clientToken, description } = body;
     const userId = auth.uid;
-
-    // Même fourchette que create-payment-intent (30 € – 1000 €) en attendant le prix serveur.
-    if (!Number.isInteger(amountCents) || amountCents < 3000 || amountCents > 100000) {
-      return NextResponse.json(
-        { error: "amountCents invalide" },
-        { status: 400 }
-      );
-    }
     if (!rawBookingData || typeof rawBookingData !== "object") {
       return NextResponse.json(
         { error: "bookingData manquant" },
         { status: 400 }
       );
     }
-    // Liste blanche des champs client ; email = jeton. Le prix enregistré est le
-    // montant réellement débité (la part chauffeur doit correspondre à ce qui a été payé).
+    const { quote, response: quoteError } = quoteOrResponse(rawBookingData);
+    if (quoteError) return quoteError;
+    const mismatch = checkDisplayedPrice(body, quote);
+    if (mismatch) return mismatch;
+
+    const amountCents = quote.totalCents;
+    // Liste blanche des champs client ; email = jeton. Flux tout-portefeuille :
+    // prix, montants et paramètres validés viennent du calcul serveur.
     const bookingData = {
       ...pickBookingFields(rawBookingData),
+      depart: quote.depart,
+      arrivee: quote.arrivee,
+      prioriteReservation: quote.prioriteReservation,
+      ...(quote.reservationDateIso ? { reservationDate: quote.reservationDateIso } : {}),
       email: auth.email,
-      prix: amountCents / 100,
-      amountAuthorized: amountCents / 100,
-      amountCaptured: amountCents / 100,
+      prix: quote.total,
+      amountAuthorized: quote.total,
+      amountCaptured: quote.total,
     };
+    if (quote.distanceKm !== null) bookingData.distance = quote.distanceKm;
+    else delete bookingData.distance;
     // Le préfixe "hybrid_" est réservé aux ledgers hybrides (clé dérivée du PaymentIntent).
     if (
       !clientToken ||
@@ -59,28 +86,34 @@ export async function POST(request) {
       );
     }
 
-    const result = await debitWalletForBooking({
-      userId,
-      amountCents,
-      bookingData,
-      clientToken,
-      description,
-    });
+    // Source de paiement résolue côté serveur depuis l'uid : société si l'user
+    // est membre actif d'une entreprise, sinon wallet perso.
+    const company = await getCompanyContextForUser(userId).catch(() => null);
+
+    const result = company
+      ? await debitCompanyWalletForBooking({
+          companyId: company.companyId,
+          actorUid: userId,
+          actorEmail: company.member.email ?? null,
+          amountCents,
+          bookingData,
+          clientToken,
+          description,
+        })
+      : await debitWalletForBooking({
+          userId,
+          amountCents,
+          bookingData,
+          clientToken,
+          description,
+        });
 
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof WalletError) {
-      const status =
-        err.code === "INSUFFICIENT_BALANCE"
-          ? 402
-          : err.code === "WALLET_NOT_FOUND"
-          ? 404
-          : err.code === "CONFLICT"
-          ? 409
-          : 400;
       return NextResponse.json(
         { error: err.message, code: err.code },
-        { status }
+        { status: walletErrorStatus(err.code) }
       );
     }
     console.error("[wallet/debit-for-booking] erreur:", err);

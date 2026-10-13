@@ -10,7 +10,8 @@ const root = path.resolve(here, "../../..");
 
 export const PROJECT_EMERGENCY = "demo-izymoto";
 export const PROJECT_PROD = "demo-izymoto-prod"; // même émulateur, règles de prod chargées sur un autre projet
-export const RULES_EMERGENCY = path.join(root, "firestore.rules");
+// Règles d'urgence déployées le 2026-10-05, archivées : firestore.rules porte désormais celles de la phase 0.
+export const RULES_EMERGENCY = path.join(root, "docs/incident/firestore-urgence-2026-10-05.rules");
 export const RULES_PROD = path.join(root, "docs/incident/regles-prod-2026-10-05.rules");
 
 // Ce que main écrit : Timestamp.now() (navigateur) ou serverTimestamp().

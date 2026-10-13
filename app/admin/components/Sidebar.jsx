@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Users,
   Wallet,
+  Building2,
   Settings,
   LogOut,
   ExternalLink,
@@ -20,6 +21,7 @@ export const NAV_ITEMS = [
   { icon: Bike, name: "Chauffeurs", path: "/admin/chauffeurs" },
   { icon: Users, name: "Utilisateurs", path: "/admin/utilisateurs" },
   { icon: Wallet, name: "Portefeuilles", path: "/admin/wallets" },
+  { icon: Building2, name: "Sociétés", path: "/admin/companies" },
   { icon: Settings, name: "Paramètres", path: "/admin/parametres" },
 ];
 

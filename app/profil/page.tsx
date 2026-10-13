@@ -24,6 +24,7 @@ import {
   Loader2,
   CreditCard,
   Calendar,
+  Building2,
 } from "lucide-react";
 
 // Définir l'interface pour une réservation
@@ -365,6 +366,25 @@ export default function ProfilPage() {
             </Link>
           </div>
         </div>
+
+        {/* Espace entreprise */}
+        <Link
+          href="/profil/entreprise"
+          className="group flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-lg shadow p-6 mb-8 hover:border-gray-900 transition-colors"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
+              <Building2 className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <div className="font-bold text-gray-900">Espace entreprise</div>
+              <div className="text-sm text-gray-500">
+                Portefeuille partagé, collaborateurs et budgets
+              </div>
+            </div>
+          </div>
+          <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-gray-900 transition-colors" />
+        </Link>
 
         {/* Historique des réservations */}
         <div className="bg-white rounded-lg shadow overflow-hidden mb-8">

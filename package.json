@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel-build": "next build"
+    "vercel-build": "next build",
+    "test": "firebase emulators:exec --only firestore,auth,storage --project demo-izymoto \"vitest run\"",
+    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-izymoto \"vitest run tests/rules\"",
+    "seed:staging": "node scripts/seed-staging.mjs",
+    "test:api": "firebase emulators:exec --only firestore,auth --project demo-izymoto \"vitest run tests/api\""
   },
   "engines": {
     "node": ">=18.x"
@@ -47,14 +51,17 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@firebase/rules-unit-testing": "5.0.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^9",
     "eslint-config-next": "^14.2.26",
+    "firebase-tools": "13.35.1",
     "postcss": "^8.5.3",
     "shadcn-ui": "^0.9.5",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "3.2.7"
   }
 }

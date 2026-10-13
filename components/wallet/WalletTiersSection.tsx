@@ -14,8 +14,15 @@ import TierCard from "@/components/wallet/TierCard";
 
 const PENDING_TIER_KEY = "izymoto_pending_recharge_tier";
 
-export default function WalletTiersSection() {
-  const [audience, setAudience] = useState<WalletAudience>("individual");
+interface WalletTiersSectionProps {
+  /** Audience affichée par défaut (ex. "business" sur /entreprise). */
+  defaultAudience?: WalletAudience;
+}
+
+export default function WalletTiersSection({
+  defaultAudience = "individual",
+}: WalletTiersSectionProps) {
+  const [audience, setAudience] = useState<WalletAudience>(defaultAudience);
   const [loadingTierId, setLoadingTierId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuth();
@@ -27,14 +34,14 @@ export default function WalletTiersSection() {
     setLoadingTierId(tier.id);
     setError(null);
     try {
+      const idToken = await user.getIdToken();
       const res = await fetch("/api/wallet/create-checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tierId: tier.id,
-          userId: user.uid,
-          userEmail: user.email,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ tierId: tier.id }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) {

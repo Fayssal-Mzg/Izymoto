@@ -56,6 +56,7 @@ export default function ReservationProcess({
     prioriteReservation,
     setPrioriteReservation,
     prixFinal,
+    requiresQuote,
     setPrixFinal,
     reservationDate,
     setReservationDate,
@@ -233,6 +234,7 @@ export default function ReservationProcess({
             prixBase={prixBase}
             prix={prix}
             prixFinal={prixFinal}
+            requiresQuote={requiresQuote}
             detailsMajorations={detailsMajorations}
             prioriteReservation={prioriteReservation}
             setPrioriteReservation={setPrioriteReservation}

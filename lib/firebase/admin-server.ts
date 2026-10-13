@@ -55,6 +55,7 @@ export function getAdminAuth(): Auth {
 export interface AdminContext {
   uid: string;
   email: string | null;
+  emailVerified: boolean;
 }
 
 // Vérifie l'ID token Firebase d'une requête entrante et confirme que l'user
@@ -73,10 +74,31 @@ export class AdminAuthError extends Error {
 }
 
 // Vérifie l'ID token Firebase et retourne l'identité, SANS exiger isAdmin.
-// Pour les routes "utilisateur connecté" : l'identité vient du jeton, jamais du corps.
-export async function requireAuth(
-  request: Request
-): Promise<AdminContext & { emailVerified: boolean }> {
+// Pour les routes "membre connecté" (espace entreprise). Les droits métier
+// (owner d'une société, etc.) sont vérifiés ensuite côté serveur depuis l'uid.
+// Distingue un jeton refusé (401) d'une panne technique (503, réseau ou service
+// Auth indisponible). Les messages restent génériques.
+const TECHNICAL_AUTH_CODES = new Set([
+  "auth/internal-error",
+  "auth/network-request-failed",
+  "auth/insufficient-permission",
+  "auth/service-unavailable",
+  "auth/quota-exceeded",
+]);
+
+function toTokenError(e: unknown): AdminAuthError {
+  const code =
+    typeof (e as { code?: unknown })?.code === "string"
+      ? ((e as { code: string }).code)
+      : "";
+  if (code.startsWith("auth/") && !TECHNICAL_AUTH_CODES.has(code)) {
+    return new AdminAuthError("Token invalide ou expiré", 401);
+  }
+  console.error("[auth] vérification du jeton impossible:", code || "erreur technique");
+  return new AdminAuthError("Service momentanément indisponible", 503);
+}
+
+export async function requireAuth(request: Request): Promise<AdminContext> {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     throw new AdminAuthError("Token manquant", 401);
@@ -86,14 +108,16 @@ export async function requireAuth(
     throw new AdminAuthError("Token vide", 401);
   }
   try {
-    const decoded = await getAdminAuth().verifyIdToken(token);
+    // checkRevoked=true : un jeton émis avant revokeRefreshTokens() est refusé
+    // immédiatement (un appel réseau supplémentaire vers Firebase Auth par requête).
+    const decoded = await getAdminAuth().verifyIdToken(token, true);
     return {
       uid: decoded.uid,
       email: decoded.email ?? null,
       emailVerified: decoded.email_verified === true,
     };
   } catch (e) {
-    throw new AdminAuthError("Token invalide ou expiré", 401);
+    throw toTokenError(e);
   }
 }
 
@@ -111,9 +135,9 @@ export async function requireAdmin(
 
   let decoded;
   try {
-    decoded = await getAdminAuth().verifyIdToken(token);
+    decoded = await getAdminAuth().verifyIdToken(token, true);
   } catch (e) {
-    throw new AdminAuthError("Token invalide ou expiré", 401);
+    throw toTokenError(e);
   }
 
   const uid = decoded.uid;
@@ -128,5 +152,5 @@ export async function requireAdmin(
     throw new AdminAuthError("Accès admin requis", 403);
   }
 
-  return { uid, email };
+  return { uid, email, emailVerified: decoded.email_verified === true };
 }

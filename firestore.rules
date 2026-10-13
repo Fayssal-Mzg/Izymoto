@@ -1,18 +1,26 @@
 rules_version = '2';
 
 // ============================================================================
-// Règles d'urgence — incident 2026-10-05 — compatibles avec main ; remplacées par
-// les règles du lot 0.5 lors de la mise en production de la phase 0.
+// Ne pas déployer sans validation de Fayssal (porte 2) ; comparer avec les règles
+// en production avant tout déploiement.
 // ============================================================================
 //
-// - Refus par défaut (dernier bloc). Plus aucune règle générale permissive.
-// - Reconstruites à partir des accès réels du code de main
-//   (voir docs/incident/inventaire-firestore-main.md).
-// - L'Admin SDK (webhook Stripe, routes wallet / admin) contourne ces règles.
-// - Admin = users/{uid}.isAdmin == true (champ non modifiable par l'utilisateur).
-// - Chauffeur validé = drivers/{uid}.status == "active" (posé par l'admin).
-// - Les horodatages écrits par main avec Timestamp.now() (horloge du navigateur)
-//   sont seulement contrôlés en type (is timestamp), pas égaux à request.time.
+// Règles de sécurité Firestore — Izymoto (lot 0.5 : règles minimales, refus par défaut)
+// ----------------------------------------------------------------------------
+// - Reconstruites à partir des accès CLIENT réels de l'app (hooks, contexts, pages
+//   admin / chauffeur / entreprise). L'Admin SDK (routes API, webhook Stripe)
+//   bypasse ces règles : toutes les écritures sensibles (argent, rôles, rattachement
+//   entreprise, courses payées) passent par le serveur.
+// - Chaque écriture client autorisée liste ses champs modifiables
+//   (keys().hasOnly / affectedKeys().hasOnly). Tout le reste est refusé.
+// - Testées uniquement sur l'émulateur `demo-izymoto` (tests/rules/).
+// - « Chauffeur validé » = drivers/{uid}.status == "active" (posé par l'admin).
+//
+// Réserves connues (voir rapport du lot 0.5) :
+// - Le pool de courses expose encore le document complet (name, phone, email du
+//   passager) aux chauffeurs validés : version sans données perso = phase 2.
+// - Le chauffeur assigné écrit encore côté client commissionRate / platformShareCents /
+//   driverShareCents à l'acceptation (contraints ici : taux 0.2, cohérents avec prix).
 // ----------------------------------------------------------------------------
 
 service cloud.firestore {
@@ -28,35 +36,25 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
     }
 
+    // Chauffeur validé par l'admin (drivers/{uid}.status == "active").
     function isValidatedDriver() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/drivers/$(request.auth.uid))
         && get(/databases/$(database)/documents/drivers/$(request.auth.uid)).data.get('status', '') == 'active';
     }
 
-    // Mêmes conditions que acceptRide() de main : status "active" ET availability "online".
+    // Chauffeur validé ET en service (drivers/{uid}.availability == "online").
     function isOnlineValidatedDriver() {
       return isValidatedDriver()
         && get(/databases/$(database)/documents/drivers/$(request.auth.uid)).data.get('availability', '') == 'online';
     }
 
-    function shortString(v, max) {
-      return v == null || (v is string && v.size() <= max);
-    }
-
-    // Documents chauffeur : 6 clés connues, chacune null ou avec un `path`
-    // Storage sous drivers/<uid>/ (uploadDriverDocument / deleteDriverDocument).
+    // Documents chauffeur : seules les 6 clés connues, chacune null ou avec un `path`
+    // de Storage sous drivers/<uid>/ (uploadDriverDocument).
     function docPathOk(docs, kind, uid) {
       return !(kind in docs)
         || docs[kind] == null
-        || (docs[kind] is map
-            && docs[kind].get('path', '') is string
-            && docs[kind].get('path', '').matches('drivers/' + uid + '/.*')
-            // URL produite par getDownloadURL (Firebase Storage) dans main.
-            && docs[kind].get('url', '') is string
-            && docs[kind].get('url', '').matches('https://firebasestorage[.]googleapis[.]com/.*')
-            && docs[kind].get('filename', '') is string
-            && docs[kind].get('filename', '').size() <= 500);
+        || (docs[kind].path is string && docs[kind].path.matches('drivers/' + uid + '/.*'));
     }
     function driverDocsOk(docs, uid) {
       return docs is map
@@ -69,50 +67,64 @@ service cloud.firestore {
         && docPathOk(docs, 'motoPhoto', uid);
     }
 
+    // Membre ACTIF de l'entreprise (un membre retiré, status "removed", ne lit plus rien).
+    function isCompanyMember(companyId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/companies/$(companyId)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/companies/$(companyId)/members/$(request.auth.uid)).data.get('status', '') == 'active';
+    }
+
+    function isCompanyOwner(companyId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/companies/$(companyId))
+        && get(/databases/$(database)/documents/companies/$(companyId)).data.get('ownerUid', '') == request.auth.uid;
+    }
+
     // --- users ---------------------------------------------------------------
-    // main : AuthContext (signUp, signUpAsDriver, logIn, signInWithGoogle,
-    // updatePhoneNumber), useUserInformation, paymentService, PaymentModal,
-    // chauffeur/inscription (bascule role -> driver), pages admin.
-    // isAdmin : seulement `false` à la création ; jamais modifiable par l'utilisateur.
-    // role    : "client" ou "driver" à la création ; ensuite client -> driver uniquement.
-    // phoneVerified : écrit `true` par main sans vérification réelle (risque résiduel,
-    //                 aucun droit n'en dépend côté règles ni serveur).
+    // read   : soi-même ou admin.
+    // create : soi-même, liste blanche de clés (AuthContext, useUserInformation),
+    //          sans isAdmin/companyId/companyRole/phoneVerified ; role client ou driver
+    //          (le rôle "driver" ne donne AUCUN droit : tout passe par drivers/{uid}.status
+    //          posé par l'admin).
+    // update : soi-même, champs de profil seulement. role : uniquement client -> driver
+    //          (bascule de l'inscription chauffeur d'un compte existant). Jamais isAdmin,
+    //          companyId, companyRole, phoneVerified.
+    // delete : admin seulement (ferme « suppression puis recréation »).
     match /users/{uid} {
       allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
 
       allow create: if isAdmin()
         || (isSignedIn() && request.auth.uid == uid
             && request.resource.data.keys().hasOnly([
-                 'uid', 'email', 'displayName', 'photoURL', 'phoneNumber', 'phoneVerified',
-                 'role', 'isAdmin', 'pendingReservation',
-                 'createdAt', 'lastLogin', 'updatedAt', 'lastModified'
+                 'uid', 'email', 'displayName', 'photoURL', 'phoneNumber', 'role',
+                 'createdAt', 'lastLogin', 'updatedAt', 'lastModified',
+                 'isAdmin', 'pendingReservation'
                ])
-            && request.resource.data.get('uid', uid) == uid
             && request.resource.data.get('isAdmin', false) == false
-            && request.resource.data.get('role', 'client') in ['client', 'driver']);
+            && request.resource.data.get('uid', uid) == uid
+            && request.resource.data.get('role', 'client') in ['client', 'driver']
+            && request.resource.data.get('pendingReservation', {}).size() <= 20);
 
       allow update: if isAdmin()
         || (isSignedIn() && request.auth.uid == uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'email', 'displayName', 'photoURL', 'phoneNumber', 'phoneVerified',
-                 'pendingReservation', 'role',
-                 'lastLogin', 'updatedAt', 'lastModified'
+                 'displayName', 'photoURL', 'phoneNumber', 'email',
+                 'lastLogin', 'updatedAt', 'lastModified', 'pendingReservation', 'role'
                ])
             && (request.resource.data.get('role', null) == resource.data.get('role', null)
                 || (request.resource.data.get('role', null) == 'driver'
-                    && resource.data.get('role', 'client') == 'client')));
+                    && resource.data.get('role', 'client') == 'client'))
+            && request.resource.data.get('pendingReservation', {}).size() <= 20);
 
       allow delete: if isAdmin();
     }
 
     // --- drivers -------------------------------------------------------------
-    // read   : le chauffeur (sa fiche) ou l'admin.
-    // create : le chauffeur, fiche vide "pending" (createDriverProfile).
-    // update : le chauffeur : profil, moto, RIB, documents, disponibilité.
-    //          Jamais status / acceptedAt / rejectedAt / rejectionReason / stats / uid / email.
-    //          `createdAt` toléré : createDriverProfile (setDoc sans merge) peut être
-    //          rejoué sur une fiche existante (course entre le bootstrap et l'étape Compte).
-    // admin  : tout (approve / reject / suspend / reinstate).
+    // read   : soi-même ou admin (jamais la fiche d'un autre chauffeur).
+    // create : soi-même, fiche vide « pending » (createDriverProfile).
+    // update : soi-même, profil / disponibilité / documents / banque seulement.
+    //          Jamais status, acceptedAt, rejectedAt, rejectionReason, stats, uid, email.
+    // delete : admin seulement.
     match /drivers/{uid} {
       allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
 
@@ -129,19 +141,19 @@ service cloud.firestore {
                ])
             && request.resource.data.get('uid', uid) == uid
             && request.resource.data.get('email', '') == request.auth.token.get('email', '')
+            && driverDocsOk(request.resource.data.get('documents', {}), uid)
             && request.resource.data.get('status', '') == 'pending'
             && request.resource.data.get('availability', 'offline') == 'offline'
             && request.resource.data.get('acceptedAt', null) == null
             && request.resource.data.get('rejectedAt', null) == null
             && request.resource.data.get('rejectionReason', '') == ''
             && request.resource.data.get('stats', {'totalRides': 0, 'totalEarningsCents': 0})
-                 == {'totalRides': 0, 'totalEarningsCents': 0}
-            && driverDocsOk(request.resource.data.get('documents', {}), uid));
+                 == {'totalRides': 0, 'totalEarningsCents': 0});
 
       allow update: if isAdmin()
         || (isSignedIn() && request.auth.uid == uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'availability', 'updatedAt', 'createdAt',
+                 'availability', 'updatedAt',
                  'firstName', 'lastName', 'phone', 'dateOfBirth', 'address',
                  'legalForm', 'companyName', 'siret', 'vatNumber',
                  'licenseNumber', 'licenseDeliveryDate',
@@ -154,38 +166,13 @@ service cloud.firestore {
     }
 
     // --- bookings ------------------------------------------------------------
-    // read   : passager (userId), chauffeur assigné (driverId), admin ;
-    //          pool (status == "awaiting_driver") pour un chauffeur validé
-    //          (document complet, données perso comprises : D-010, temporaire).
-    // create : (a) devis (useReservation.handleRequestDevis -> saveBooking) :
-    //              invité NON connecté (userId "guest_xxx", accountType "guest")
-    //              ou client connecté (userId == auth.uid) ; status "devis" ;
-    //          (b) course payée par carte (paymentService.handleSuccessfulPayment ->
-    //              saveBooking) : userId == auth.uid, status "confirmed",
-    //              paymentStatus "authorized", isPaid false. RISQUE RÉSIDUEL : le
-    //              navigateur fixe prix / paymentId / amountAuthorized (corrigé au lot 0.3).
-    //          Les courses wallet / hybride sont créées par le serveur (Admin SDK).
-    // update : admin ; transitions chauffeur de lib/firebase/dispatch.ts.
-    //          Aucune mise à jour par le passager.
-    // delete : admin.
-    function bookingCommonOk(d) {
-      return d.createdAt is timestamp
-        && shortString(d.get('depart', null), 2000)
-        && shortString(d.get('arrivee', null), 2000)
-        && shortString(d.get('name', null), 500)
-        && shortString(d.get('email', null), 500)
-        && shortString(d.get('phone', null), 100)
-        && shortString(d.get('notes', null), 2000)
-        && shortString(d.get('reservationId', null), 100)
-        && shortString(d.get('dateFormatted', null), 200)
-        // distance / duree : nombres (Google Directions) ou null (état initial du tunnel).
-        && (d.get('distance', null) == null || d.get('distance', null) is number)
-        && (d.get('duree', null) == null || d.get('duree', null) is number)
-        && d.get('prioriteReservation', false) is bool
-        // Devis : chaîne du champ datetime ; course carte : Date -> timestamp.
-        && (d.get('reservationDate', null) is string || d.get('reservationDate', null) is timestamp);
-    }
-
+    // read   : passager (userId), chauffeur assigné (driverId), admin ; pool
+    //          (status == awaiting_driver) UNIQUEMENT pour un chauffeur validé.
+    // create : devis connecté uniquement (status "devis", userId == auth.uid, liste blanche).
+    //          Les courses payées (card_<pi>, hybrid_<pi>, deferred_<seti>, wallet) sont créées par le serveur.
+    // update : admin ; chauffeur validé qui accepte une course du pool ; chauffeur assigné
+    //          qui démarre / termine / libère. Aucune mise à jour par le passager.
+    // delete : admin seulement.
     match /bookings/{id} {
       allow read: if isAdmin()
         || (isSignedIn() && (
@@ -195,129 +182,133 @@ service cloud.firestore {
         || (resource.data.get('status', '') == 'awaiting_driver' && isValidatedDriver());
 
       allow create: if isAdmin()
-        // (a) Devis invité ou connecté.
-        || (request.resource.data.keys().hasOnly([
+        || (isSignedIn()
+            && !id.matches('card_.*')
+            && !id.matches('hybrid_.*')
+            && !id.matches('deferred_.*')
+            && request.resource.data.keys().hasOnly([
                  'userId', 'accountType', 'status', 'createdAt',
                  'depart', 'arrivee', 'distance', 'duree', 'prix',
                  'prioriteReservation', 'reservationId', 'email', 'phone', 'name',
                  'notes', 'reservationDate', 'dateFormatted'
                ])
             && request.resource.data.status == 'devis'
-            && bookingCommonOk(request.resource.data)
-            // prix indicatif (prixFinal || 0) : 30 € + 3 €/km (France métropolitaine,
-            // jusqu'à ~1 500 km) + majorations 100 € + priorité 20 € < 5 000 €.
-            && request.resource.data.get('prix', 0) is number
-            && request.resource.data.get('prix', 0) >= 0
-            && request.resource.data.get('prix', 0) <= 5000
-            && (
-                 (request.resource.data.accountType == 'guest'
-                  && request.resource.data.userId is string
-                  && request.resource.data.userId.matches('guest_[a-z0-9]{1,16}'))
-              || (isSignedIn()
-                  && request.resource.data.accountType == 'registered'
-                  && request.resource.data.userId == request.auth.uid)
-            ))
-        // (b) Course payée par carte (hold Stripe), créée par le navigateur dans main.
-        || (isSignedIn()
-            && request.resource.data.keys().hasOnly([
-                 'userId', 'accountType', 'status', 'createdAt',
-                 'depart', 'arrivee', 'distance', 'duree', 'prix', 'amountAuthorized',
-                 'prioriteReservation', 'reservationId', 'email', 'phone', 'name',
-                 'notes', 'reservationDate', 'dateFormatted',
-                 'paymentId', 'paymentStatus', 'isPaid'
-               ])
             && request.resource.data.userId == request.auth.uid
-            && request.resource.data.accountType == 'registered'
-            && request.resource.data.status == 'confirmed'
-            && request.resource.data.paymentStatus == 'authorized'
-            && request.resource.data.isPaid == false
-            && request.resource.data.paymentId is string
-            && request.resource.data.paymentId.matches('pi_[A-Za-z0-9_]{1,250}')
-            // Mêmes bornes que MIN_AMOUNT_EUR / MAX_AMOUNT_EUR de /api/create-payment-intent.
-            && request.resource.data.get('prix', null) is number
-            && request.resource.data.prix >= 30
-            && request.resource.data.prix <= 1000
-            && request.resource.data.get('amountAuthorized', null) == request.resource.data.prix
-            && bookingCommonOk(request.resource.data));
+            && request.resource.data.get('accountType', 'registered') == 'registered'
+            && request.resource.data.get('prix', 0) is number
+            && request.resource.data.createdAt == request.time
+            && request.resource.data.get('notes', '').size() <= 2000
+            && request.resource.data.get('name', '').size() <= 2000
+            && request.resource.data.get('depart', '').size() <= 2000
+            && request.resource.data.get('arrivee', '').size() <= 2000);
 
       allow update: if isAdmin()
-        // acceptRide : chauffeur validé ET en service, course libre du pool.
+        // Acceptation FCFS d'une course du pool (dispatch.ts : acceptRide).
         || (isOnlineValidatedDriver()
             && resource.data.get('status', '') == 'awaiting_driver'
             && resource.data.get('driverId', null) == null
             && resource.data.get('userId', '') != request.auth.uid
+            && request.resource.data.driverAcceptedAt == request.time
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.get('driverId', null) == request.auth.uid
+            && request.resource.data.get('status', '') == 'assigned'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                  'driverId', 'driverAcceptedAt', 'status',
                  'commissionRate', 'platformShareCents', 'driverShareCents', 'updatedAt'
                ])
-            && request.resource.data.get('driverId', null) == request.auth.uid
-            && request.resource.data.get('status', '') == 'assigned'
-            && request.resource.data.get('driverAcceptedAt', null) is timestamp
-            && request.resource.data.get('updatedAt', null) is timestamp
+            // Commission contrainte : taux 0.2, parts cohérentes avec le prix serveur
+            // (tolérance 1 centime d'arrondi). Migration serveur prévue en phase 2.
+            && resource.data.get('prix', null) is number
             && request.resource.data.get('commissionRate', null) == 0.2
             && request.resource.data.get('platformShareCents', null) is int
             && request.resource.data.get('driverShareCents', null) is int
-            && (resource.data.get('prix', null) is number
-                ? (math.abs(request.resource.data.platformShareCents - resource.data.prix * 20) <= 1
-                   && math.abs(request.resource.data.platformShareCents
-                               + request.resource.data.driverShareCents
-                               - resource.data.prix * 100) <= 1)
-                : (request.resource.data.platformShareCents == 0
-                   && request.resource.data.driverShareCents == 0)))
-        // startRide : chauffeur assigné, assigned -> in_progress.
-        || (isSignedIn()
+            && math.abs(request.resource.data.platformShareCents - resource.data.prix * 20) <= 1
+            && math.abs(request.resource.data.platformShareCents
+                        + request.resource.data.driverShareCents
+                        - resource.data.prix * 100) <= 1)
+        // Démarrage par le chauffeur assigné (startRide).
+        || (isValidatedDriver()
             && resource.data.get('driverId', null) == request.auth.uid
             && resource.data.get('status', '') == 'assigned'
+            && request.resource.data.get('status', '') == 'in_progress'
+            && request.resource.data.driverStartedAt == request.time
+            && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                  'status', 'driverStartedAt', 'updatedAt'
-               ])
-            && request.resource.data.get('status', '') == 'in_progress'
-            && request.resource.data.get('driverStartedAt', null) is timestamp
-            && request.resource.data.get('updatedAt', null) is timestamp)
-        // completeRide : chauffeur assigné, assigned|in_progress -> completed_by_driver.
-        || (isSignedIn()
+               ]))
+        // Fin de course par le chauffeur assigné (completeRide).
+        || (isValidatedDriver()
             && resource.data.get('driverId', null) == request.auth.uid
             && resource.data.get('status', '') in ['assigned', 'in_progress']
+            && request.resource.data.get('status', '') == 'completed_by_driver'
+            && request.resource.data.driverCompletedAt == request.time
+            && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                  'status', 'driverCompletedAt', 'updatedAt'
-               ])
-            && request.resource.data.get('status', '') == 'completed_by_driver'
-            && request.resource.data.get('driverCompletedAt', null) is timestamp
-            && request.resource.data.get('updatedAt', null) is timestamp)
-        // releaseRide : chauffeur assigné, assigned -> awaiting_driver.
+               ]))
+        // Libération par le chauffeur assigné, avant démarrage (releaseRide).
         || (isSignedIn()
             && resource.data.get('driverId', null) == request.auth.uid
             && resource.data.get('status', '') == 'assigned'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'driverId', 'driverAcceptedAt', 'status', 'driverReleaseReason', 'updatedAt'
-               ])
             && request.resource.data.get('status', '') == 'awaiting_driver'
             && request.resource.data.get('driverId', null) == null
             && request.resource.data.get('driverAcceptedAt', null) == null
-            && request.resource.data.get('updatedAt', null) is timestamp
-            && shortString(request.resource.data.get('driverReleaseReason', null), 500));
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                 'driverId', 'driverAcceptedAt', 'status', 'driverReleaseReason', 'updatedAt'
+               ])
+            && request.resource.data.get('driverReleaseReason', '') is string
+            && request.resource.data.get('driverReleaseReason', '').size() <= 500);
 
       allow delete: if isAdmin();
     }
 
-    // --- wallets / walletTransactions : lecture du sien ; écriture serveur uniquement ---
+    // --- wallets : lecture de son solde ; écriture serveur uniquement ---
     match /wallets/{uid} {
       allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
       allow write: if false;
     }
+
+    // --- walletTransactions : lecture de son historique ; écriture serveur ---
     match /walletTransactions/{txId} {
       allow read: if isAdmin()
         || (isSignedIn() && resource.data.get('userId', '') == request.auth.uid);
       allow write: if false;
     }
 
-    // --- factures : back-office admin uniquement (generateInvoicePDF, getAllFactures) ---
-    match /factures/{factureId} {
-      allow read, write: if isAdmin();
+    // --- companies : lecture par l'owner, un membre ACTIF ou l'admin ; écriture serveur ---
+    match /companies/{companyId} {
+      allow read: if isAdmin()
+        || isCompanyOwner(companyId)
+        || isCompanyMember(companyId);
+      allow write: if false;
+
+      // Membres : son propre doc (tant qu'actif), l'owner, ou admin. Un collaborateur
+      // ne lit ni les membres ni les budgets des autres.
+      match /members/{memberUid} {
+        allow read: if isAdmin()
+          || (isSignedIn() && request.auth.uid == memberUid
+              && resource.data.get('status', '') == 'active')
+          || isCompanyOwner(companyId);
+        allow write: if false;
+      }
     }
 
-    // --- companies / members / companyInvitations : aucun accès client dans main ---
-    // (couverts par le refus par défaut ci-dessous).
+    // --- Collections serveur uniquement (Admin SDK) : aucun accès client ---
+    match /companyInvitations/{token} {
+      allow read, write: if false;
+    }
+    match /paymentClaims/{claimId} {
+      allow read, write: if false;
+    }
+    match /auditLogs/{logId} {
+      allow read, write: if false;
+    }
+
+    // --- factures : back-office admin uniquement ---
+    match /factures/{id} {
+      allow read, write: if isAdmin();
+    }
 
     // Tout le reste est refusé par défaut.
     match /{document=**} {

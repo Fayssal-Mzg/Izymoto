@@ -29,7 +29,7 @@ Garder concis : uniquement ce qui n'est pas trivialement déductible du code.
 | Hébergement | **Vercel** (`vercel.json`, build via `next build`) |
 | Node | >= 18.x |
 
-**Ne pas ajouter sans demander** : nouvelle lib UI, ORM, state manager global, framework de tests (rien en place actuellement).
+**Ne pas ajouter sans demander** : nouvelle lib UI, ORM, state manager global, autre framework de tests (Vitest en place, D-009).
 
 ## 3. Arborescence haut niveau
 
@@ -86,7 +86,7 @@ public/
 - **Client vs Server components** : par défaut Server. Mettre `"use client"` uniquement si le composant utilise hooks, contexts, ou listeners. La landing `app/page.tsx` est `"use client"` à cause de `useAuth` et `useInView`.
 - **Imports** : alias `@/` mappé sur la racine (voir `tsconfig.json`).
 - **Tailwind** : pas de CSS custom dans `globals.css` sauf utilités globales. Utiliser `cn()` de `lib/utils.ts` pour la composition de classes.
-- **Pas de tests** dans le repo aujourd'hui — ne pas en ajouter sans demander.
+- **Tests** : Vitest dans `tests/` (`tests/rules/` sur l'émulateur Firestore, `tests/api/` pour les routes), lancés par `npm test` (émulateur `demo-izymoto`, Java 17+). Voir DECISIONS.md D-009.
 - **Langue** : tout le contenu utilisateur en **français** (le site cible la France).
 
 ## 5. Variables d'environnement attendues (à confirmer côté `.env.local`)
@@ -172,3 +172,22 @@ L'utilisateur signe ses commits en tant que `Fayssal Merzougui <merzougui.fayssa
 - **Pas de commentaires inutiles** — uniquement quand le "pourquoi" n'est pas évident.
 - **Privilégier l'édition** des fichiers existants à la création de nouveaux.
 - **Demander avant** : modifications du tunnel de paiement Stripe, des règles Firebase, du middleware, ou de la structure d'auth.
+
+## 11. Équipe d'agents & chaîne de décision
+
+Décisions de référence : `docs/DECISIONS.md` (dont le tableau « Qui voit quoi »). Aucun agent ne modifie une décision ; un désaccord est remonté à Fayssal.
+
+**Rôles** : le chef de projet est la session principale (il orchestre, consolide et rend compte). Fayssal est le validateur final. Agents actifs (`.claude/agents/`) : `dev-fullstack` (implémente), `securite-reviewer` (relit en lecture seule, peut bloquer), `qa-tests` (tests sur l'émulateur Firebase et des routes API). Les autres agents arrivent en phases 2 à 4 (DECISIONS.md D-007).
+
+**Chaîne** :
+1. **Cadrage** : le chef reformule la demande, la découpe en lots, écrit des critères d'acceptation vérifiables, classe chaque lot LÉGER (texte, style, contenu) ou SENSIBLE (authentification, règles, argent, données perso, factures, rôles) et désigne les agents. → **PORTE 1 : Fayssal valide le plan.**
+2. **Implémentation** par l'agent désigné, sur une branche dédiée au lot (`lot/<phase>-<nom>`).
+3. **Vérifications en parallèle** :
+   - LÉGER : relecture par le chef uniquement ;
+   - SENSIBLE : `securite-reviewer` + `qa-tests`, systématiquement.
+4. **Consolidation** : le chef vérifie chaque critère d'acceptation et la conformité à DECISIONS.md. Un verdict BLOQUANT renvoie le lot à l'implémenteur ; après 2 allers-retours sans solution, escalade vers Fayssal.
+5. **Rapport final** à Fayssal, **10 lignes maximum** : ce qui est fait, ce qui bloque, ce que Fayssal doit faire (tester la prévisualisation Vercel, déployer, changer une clé, consulter un avocat ou un comptable). Les rapports détaillés des agents sont enregistrés par le chef dans `docs/rapports/<date>-<lot>.md`. → **PORTE 2 : Fayssal valide.**
+
+**Preuves avant production** : CI GitHub Actions verte (types + tests des règles sur l'émulateur) et prévisualisation Vercel testée par Fayssal. Le « VALIDÉ » d'un agent ne remplace jamais un test qui passe.
+
+**Commit, push et déploiement** uniquement sur demande explicite de Fayssal. `git push`, `firebase deploy`, `vercel` et les suppressions récursives sont bloqués par `.claude/settings.json`.

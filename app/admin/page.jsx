@@ -25,6 +25,7 @@ import {
 const STATUS_META = {
   confirmed: { label: "Confirmée", bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
   pending: { label: "En attente", bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-500" },
+  devis: { label: "Devis", bg: "bg-gray-50", text: "text-gray-700", dot: "bg-gray-400" },
   awaiting_driver: { label: "En attente chauffeur", bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
   assigned: { label: "Attribuée", bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500" },
   in_progress: { label: "En course", bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },

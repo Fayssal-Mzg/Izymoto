@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+firestore-debug.log
+ui-debug.log
+firebase-debug.log
 
 # next.js
 /.next/
@@ -45,5 +48,10 @@ serviceAccountKey*.json
 *.tsbuildinfo
 next-env.d.ts
 
-# claude code (local agent config)
-.claude/
+# claude code : agents et settings partagés versionnés, le reste local
+.claude/*
+!.claude/agents/
+!.claude/settings.json
+
+# config MCP locale (contient des clés API)
+.mcp.json

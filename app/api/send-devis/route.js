@@ -1,7 +1,11 @@
 // app/api/send-devis/route.js
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
+import { randomUUID } from "node:crypto";
+import { FieldValue } from "firebase-admin/firestore";
+import { requireAuth, AdminAuthError, getAdminFirestore } from "@/lib/firebase/admin-server";
+import { quoteOrResponse } from "@/lib/api/pricing";
+import { DEVIS_QUOTE_OPTIONS } from "@/lib/pricing";
 
 // Échappement HTML de toute valeur provenant de l'appelant avant insertion.
 function esc(value) {
@@ -25,9 +29,9 @@ const isValidEmail = (v) => typeof v === "string" && v.length <= 254 && EMAIL_RE
 
 // Authentification FACULTATIVE : le parcours devis existe aussi pour un invité
 // (non connecté, cf. useReservation.js). Si un jeton est présent il doit être
-// valide : le devis part alors à l'email du jeton s'il est vérifié (email du
-// corps ignoré ; jeton sans email -> 400) et à l'admin.
-// Décision D-011 : sans jeton (invité), l'email part
+// valide : le devis part alors à l'email du jeton (email du corps ignoré ; jeton
+// sans email -> 400) et à l'admin, SI l'email du jeton est vérifié (sinon : invité).
+// DÉCISION PROVISOIRE (à valider par Fayssal) : sans jeton (invité), l'email part
 // UNIQUEMENT à l'admin (contact@izymoto.com), avec l'email saisi dans le contenu
 // pour qu'il recontacte l'invité. Aucun email n'est envoyé à une adresse fournie
 // par un appelant non authentifié.
@@ -53,18 +57,25 @@ export async function POST(request) {
       email: bodyEmail,
       depart,
       arrivee,
-      prix,
       distance,
       reservationId,
       notes,
-      prioriteReservation,
       phone,
       reservationDate,
     } = body;
 
     // Email du client : celui du jeton si connecté, sinon (invité) celui saisi,
     // utilisé uniquement dans le contenu de l'email admin.
-    const email = auth ? auth.email : bodyEmail;
+    // Connecté avec email NON vérifié : traité comme un invité (admin seul).
+    const sendToClient = !!auth && auth.emailVerified === true;
+    // (jeton sans email : 400, comme avant).
+    const email = auth
+      ? sendToClient
+        ? auth.email
+        : auth.email && isValidEmail(bodyEmail)
+        ? bodyEmail
+        : auth.email
+      : bodyEmail;
     if (!isValidEmail(email)) {
       return NextResponse.json(
         { error: "Adresse email invalide" },
@@ -72,17 +83,27 @@ export async function POST(request) {
       );
     }
 
+    // lot 0.3 : le prix du devis est recalculé par le serveur (adresses, distance,
+    // date, priorité). Le `prix` envoyé dans le corps est ignoré.
+    const { quote, response: quoteError } = quoteOrResponse(body, DEVIS_QUOTE_OPTIONS);
+    if (quoteError) return quoteError;
+    const prix = quote.total;
+    const prioriteReservation = quote.prioriteReservation;
+
     // Formatage de la date
     let dateStr = "";
     let heureStr = "";
-    if (reservationDate) {
-      const date = new Date(reservationDate);
+    if (quote.reservationDateIso) {
+      // Heure affichée à Paris, quel que soit le fuseau du serveur (UTC sur Vercel).
+      const date = new Date(quote.reservationDateIso);
       dateStr = date.toLocaleDateString("fr-FR", {
+        timeZone: "Europe/Paris",
         year: "numeric",
         month: "long",
         day: "numeric",
       });
       heureStr = date.toLocaleTimeString("fr-FR", {
+        timeZone: "Europe/Paris",
         hour: "2-digit",
         minute: "2-digit",
       });
@@ -90,9 +111,41 @@ export async function POST(request) {
 
     const subjectId = String(reservationId ?? "").replace(/[\r\n]+/g, " ").slice(0, 60);
 
-    // Envoi email client : seulement à une adresse vérifiée (sinon un compte créé
-    // avec l'adresse d'un tiers ferait de cette route un relais d'emails).
-    const clientEmail = auth?.emailVerified
+    // Devis d'un INVITÉ : enregistré ici (Admin SDK), jamais par le navigateur (les règles
+    // Firestore refusent toute écriture non connectée). Prix recalculé serveur, champs en
+    // liste blanche et bornés, createdAt serveur. Un devis connecté reste écrit par le
+    // client (saveBooking) : pas de doublon ici. Un échec n'empêche pas l'email admin.
+    if (!auth) {
+      try {
+        const cut = (v, n) => String(v ?? "").slice(0, n);
+        await getAdminFirestore()
+          .collection("bookings")
+          .add({
+            userId: `guest_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
+            accountType: "guest",
+            status: "devis",
+            depart: cut(depart, 500),
+            arrivee: cut(arrivee, 500),
+            distance: quote.distanceKm,
+            duree: typeof body.duree === "number" && Number.isFinite(body.duree) ? body.duree : null,
+            prix,
+            prioriteReservation,
+            reservationId: subjectId,
+            email: cut(email, 254).trim(),
+            phone: cut(phone, 50),
+            name: cut(name, 200),
+            notes: cut(notes, 2000),
+            reservationDate: quote.reservationDateIso,
+            dateFormatted: dateStr ? `${dateStr} à ${heureStr}` : "",
+            createdAt: FieldValue.serverTimestamp(),
+          });
+      } catch (err) {
+        console.error("Erreur enregistrement devis invité:", err.message);
+      }
+    }
+
+    // Envoi email client
+    const clientEmail = sendToClient
       ? await resend.emails.send({
       from: "IzyMoto <contact@izymoto.com>",
       to: [email.trim()],

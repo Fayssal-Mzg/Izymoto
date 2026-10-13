@@ -1,0 +1,69 @@
+rules_version = '2';
+
+// Règles Storage (lot 0.6). Aucun bucket en prod au 2026-10-11 : déployées d'abord sur izymoto-staging.
+// - drivers/<uid>/ : documents KYC du chauffeur (uploadDriverDocument), déposés par lui seul (fiche pending
+//                    ou active), lus par lui et l'admin.
+// Prérequis au déploiement : accorder le rôle « Firebase Rules Firestore Service Agent » proposé par la CLI,
+// sinon isAdmin() et driverStatus() échouent (refus total).
+// - factures/      : PDF générés depuis le back-office (generateInvoicePDF), admin uniquement.
+// - tout le reste  : refusé.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
+    // Même nommage que uploadDriverDocument : <kind>_<timestamp>_<nom assaini>.
+    function isDriverDocName(name) {
+      return name.matches('(identityCard|drivingLicense|vehicleRegistration|insurance|rib|motoPhoto)_[0-9]+_[A-Za-z0-9._-]{1,200}');
+    }
+
+    // Mêmes types et taille que DocumentUploadField (ACCEPT, MAX_MB = 10).
+    function isDriverDocFile() {
+      return request.resource.size > 0
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|heic)|application/pdf');
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function driverStatus(uid) {
+      return firestore.get(/databases/(default)/documents/drivers/$(uid)).data.get('status', '');
+    }
+
+    // Pas d'update : chaque dépôt a un nom unique (timestamp), un fichier déjà vu par l'admin
+    // ne peut pas être remplacé. Suppression par le chauffeur tant que son dossier est en attente.
+    match /drivers/{uid}/{fileName} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid)
+        && resource == null
+        && isDriverDocName(fileName)
+        && isDriverDocFile()
+        && firestore.exists(/databases/(default)/documents/drivers/$(uid))
+        && driverStatus(uid) in ['pending', 'active'];
+      allow delete: if (isOwner(uid) && driverStatus(uid) == 'pending') || isAdmin();
+    }
+
+    match /factures/{fileName} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin()
+        && fileName.matches('facture_[A-Za-z0-9_-]{1,200}\\.pdf')
+        && request.resource.size > 0
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

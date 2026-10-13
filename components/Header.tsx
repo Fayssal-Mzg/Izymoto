@@ -126,6 +126,11 @@ const Header = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/entreprise" className={navPillClass} onClick={handleNavigation}>
+                  Entreprises
+                </Link>
+              </li>
+              <li>
                 <Link href="/about" className={navPillClass} onClick={handleNavigation}>
                   À propos
                 </Link>
@@ -242,6 +247,13 @@ const Header = () => {
               onClick={handleNavigation}
             >
               Aéroports Paris
+            </Link>
+            <Link
+              href="/entreprise"
+              className="text-white text-2xl uppercase tracking-widest hover:text-gold-400 transition-colors duration-300"
+              onClick={handleNavigation}
+            >
+              Entreprises
             </Link>
             <Link
               href="/about"

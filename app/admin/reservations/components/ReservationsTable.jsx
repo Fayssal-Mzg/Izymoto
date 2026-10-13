@@ -25,6 +25,36 @@ const STATUS_META = {
     text: "text-yellow-700",
     dot: "bg-yellow-500",
   },
+  devis: {
+    label: "Devis",
+    bg: "bg-gray-50",
+    text: "text-gray-700",
+    dot: "bg-gray-400",
+  },
+  awaiting_driver: {
+    label: "En attente chauffeur",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    dot: "bg-amber-500",
+  },
+  assigned: {
+    label: "Attribuée",
+    bg: "bg-indigo-50",
+    text: "text-indigo-700",
+    dot: "bg-indigo-500",
+  },
+  in_progress: {
+    label: "En course",
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    dot: "bg-blue-500",
+  },
+  completed_by_driver: {
+    label: "Terminée chauffeur",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    dot: "bg-emerald-500",
+  },
   completed: {
     label: "Terminée",
     bg: "bg-blue-50",
@@ -39,7 +69,7 @@ const STATUS_META = {
   },
 };
 
-function getStatusMeta(status) {
+export function getStatusMeta(status) {
   return (
     STATUS_META[status] || {
       label: status,
@@ -225,6 +255,12 @@ export default function ReservationsTable({
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={booking.status} />
                     <PaymentBadge method={booking.paymentMethod} />
+                    {/* lot 1.1 : empreinte différée refusée, course non garantie */}
+                    {booking.paymentStatus === "action_required" && booking.status !== "cancelled" && (
+                      <span className="inline-flex items-center px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                        Paiement à confirmer
+                      </span>
+                    )}
                   </div>
 
                   <div className="text-xs text-gray-500 flex items-center gap-1.5">
