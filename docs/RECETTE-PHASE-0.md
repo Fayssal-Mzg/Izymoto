@@ -50,13 +50,20 @@ Cocher chaque ligne. Une ligne KO = noter l'heure, le compte, la capture d'écra
 ## E. Back-office (compte `admin`)
 
 - [ ] **E1 Accès** — `/admin` accessible en `admin` ; en `client`, accès refusé.
-- [ ] **E2 Réservations** — liste complète, détail d'une course. ⚠ Bug connu : dates « Invalid Date ».
+- [ ] **E2 Réservations** — liste complète, détail d'une course, dates et statuts en français (corrigé, commits c0eeade et d857e7d).
 - [ ] **E3 Capture** — capturer la course A1. Attendu : Stripe « réussi » (montant prélevé), la course passe « terminée », webhook 200, e-mail de demande d'avis au client.
 - [ ] **E4 Annulation carte** — annuler la course A3. Attendu : Stripe « annulé », course « annulée ».
 - [ ] **E5 Validation chauffeur** — `/admin/chauffeurs` → dossier D5 → ouvrir chaque document → *Approuver*. Attendu : le chauffeur voit le pool après passage en service.
 - [ ] **E6 Portefeuilles** — `/admin/wallets` : solde et historique du client ; ajustement manuel de +5 € avec motif. Attendu : visible côté client.
 - [ ] **E7 Entreprises** — `/admin/companies` : « Société Fictive SAS », membres, historique.
 - [ ] **E8 Facture** — ⚠ bug connu : la génération PDF plante (date). Noter le résultat, ne bloque pas la recette si la décision est « après la mise en production ».
+
+## G. Empreinte différée (lot 1.1) — faite le 2026-10-13 sur staging
+
+- [x] **G1** Course à J+10, carte `…3155` : carte enregistrée, aucun montant bloqué (SetupIntent `succeeded`, aucun PaymentIntent).
+- [x] **G2** Tâche à J-3 (appel manuel avec `CRON_SECRET`) : empreinte de 76 € posée, réservation « authorized ».
+- [x] **G3** Carte refusée à J-3 : « action requise », e-mail client + alerte contact@izymoto.com, badge admin.
+- [x] **G4** Confirmation par le client (lien de l'e-mail, compte du client, carte `4242…`) : empreinte posée, réservation « authorized ».
 
 ## F. Contrôles transverses
 
@@ -79,6 +86,9 @@ Rôles : Fayssal exécute toutes les commandes. Claude ne pousse, ne fusionne et
   - `NEXT_PUBLIC_SITE_URL` = `https://izymoto.com` (sans `/` final) ;
   - `STRIPE_SECRET_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` en **live**, `STRIPE_WEBHOOK_SECRET` = celui de l'endpoint **live** `https://izymoto.com/api/webhooks/stripe` ;
   - endpoint live abonné à : `checkout.session.completed`, `payment_intent.amount_capturable_updated`, `payment_intent.succeeded`, `payment_intent.canceled`, `payment_intent.payment_failed`.
+  - `CRON_SECRET` présent (tâche quotidienne des empreintes différées, lot 1.1) ;
+  - `RESEND_API_KEY` = clé du compte Resend **de contact@izymoto.com** (domaine `izymoto.com` vérifié), pas une clé d'un compte personnel ;
+  - chaque valeur relue : aucune ligne collée à la suivante (cas vécu sur la Preview : `NEXT_PUBLIC_SITE_URL` suivie de `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=…`).
 - [ ] **Fiches chauffeurs existantes** — console Firebase prod → Firestore → `drivers`. Pour chaque document :
   - `documents` est vide `{}` ou ne contient que `identityCard`, `drivingLicense`, `vehicleRegistration`, `insurance`, `rib`, `motoPhoto`, chacun avec un `path` qui commence par `drivers/<uid du document>/` ;
   - `availability` vaut `online` ou `offline` ; `status` vaut `pending`, `active`, `suspended` ou `rejected`.
@@ -109,6 +119,7 @@ Ordre important : **le code d'abord, les règles juste après**. L'inverse casse
 - [ ] Devis invité vers ta propre adresse : « Demande transmise », e-mail reçu sur contact@izymoto.com.
 - [ ] Ton compte : paiement carte réel d'un petit trajet, puis **annulation depuis le back-office** (empreinte libérée, aucun débit). Webhook live : livraisons 200.
 - [ ] Un chauffeur validé voit le pool ; un compte client ne le voit pas.
+- [ ] Vercel → Settings → Cron Jobs : la tâche `/api/cron/deferred-holds` (tous les jours à 05:00 UTC) apparaît ; `https://izymoto.com/api/cron/deferred-holds` sans secret répond 401.
 - [ ] Vercel → Logs production : pas d'erreur 500.
 
 ## 4. Retour arrière (si un contrôle échoue)
