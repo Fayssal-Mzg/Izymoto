@@ -12,7 +12,15 @@ import { getStripe } from "@/lib/stripe";
 // carte enregistrée (refus ou authentification demandée par la banque). Le client
 // confirme ici, en session, avec la même carte ou une autre.
 
-type HoldState = "loading" | "action_required" | "authorized" | "pending" | "cancelled" | "unavailable" | "error";
+type HoldState =
+  | "loading"
+  | "action_required"
+  | "authorized"
+  | "pending"
+  | "cancelled"
+  | "unavailable"
+  | "not_found"
+  | "error";
 
 interface HoldInfo {
   state: HoldState;
@@ -86,7 +94,8 @@ export default function ConfirmPaymentPage({ params }: { params: { bookingId: st
         body: JSON.stringify({ bookingId: params.bookingId }),
       });
       const data = await res.json().catch(() => ({}));
-      setInfo(res.ok ? data : { state: "error" });
+      // 404 : réservation absente OU liée à un autre compte (le serveur ne distingue pas).
+      setInfo(res.ok ? data : { state: res.status === 404 ? "not_found" : "error" });
     } catch {
       setInfo({ state: "error" });
     }
@@ -147,6 +156,13 @@ export default function ConfirmPaymentPage({ params }: { params: { bookingId: st
         )}
 
         {info.state === "cancelled" && <p className="text-sm text-gray-600">Cette réservation a été annulée.</p>}
+
+        {info.state === "not_found" && (
+          <p className="text-sm text-gray-600">
+            Cette réservation n'est pas liée au compte connecté. Déconnectez-vous puis reconnectez-vous avec le
+            compte utilisé pour réserver.
+          </p>
+        )}
 
         {(info.state === "unavailable" || info.state === "error") && (
           <p className="text-sm text-gray-600">
