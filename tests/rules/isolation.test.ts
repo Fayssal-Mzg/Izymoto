@@ -310,12 +310,13 @@ describe("client : bookings", () => {
     await assertFails(db.collection("bookings").add(devis(UID.client, { companyId: COMPANY_A })));
     await assertFails(db.collection("bookings").add(devis(UID.client, { driverId: UID.driver })));
   });
-  it("refuse la création pour le compte d'un autre (userId différent) et les id card_ / hybrid_", async () => {
+  it("refuse la création pour le compte d'un autre (userId différent) et les id card_ / hybrid_ / deferred_", async () => {
     const db = as.client().firestore();
     await assertFails(db.collection("bookings").add(devis(UID.client2)));
     await assertSucceeds(db.collection("bookings").doc("dev_ok").set(devis(UID.client))); // témoin : id libre OK
     await assertFails(db.collection("bookings").doc("card_x").set(devis(UID.client)));
     await assertFails(db.collection("bookings").doc("hybrid_x").set(devis(UID.client)));
+    await assertFails(db.collection("bookings").doc("deferred_seti_x").set(devis(UID.client)));
   });
   it("refuse createdAt à l'heure client (new Date()) ; serverTimestamp accepté", async () => {
     const db = as.client().firestore();

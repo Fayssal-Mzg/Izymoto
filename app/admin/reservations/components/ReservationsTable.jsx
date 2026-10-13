@@ -255,6 +255,12 @@ export default function ReservationsTable({
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={booking.status} />
                     <PaymentBadge method={booking.paymentMethod} />
+                    {/* lot 1.1 : empreinte différée refusée, course non garantie */}
+                    {booking.paymentStatus === "action_required" && booking.status !== "cancelled" && (
+                      <span className="inline-flex items-center px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                        Paiement à confirmer
+                      </span>
+                    )}
                   </div>
 
                   <div className="text-xs text-gray-500 flex items-center gap-1.5">

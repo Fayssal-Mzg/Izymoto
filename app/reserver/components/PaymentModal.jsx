@@ -314,6 +314,10 @@ function CheckoutForm({
   onCancel,
   phoneNumber,
   userName,
+  // lot 1.1 : "setup" = course lointaine, la carte est enregistrée et l'empreinte
+  // sera posée à `holdScheduledFor` (ISO). "payment" = empreinte immédiate.
+  intentType = "payment",
+  holdScheduledFor = null,
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -356,16 +360,32 @@ function CheckoutForm({
     setError(null);
 
     try {
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          payment_method_data: {
-            billing_details: {
-              phone: phoneNumber,
-              name: userName,
-            },
+      const confirmParams = {
+        payment_method_data: {
+          billing_details: {
+            phone: phoneNumber,
+            name: userName,
           },
         },
+      };
+
+      if (intentType === "setup") {
+        const { error: setupError, setupIntent } = await stripe.confirmSetup({
+          elements,
+          confirmParams,
+          redirect: "if_required",
+        });
+        if (setupError) {
+          setError(setupError.message);
+        } else if (setupIntent && setupIntent.status === "succeeded") {
+          await finalize(setupIntent.id);
+        }
+        return;
+      }
+
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams,
         redirect: "if_required",
       });
 
@@ -429,6 +449,19 @@ function CheckoutForm({
         </div>
       </div>
 
+      {intentType === "setup" && (
+        <p className="text-xs text-gray-600 leading-relaxed">
+          Aucun montant n'est bloqué aujourd'hui. En validant, j'autorise Izymoto à
+          enregistrer cette carte pour cette course et mes prochaines réservations, à y
+          réserver {Number(prixFinal).toFixed(2).replace(".", ",")} €
+          {holdScheduledFor
+            ? ` à partir du ${new Date(holdScheduledFor).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}`
+            : ""}
+          , quelques jours avant la course, puis à débiter ce montant après la course.
+          Je peux demander la suppression de ma carte à tout moment à contact@izymoto.com.
+        </p>
+      )}
+
       <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-2">
         <button
           type="button"
@@ -453,6 +486,8 @@ function CheckoutForm({
               ? "Traitement..."
               : retryId
               ? "Réessayer la finalisation"
+              : intentType === "setup"
+              ? "Enregistrer ma carte et réserver"
               : `Payer ${Math.round(prixFinal)}€`}
           </span>
         </button>
@@ -1145,6 +1180,8 @@ export default function PaymentModal({
   reservationDate,
 }) {
   const [clientSecret, setClientSecret] = useState("");
+  // lot 1.1 : { type: "payment" | "setup", holdScheduledFor } renvoyé par le serveur.
+  const [intentInfo, setIntentInfo] = useState({ type: "payment", holdScheduledFor: null });
   const [error, setError] = useState(null);
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -1332,6 +1369,10 @@ export default function PaymentModal({
 
       const data = await response.json();
       setServerTotalCents(data.totalAmountCents);
+      setIntentInfo({
+        type: data.intentType === "setup" ? "setup" : "payment",
+        holdScheduledFor: data.holdScheduledFor ?? null,
+      });
       setClientSecret(data.clientSecret);
       if (data.isHybrid) {
         setHybridSplit({
@@ -1523,6 +1564,8 @@ export default function PaymentModal({
                   }
                   phoneNumber={phoneNumber}
                   userName={name}
+                  intentType={intentInfo.type}
+                  holdScheduledFor={intentInfo.holdScheduledFor}
                 />
               )}
             </Elements>

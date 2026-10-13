@@ -169,7 +169,7 @@ service cloud.firestore {
     // read   : passager (userId), chauffeur assigné (driverId), admin ; pool
     //          (status == awaiting_driver) UNIQUEMENT pour un chauffeur validé.
     // create : devis connecté uniquement (status "devis", userId == auth.uid, liste blanche).
-    //          Les courses payées (card_<pi>, hybrid_<pi>, wallet) sont créées par le serveur.
+    //          Les courses payées (card_<pi>, hybrid_<pi>, deferred_<seti>, wallet) sont créées par le serveur.
     // update : admin ; chauffeur validé qui accepte une course du pool ; chauffeur assigné
     //          qui démarre / termine / libère. Aucune mise à jour par le passager.
     // delete : admin seulement.
@@ -185,6 +185,7 @@ service cloud.firestore {
         || (isSignedIn()
             && !id.matches('card_.*')
             && !id.matches('hybrid_.*')
+            && !id.matches('deferred_.*')
             && request.resource.data.keys().hasOnly([
                  'userId', 'accountType', 'status', 'createdAt',
                  'depart', 'arrivee', 'distance', 'duree', 'prix',

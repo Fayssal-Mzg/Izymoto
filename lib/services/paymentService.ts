@@ -75,15 +75,17 @@ export async function handleSuccessfulPayment({
 
     // lot 0.3 : la réservation est créée par le SERVEUR (prix et amountAuthorized
     // recalculés, un PaymentIntent = une course). Aucune écriture client.
+    // lot 1.1 : « seti_… » = carte enregistrée pour une course lointaine (empreinte différée).
+    const isDeferred = paymentId.startsWith("seti_");
     const idToken = await user.getIdToken();
-    const response = await fetch("/api/finalize-card-booking", {
+    const response = await fetch(isDeferred ? "/api/finalize-deferred-booking" : "/api/finalize-card-booking", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({
-        paymentIntentId: paymentId,
+        ...(isDeferred ? { setupIntentId: paymentId } : { paymentIntentId: paymentId }),
         displayedTotalCents: Math.round(prixFinal * 100),
         bookingData: {
           ...rideParams,
@@ -126,7 +128,7 @@ export async function handleSuccessfulPayment({
       reservationDate: date,
       dateFormatted: formattedDate,
       status: "confirmed",
-      paymentStatus: "authorized",
+      paymentStatus: isDeferred ? "card_saved" : "authorized",
       createdAt: new Date(),
       email: user.email,
       isPaid: false, // pas encore capturé — pour les templates emails

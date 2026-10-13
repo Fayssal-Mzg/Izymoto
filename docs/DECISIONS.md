@@ -113,6 +113,17 @@ Validées telles quelles :
 - Phase 1 : mise en cohérence des prix affichés avec la grille tarifaire.
 - Phase 3 : choix perso/pro du collaborateur au moment de réserver.
 
+## D-013 — Empreinte différée des courses réservées à l'avance (lot 1.1)
+**Date** : 2026-10-13 · **Statut** : validée (porte 1 et arbitrages de la relecture sécurité)
+
+- Course à 5 jours ou plus : la carte est enregistrée à la réservation (3-D Secure) et l'empreinte est posée automatiquement 3 jours avant le départ. Moins de 5 jours : empreinte immédiate, inchangée. Paiement hybride refusé au-delà de 5 jours.
+- Empreinte refusée (« action_required ») : e-mail au client avec une page de confirmation, alerte e-mail à l'admin et badge « Paiement à confirmer », nouvelle tentative chaque matin. **La course reste dans le pool des chauffeurs ; à J-1 sans confirmation, c'est l'admin qui décide** (appel du client ou annulation). Pas de retrait ni d'annulation automatique.
+- Au-delà d'un jour après le départ, ou si la course est terminée sans empreinte, les tentatives s'arrêtent (« failed »).
+- **La carte reste enregistrée après la course** (pas de détachement) ; le texte d'accord le dit (« pour cette course et mes prochaines réservations ») et indique que la suppression se demande à contact@izymoto.com. La réutilisation d'une carte enregistrée à l'écran n'est pas encore proposée.
+- Seul le serveur crée les réservations `deferred_<seti>` (règle Firestore).
+
+**Pourquoi** : une empreinte n'est valable que 7 jours ; l'autorisation prolongée (30 jours) est réservée à la tarification IC+. Laisser la décision à l'admin à J-1 évite d'annuler une course qu'un simple appel au client peut sauver. Accepté par Fayssal : une course peut être réalisée sans empreinte si personne n'agit (risque d'impayé tracé par l'alerte admin).
+
 ---
 
 ## Qui voit quoi (référence d'isolation)

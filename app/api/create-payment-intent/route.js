@@ -4,6 +4,11 @@ import { requireAuth, AdminAuthError } from "@/lib/firebase/admin-server";
 import { pickPaymentIntentMetadata } from "@/lib/api/identity";
 import { quoteOrResponse, checkDisplayedPrice } from "@/lib/api/pricing";
 import { getSpendableCentsForUser } from "@/lib/wallet/companyServer";
+import {
+  getOrCreateStripeCustomer,
+  holdScheduledFor,
+  isDeferredHold,
+} from "@/lib/payments/deferredHold";
 
 // Stripe minimum pour une charge EUR : 0.50€ = 50 centimes.
 const STRIPE_MIN_CHARGE_CENTS = 50;
@@ -77,6 +82,58 @@ export async function POST(request) {
     const cardAmountCents = totalCents - walletCents;
     const isHybrid = walletCents > 0;
 
+    // Mêmes métadonnées de course pour l'empreinte et pour l'enregistrement de carte.
+    const rideMetadata = Object.fromEntries(
+      Object.entries({
+        ...pickPaymentIntentMetadata(metadata),
+        depart: quote.depart,
+        arrivee: quote.arrivee,
+        ...(quote.distanceKm !== null ? { distance: quote.distanceKm } : {}),
+        ...(quote.reservationDateIso ? { reservationDate: quote.reservationDateIso } : {}),
+        prioriteReservation: quote.prioriteReservation,
+      }).map(([k, v]) => [k, String(v)])
+    );
+
+    // lot 1.1 : une empreinte n'est valable que 7 jours. Pour une course lointaine
+    // payée par carte seule, on enregistre la carte (3-D Secure fait maintenant) ;
+    // l'empreinte sera posée par la tâche quotidienne quelques jours avant le départ.
+    const deferred = isDeferredHold(quote.reservationDateIso);
+    // L'empreinte de la part carte expirerait avant la course : pas d'hybride au-delà.
+    if (isHybrid && deferred) {
+      return NextResponse.json(
+        {
+          error:
+            "Pour une course réservée plus de 5 jours à l'avance, payez entièrement par carte ou par portefeuille.",
+          code: "HYBRID_NOT_DEFERRED",
+        },
+        { status: 400 }
+      );
+    }
+    if (deferred) {
+      const customer = await getOrCreateStripeCustomer(auth.uid, auth.email);
+      const setupIntent = await stripe.setupIntents.create({
+        customer,
+        usage: "off_session",
+        payment_method_types: ["card"],
+        metadata: {
+          ...rideMetadata,
+          userId: auth.uid,
+          paymentMode: "card_deferred",
+          totalAmountCents: String(totalCents),
+        },
+      });
+      return NextResponse.json({
+        intentType: "setup",
+        clientSecret: setupIntent.client_secret,
+        setupIntentId: setupIntent.id,
+        cardAmountCents: totalCents,
+        walletAmountCents: 0,
+        totalAmountCents: totalCents,
+        isHybrid: false,
+        holdScheduledFor: holdScheduledFor(quote.reservationDateIso).toISOString(),
+      });
+    }
+
     // Modèle "Uber" : on autorise les fonds sans débiter (`capture_method: manual`),
     // l'admin déclenche la capture après la course via /api/capture-payment.
     // TODO: réactiver `payment_method_options.card.request_incremental_authorization: "if_available"`
@@ -90,17 +147,8 @@ export async function POST(request) {
       // personnelle : le webhook ne lit pas ces métadonnées), puis clés serveur posées
       // APRÈS la copie, donc non écrasables : propriétaire, mode, parts wallet/total.
       metadata: {
-        ...Object.fromEntries(
-          Object.entries({
-            ...pickPaymentIntentMetadata(metadata),
-            // Valeurs validées par le serveur (priment sur celles du client).
-            depart: quote.depart,
-            arrivee: quote.arrivee,
-            ...(quote.distanceKm !== null ? { distance: quote.distanceKm } : {}),
-            ...(quote.reservationDateIso ? { reservationDate: quote.reservationDateIso } : {}),
-            prioriteReservation: quote.prioriteReservation,
-          }).map(([k, v]) => [k, String(v)])
-        ),
+        // Valeurs validées par le serveur (priment sur celles du client).
+        ...rideMetadata,
         userId: auth.uid,
         paymentMode: isHybrid ? "hybrid" : "card",
         walletAmountCents: String(walletCents),
@@ -112,6 +160,7 @@ export async function POST(request) {
     });
 
     return NextResponse.json({
+      intentType: "payment",
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
       cardAmountCents,

@@ -10,6 +10,7 @@ import {
 } from "@/lib/wallet/server";
 import { creditCompanyWallet } from "@/lib/wallet/companyServer";
 import { sendReviewRequestEmail } from "@/lib/emails/reviewRequestEmail";
+import { recordAuthorizedHold } from "@/lib/payments/deferredHold";
 
 // Webhook Stripe — source unique de vérité pour les transitions de statut.
 // Côtés client/admin appellent les endpoints (capture/cancel/increment) puis
@@ -225,10 +226,25 @@ export async function POST(request) {
           const NOT_YET_DISPATCHED = new Set([undefined, null, "", "pending", "confirmed", "awaiting_driver"]);
           // Un événement tardif ou rejoué ne doit pas faire revenir en arrière un paiement
           // déjà capturé, annulé, libéré, remboursé, échoué ou autrement avancé.
-          const NOT_YET_AUTHORIZED = new Set([undefined, null, "", "pending", "authorized"]);
+          // lot 1.1 : une empreinte différée confirmée par le client (après refus ou
+          // authentification) passe aussi de « action_required » à « authorized ».
+          const NOT_YET_AUTHORIZED = new Set([
+            undefined, null, "", "pending", "authorized", "hold_in_progress", "action_required",
+          ]);
+          // lot 1.1 : empreinte différée — même écriture que la tâche quotidienne
+          // (transaction, date limite de capture, libération si la course est annulée).
+          const deferred = bookings.filter(
+            (b) => b.deferredHold === true && NOT_YET_AUTHORIZED.has(b.paymentStatus)
+          );
+          if (deferred.length > 0) {
+            const pi = await stripe.paymentIntents.retrieve(obj.id, { expand: ["latest_charge"] });
+            for (const b of deferred) {
+              await recordAuthorizedHold(getAdminFirestore().collection("bookings").doc(b.id), pi);
+            }
+          }
           await Promise.all(
             bookings
-              .filter((b) => NOT_YET_AUTHORIZED.has(b.paymentStatus))
+              .filter((b) => NOT_YET_AUTHORIZED.has(b.paymentStatus) && b.deferredHold !== true)
               .map((b) =>
                 getAdminFirestore().collection("bookings").doc(b.id).update({
                   paymentStatus: "authorized",
@@ -264,10 +280,29 @@ export async function POST(request) {
 
       case "payment_intent.payment_failed": {
         if (isWalletRecharge) break;
+        const message = obj.last_payment_error?.message || "Paiement refusé";
+        // lot 1.1 : l'échec d'une empreinte différée attend la confirmation du client
+        // (« action_required ») au lieu d'être définitif ; la tâche et la page de
+        // confirmation ont déjà posé ce statut, l'événement ne fait que le confirmer.
+        const all = await findBookingsByPaymentIntent(obj.id);
+        const deferred = all.filter((b) => b.deferredHold === true);
+        await Promise.all(
+          deferred
+            // hold_in_progress : la tâche détient le verrou et posera elle-même le statut.
+            .filter((b) => b.paymentStatus === "action_required")
+            .map((b) =>
+              getAdminFirestore().collection("bookings").doc(b.id).update({
+                paymentStatus: "action_required",
+                // Jamais le motif bancaire brut : le document est lu par le chauffeur assigné.
+                holdLastError: "Empreinte refusée ou confirmation demandée par la banque",
+                paymentUpdatedAt: Timestamp.now(),
+              })
+            )
+        );
+        if (all.length === deferred.length) break;
         const bookings = await updateBookingByPaymentIntent(obj.id, {
           paymentStatus: "failed",
-          paymentFailureMessage:
-            obj.last_payment_error?.message || "Paiement refusé",
+          paymentFailureMessage: message,
         });
         await refundHybridBookings(bookings, event.id);
         break;

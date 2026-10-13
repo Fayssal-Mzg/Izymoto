@@ -18,6 +18,21 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Timestamp Firestore brut (champs non convertis par getAllBookings) ou Date.
+const formatAdminDate = (value) => {
+  const ms =
+    typeof value?.toMillis === "function"
+      ? value.toMillis()
+      : typeof value?.seconds === "number"
+      ? value.seconds * 1000
+      : value
+      ? new Date(value).getTime()
+      : NaN;
+  return Number.isNaN(ms)
+    ? "—"
+    : new Date(ms).toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "short", timeStyle: "short" });
+};
+
 export default function ReservationDetailsModal({
   booking,
   onClose,
@@ -380,6 +395,30 @@ export default function ReservationDetailsModal({
                   {booking.paymentFailureMessage &&
                     ` — ${booking.paymentFailureMessage}`}
                 </div>
+              )}
+
+              {/* lot 1.1 : empreinte différée (course réservée à l'avance) */}
+              {booking.deferredHold && booking.paymentStatus !== "captured" && (
+                <div className="mt-3 pt-3 border-t border-gray-200 text-xs space-y-1">
+                  {(booking.paymentStatus === "card_saved" ||
+                    booking.paymentStatus === "hold_in_progress") && (
+                    <p className="text-gray-700">
+                      Carte enregistrée — empreinte prévue le{" "}
+                      <strong>{formatAdminDate(booking.holdScheduledFor)}</strong>.
+                    </p>
+                  )}
+                  {booking.paymentStatus === "action_required" && (
+                    <p className="text-red-700 font-semibold">
+                      Empreinte refusée : le client doit confirmer le paiement (e-mail envoyé)
+                      {booking.holdLastError ? ` — ${booking.holdLastError}` : ""}.
+                    </p>
+                  )}
+                </div>
+              )}
+              {booking.captureBefore && booking.paymentStatus === "authorized" && (
+                <p className="text-xs text-gray-600 pt-1">
+                  À capturer avant le <strong>{formatAdminDate(booking.captureBefore)}</strong>.
+                </p>
               )}
 
               {(booking.paymentMethod === "card" ||

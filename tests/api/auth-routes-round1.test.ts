@@ -10,6 +10,12 @@ const stripeMock = vi.hoisted(() => ({
 const emailSend = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/stripe-server", () => ({ stripe: stripeMock }));
+// lot 1.1 : ces tests couvrent l'empreinte immédiate ; l'empreinte différée (courses
+// à 5 jours ou plus, dates de test à J+10) est testée dans deferred-hold.test.ts.
+vi.mock("@/lib/payments/deferredHold", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/payments/deferredHold")>()),
+  isDeferredHold: () => false,
+}));
 vi.mock("resend", () => ({
   Resend: class {
     emails = { send: emailSend };
