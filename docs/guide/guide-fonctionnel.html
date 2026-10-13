@@ -14,7 +14,7 @@
     <p>Réservation de moto-taxi à Paris et en Île-de-France : ce que font les clients, les chauffeurs, les entreprises et l'équipe Izymoto sur izymoto.com.</p>
   </div>
   <div class="meta">
-    <p>Version du 13 octobre 2026 — décrit le site <strong>après la mise en production de la phase 0</strong> (sécurité, grille tarifaire, espace entreprise).</p>
+    <p>Version du 13 octobre 2026 — décrit izymoto.com <strong>tel qu'en production depuis le 13 octobre 2026</strong> (phase 0 : sécurité, grille tarifaire, espace entreprise ; lot 1.1 : réservation à l'avance).</p>
     <p>Toutes les captures proviennent de l'environnement de test (staging) avec des comptes et des données <strong>fictifs</strong> : aucune donnée réelle de client ou de chauffeur n'apparaît dans ce document.</p>
   </div>
 </section>
@@ -112,6 +112,14 @@
     <li><strong>Portefeuille entreprise</strong> : pour un collaborateur rattaché à une société, la course est débitée du solde de l'entreprise, dans la limite de son budget mensuel (chapitre 6).</li>
   </ul>
   <p>Le prix payé est toujours recalculé par le serveur à partir des adresses et de la date : un montant modifié dans le navigateur n'est jamais accepté.</p>
+
+  <h3>Réserver plusieurs jours à l'avance</h3>
+  <p>Pour une course prévue <strong>5 jours ou plus</strong> après la réservation, aucun montant n'est bloqué tout de suite : le client <strong>enregistre sa carte</strong> (avec la validation 3-D Secure de sa banque) et le montant est réservé automatiquement <strong>3 jours avant la course</strong>. Une empreinte bancaire n'étant valable que 7 jours, c'est ce qui garantit le paiement des courses réservées longtemps à l'avance.</p>
+  <ul>
+    <li>Si la banque refuse ou demande une confirmation, le client reçoit un e-mail avec un lien « Confirmer le paiement » ; l'équipe Izymoto est alertée et une nouvelle tentative a lieu chaque matin.</li>
+    <li>La carte reste enregistrée pour les prochaines réservations ; sa suppression se demande à contact@izymoto.com.</li>
+    <li>Le paiement mixte portefeuille + carte n'est pas possible pour ces courses.</li>
+  </ul>
 
   <h3>Les forfaits prépayés (portefeuille)</h3>
   <p>Le client peut recharger son portefeuille et recevoir un bonus. La recharge est payée par carte via Stripe ; le crédit (recharge + bonus) est disponible dès la confirmation du paiement.</p>
@@ -338,6 +346,7 @@
     <li><strong>Entreprises</strong> : trajets récurrents, interlocuteur dédié, reporting et export des dépenses, historique consolidé visible par le responsable.</li>
     <li><strong>Réservation en ligne de la mise à disposition</strong> à l'heure (aujourd'hui sur demande).</li>
     <li><strong>Annulation par le client</strong> depuis son compte.</li>
+    <li><strong>Réutilisation d'une carte enregistrée</strong> lors d'une nouvelle réservation (aujourd'hui, la carte est ressaisie).</li>
     <li><strong>Versement automatique</strong> des gains aux chauffeurs.</li>
     <li><strong>Notifications</strong> : e-mail au chauffeur lors de la validation de son dossier, SMS.</li>
     <li><strong>Export de ses données</strong> par le client, depuis son compte.</li>
@@ -385,10 +394,10 @@
     <li>Un chauffeur validé voit un bouton de suppression de ses documents, que les règles de sécurité refusent.</li>
   </ul>
 
-  <h3>Mise en production</h3>
+  <h3>Après la mise en production du 13 octobre 2026</h3>
   <ul>
-    <li>Le stockage de fichiers (Firebase Storage) n'est pas encore activé en production : l'inscription chauffeur ne peut pas aboutir tant qu'il ne l'est pas (procédure dans <code>docs/RECETTE-PHASE-0.md</code>).</li>
-    <li>Le webhook Stripe de production n'a encore reçu aucun événement. Il faudra le vérifier lors du premier paiement réel (empreinte puis annulation).</li>
+    <li>Le webhook Stripe de production n'a encore reçu aucun événement : à vérifier lors du premier paiement réel (empreinte puis annulation).</li>
+    <li>La suppression d'une carte enregistrée, sur demande du client, se fait à la main dans le tableau de bord Stripe ; la politique de confidentialité doit mentionner la conservation de la carte.</li>
   </ul>
 </section>
 
