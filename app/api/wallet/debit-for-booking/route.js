@@ -7,6 +7,7 @@ import {
   getCompanyContextForUser,
   debitCompanyWalletForBooking,
 } from "@/lib/wallet/companyServer";
+import { refreshRidePoolSafe } from "@/lib/rides/pool";
 
 function walletErrorStatus(code) {
   switch (code) {
@@ -108,6 +109,7 @@ export async function POST(request) {
           description,
         });
 
+    await refreshRidePoolSafe(result?.bookingId);
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof WalletError) {

@@ -16,11 +16,10 @@ rules_version = '2';
 // - Testées uniquement sur l'émulateur `demo-izymoto` (tests/rules/).
 // - « Chauffeur validé » = drivers/{uid}.status == "active" (posé par l'admin).
 //
-// Réserves connues (voir rapport du lot 0.5) :
-// - Le pool de courses expose encore le document complet (name, phone, email du
-//   passager) aux chauffeurs validés : version sans données perso = phase 2.
-// - Le chauffeur assigné écrit encore côté client commissionRate / platformShareCents /
-//   driverShareCents à l'acceptation (contraints ici : taux 0.2, cohérents avec prix).
+// Lot 2.1 (fin de l'écart D-010) : le pool des chauffeurs est la collection
+// `ridePool`, écrite par le serveur, sans données personnelles. Les chauffeurs ne
+// lisent plus les `bookings` du pool et n'écrivent plus dans `bookings` : accepter,
+// démarrer, terminer et libérer passent par /api/rides/* (Admin SDK).
 // ----------------------------------------------------------------------------
 
 service cloud.firestore {
@@ -166,20 +165,19 @@ service cloud.firestore {
     }
 
     // --- bookings ------------------------------------------------------------
-    // read   : passager (userId), chauffeur assigné (driverId), admin ; pool
-    //          (status == awaiting_driver) UNIQUEMENT pour un chauffeur validé.
+    // read   : passager (userId), admin ; chauffeur assigné et validé PENDANT la course
+    //          (assigned / in_progress) uniquement — « Qui voit quoi ». Les courses à
+    //          prendre se lisent dans `ridePool`, l'historique du chauffeur dans `driverRides`.
     // create : devis connecté uniquement (status "devis", userId == auth.uid, liste blanche).
     //          Les courses payées (card_<pi>, hybrid_<pi>, deferred_<seti>, wallet) sont créées par le serveur.
-    // update : admin ; chauffeur validé qui accepte une course du pool ; chauffeur assigné
-    //          qui démarre / termine / libère. Aucune mise à jour par le passager.
+    // update : admin seulement. Les actions du chauffeur passent par /api/rides/*.
     // delete : admin seulement.
     match /bookings/{id} {
       allow read: if isAdmin()
-        || (isSignedIn() && (
-              resource.data.get('userId', '') == request.auth.uid
-              || resource.data.get('driverId', '') == request.auth.uid
-            ))
-        || (resource.data.get('status', '') == 'awaiting_driver' && isValidatedDriver());
+        || (isSignedIn() && resource.data.get('userId', '') == request.auth.uid)
+        || (resource.data.get('driverId', '') == request.auth.uid
+            && resource.data.get('status', '') in ['assigned', 'in_progress']
+            && isValidatedDriver());
 
       allow create: if isAdmin()
         || (isSignedIn()
@@ -202,65 +200,23 @@ service cloud.firestore {
             && request.resource.data.get('depart', '').size() <= 2000
             && request.resource.data.get('arrivee', '').size() <= 2000);
 
-      allow update: if isAdmin()
-        // Acceptation FCFS d'une course du pool (dispatch.ts : acceptRide).
-        || (isOnlineValidatedDriver()
-            && resource.data.get('status', '') == 'awaiting_driver'
-            && resource.data.get('driverId', null) == null
-            && resource.data.get('userId', '') != request.auth.uid
-            && request.resource.data.driverAcceptedAt == request.time
-            && request.resource.data.updatedAt == request.time
-            && request.resource.data.get('driverId', null) == request.auth.uid
-            && request.resource.data.get('status', '') == 'assigned'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'driverId', 'driverAcceptedAt', 'status',
-                 'commissionRate', 'platformShareCents', 'driverShareCents', 'updatedAt'
-               ])
-            // Commission contrainte : taux 0.2, parts cohérentes avec le prix serveur
-            // (tolérance 1 centime d'arrondi). Migration serveur prévue en phase 2.
-            && resource.data.get('prix', null) is number
-            && request.resource.data.get('commissionRate', null) == 0.2
-            && request.resource.data.get('platformShareCents', null) is int
-            && request.resource.data.get('driverShareCents', null) is int
-            && math.abs(request.resource.data.platformShareCents - resource.data.prix * 20) <= 1
-            && math.abs(request.resource.data.platformShareCents
-                        + request.resource.data.driverShareCents
-                        - resource.data.prix * 100) <= 1)
-        // Démarrage par le chauffeur assigné (startRide).
-        || (isValidatedDriver()
-            && resource.data.get('driverId', null) == request.auth.uid
-            && resource.data.get('status', '') == 'assigned'
-            && request.resource.data.get('status', '') == 'in_progress'
-            && request.resource.data.driverStartedAt == request.time
-            && request.resource.data.updatedAt == request.time
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'status', 'driverStartedAt', 'updatedAt'
-               ]))
-        // Fin de course par le chauffeur assigné (completeRide).
-        || (isValidatedDriver()
-            && resource.data.get('driverId', null) == request.auth.uid
-            && resource.data.get('status', '') in ['assigned', 'in_progress']
-            && request.resource.data.get('status', '') == 'completed_by_driver'
-            && request.resource.data.driverCompletedAt == request.time
-            && request.resource.data.updatedAt == request.time
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'status', 'driverCompletedAt', 'updatedAt'
-               ]))
-        // Libération par le chauffeur assigné, avant démarrage (releaseRide).
-        || (isSignedIn()
-            && resource.data.get('driverId', null) == request.auth.uid
-            && resource.data.get('status', '') == 'assigned'
-            && request.resource.data.get('status', '') == 'awaiting_driver'
-            && request.resource.data.get('driverId', null) == null
-            && request.resource.data.get('driverAcceptedAt', null) == null
-            && request.resource.data.updatedAt == request.time
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'driverId', 'driverAcceptedAt', 'status', 'driverReleaseReason', 'updatedAt'
-               ])
-            && request.resource.data.get('driverReleaseReason', '') is string
-            && request.resource.data.get('driverReleaseReason', '').size() <= 500);
+      allow update: if isAdmin();
 
       allow delete: if isAdmin();
+    }
+
+    // --- ridePool : courses à prendre, sans données personnelles (lot 2.1) ---
+    // Écrite uniquement par le serveur ; lisible par les chauffeurs validés EN SERVICE.
+    match /ridePool/{id} {
+      allow read: if isAdmin() || isOnlineValidatedDriver();
+      allow write: if false;
+    }
+
+    // --- driverRides : historique réduit du chauffeur (zones, date, statut, gains) ---
+    // Écrit uniquement par le serveur ; lisible par le chauffeur concerné et l'admin.
+    match /driverRides/{driverUid}/rides/{bookingId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == driverUid);
+      allow write: if false;
     }
 
     // --- wallets : lecture de son solde ; écriture serveur uniquement ---

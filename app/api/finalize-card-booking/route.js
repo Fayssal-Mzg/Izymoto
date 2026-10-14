@@ -17,6 +17,7 @@ import {
   readClaim,
   rejectClaim,
 } from "@/lib/payments/claims";
+import { refreshRidePoolSafe, syncRidePoolInTx } from "@/lib/rides/pool";
 
 // Finalise une course payée par carte seule, APRÈS confirmPayment côté client
 // (PaymentIntent en requires_capture = empreinte posée). La réservation est créée
@@ -253,6 +254,8 @@ export async function POST(request) {
         return null;
       }
       tx.set(bookingRef, booking);
+      // lot 2.1 : la course entre au pool des chauffeurs dans la même transaction.
+      syncRidePoolInTx(tx, bookingRef.id, booking);
       return { result: null, bookingId: bookingRef.id, reservationId };
     });
     if (!done.ok) {
@@ -265,6 +268,7 @@ export async function POST(request) {
       return lostLock();
     }
     held = null;
+    await refreshRidePoolSafe(bookingRef.id);
     return NextResponse.json({ bookingId: bookingRef.id, reservationId });
   } catch (err) {
     console.error("[finalize-card-booking] erreur:", err);

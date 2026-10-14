@@ -32,10 +32,14 @@ beforeEach(async () => {
     await db.collection("bookings").doc("bkDecimal").set({
       userId: UID.client, status: "awaiting_driver", prix: 79.99, createdAt: new Date(), name: "P", phone: "+33600000001",
     });
+    await db.collection("ridePool").doc("bkDecimal").set({
+      bookingId: "bkDecimal", departZone: "Paris 1er", arriveeZone: "Paris 2e", createdAt: new Date(), prix: 79.99, driverShareCents: 6399,
+    });
   });
 });
 
-const poolQuery = (db: any) =>
+const poolQuery = (db: any) => db.collection("ridePool").orderBy("createdAt", "desc").get();
+const oldPoolQuery = (db: any) =>
   db.collection("bookings").where("status", "==", "awaiting_driver").orderBy("createdAt", "desc").get();
 
 // Mise à jour exacte de dispatch.ts : acceptRide (prix en euros -> centimes).
@@ -73,204 +77,231 @@ const devis = (uid: string, extra: object = {}) => ({
   ...extra,
 });
 
-describe("pool de courses (bookings awaiting_driver)", () => {
-  it("chauffeur validé : lit le pool (requête de subscribePool)", async () => {
+const setDriver = (patch: object) =>
+  env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection("drivers").doc(UID.driver).update(patch);
+  });
+
+describe("pool de courses (ridePool, lot 2.1)", () => {
+  it("chauffeur validé en service : lit le pool (requête orderBy createdAt desc)", async () => {
     const snap = (await assertSucceeds(poolQuery(as.driver().firestore()))) as { size: number };
     if (snap.size !== 2) throw new Error(`2 courses attendues dans le pool, ${snap.size} reçues`);
   });
-  it("chauffeur validé : lit une course du pool par id", async () => {
-    await assertSucceeds(as.driver().firestore().collection("bookings").doc(BOOKING.pool).get());
+  it("chauffeur validé en service : lit une course du pool par id", async () => {
+    await assertSucceeds(as.driver().firestore().collection("ridePool").doc(BOOKING.pool).get());
   });
-  it("chauffeur pending : refusé (requête et lecture par id)", async () => {
+  it("chauffeur validé HORS service (offline) : refusé (requête et id)", async () => {
+    await setDriver({ availability: "offline" });
+    await assertFails(poolQuery(as.driver().firestore()));
+    await assertFails(as.driver().firestore().collection("ridePool").doc(BOOKING.pool).get());
+    await setDriver({ availability: "online" });
+    await assertSucceeds(poolQuery(as.driver().firestore())); // témoin
+  });
+  it("chauffeur suspendu : refusé", async () => {
+    await setDriver({ status: "suspended" });
+    await assertFails(poolQuery(as.driver().firestore()));
+    await assertFails(as.driver().firestore().collection("ridePool").doc(BOOKING.pool).get());
+  });
+  it("chauffeur non validé (pending) : refusé (requête et lecture par id)", async () => {
     await assertFails(poolQuery(as.driverPending().firestore()));
-    await assertFails(as.driverPending().firestore().collection("bookings").doc(BOOKING.pool).get());
+    await assertFails(as.driverPending().firestore().collection("ridePool").doc(BOOKING.pool).get());
   });
-  it("client : refusé sur le pool d'autrui (requête sans filtre userId)", async () => {
+  it("client : refusé", async () => {
     await assertFails(poolQuery(as.client2().firestore()));
+    await assertFails(as.client().firestore().collection("ridePool").doc(BOOKING.pool).get());
   });
-  it("membre d'entreprise : refusé", async () => {
+  it("membre / propriétaire d'entreprise : refusé", async () => {
     await assertFails(poolQuery(as.memberA().firestore()));
     await assertFails(poolQuery(as.ownerA().firestore()));
   });
   it("anonyme : refusé", async () => {
     await assertFails(poolQuery(as.anonymous().firestore()));
+    await assertFails(as.anonymous().firestore().collection("ridePool").doc(BOOKING.pool).get());
   });
-  it("chauffeur validé : ne lit pas une course non pool d'un tiers (status pending)", async () => {
+  it("admin : lit le pool", async () => {
+    await assertSucceeds(poolQuery(as.admin().firestore()));
+  });
+  it("écriture refusée à tous (création, mise à jour, suppression), chauffeur validé en service compris", async () => {
+    const entry = { bookingId: "x", departZone: "Paris 1er", arriveeZone: "Paris 2e", createdAt: new Date(), prix: 1 };
+    for (const ctx of [as.driver(), as.driver2(), as.driverPending(), as.client(), as.ownerA(), as.admin(), as.anonymous()]) {
+      const db = ctx.firestore();
+      await assertFails(db.collection("ridePool").doc("nouveau").set(entry));
+      await assertFails(db.collection("ridePool").doc(BOOKING.pool).update({ prix: 1 }));
+      await assertFails(db.collection("ridePool").doc(BOOKING.pool).delete());
+    }
+  });
+  it("les courses à prendre ne se lisent plus dans bookings (requête et id), même pour le chauffeur validé en service", async () => {
+    await assertFails(oldPoolQuery(as.driver().firestore()));
+    await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.pool).get());
+    await assertSucceeds(oldPoolQuery(as.admin().firestore())); // témoin : l'admin lit toujours bookings
+  });
+  it("le chauffeur lit sa course assignée / en cours dans bookings, avec les coordonnées du passager", async () => {
+    const snap = (await assertSucceeds(
+      as.driver().firestore().collection("bookings").doc(BOOKING.assigned).get()
+    )) as { data(): Record<string, unknown> };
+    if (snap.data().phone !== "+33600000001" || snap.data().name !== "Passager") {
+      throw new Error("nom et téléphone du passager attendus sur la course assignée");
+    }
+    const mine = (await assertSucceeds(
+      as.driver().firestore().collection("bookings").where("driverId", "==", UID.driver)
+        .where("status", "in", ["assigned", "in_progress"]).orderBy("createdAt", "desc").get()
+    )) as { size: number };
+    if (mine.size !== 2) throw new Error(`2 courses assignées attendues, ${mine.size} reçues`);
+  });
+  it.each(["completed_by_driver", "completed", "cancelled"])(
+    "le chauffeur ne lit plus sa course au statut %s (coordonnées du passager réservées à la course en cours)",
+    async (status) => {
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        await ctx.firestore().collection("bookings").doc(BOOKING.assigned).update({ status });
+      });
+      await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.assigned).get());
+      // le passager et l'admin gardent l'accès
+      await assertSucceeds(as.client().firestore().collection("bookings").doc(BOOKING.assigned).get());
+      await assertSucceeds(as.admin().firestore().collection("bookings").doc(BOOKING.assigned).get());
+    }
+  );
+  it("chauffeur suspendu : ne lit plus sa course en cours ; le passager si", async () => {
+    await assertSucceeds(as.driver().firestore().collection("bookings").doc(BOOKING.inProgress).get()); // témoin
+    await setDriver({ status: "suspended" });
+    await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.inProgress).get());
+    await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.assigned).get());
+    await assertSucceeds(as.client().firestore().collection("bookings").doc(BOOKING.inProgress).get());
+  });
+  it("requête chauffeur sans filtre de statut : refusée par la règle (le navigateur doit filtrer)", async () => {
+    await assertFails(
+      as.driver().firestore().collection("bookings").where("driverId", "==", UID.driver).orderBy("createdAt", "desc").get()
+    );
+  });
+  it("chauffeur validé : ne lit pas une course non assignée d'un tiers (status pending)", async () => {
     await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.otherClient).get());
   });
 });
 
-describe("chauffeur : acceptation, démarrage, fin, libération", () => {
-  it("accepte une course du pool (transaction de acceptRide, clés et commissions exactes)", async () => {
+describe("driverRides (historique réduit du chauffeur, lot 2.1)", () => {
+  const mineQuery = (db: any, uid: string) => db.collection("driverRides").doc(uid).collection("rides").orderBy("createdAt", "desc").get();
+  it("le chauffeur lit son historique (requête et lecture par id), sans donnée personnelle", async () => {
+    const snap = (await assertSucceeds(mineQuery(as.driver().firestore(), UID.driver))) as { size: number };
+    if (snap.size !== 2) throw new Error(`2 entrées attendues, ${snap.size} reçues`);
+    const one = (await assertSucceeds(
+      as.driver().firestore().collection("driverRides").doc(UID.driver).collection("rides").doc(BOOKING.assigned).get()
+    )) as { data(): Record<string, unknown> };
+    for (const k of ["name", "phone", "email", "notes", "depart", "arrivee", "userId"]) {
+      if (k in one.data()) throw new Error(`champ personnel dans driverRides : ${k}`);
+    }
+  });
+  it("le chauffeur ne lit pas l'historique d'un autre chauffeur", async () => {
+    await assertFails(mineQuery(as.driver().firestore(), UID.driver2));
+    await assertFails(
+      as.driver().firestore().collection("driverRides").doc(UID.driver2).collection("rides").doc(BOOKING.otherDriver).get()
+    );
+  });
+  it("client et anonyme ne lisent aucun historique ; l'admin oui", async () => {
+    await assertFails(mineQuery(as.client().firestore(), UID.driver));
+    await assertFails(mineQuery(as.anonymous().firestore(), UID.driver));
+    await assertSucceeds(mineQuery(as.admin().firestore(), UID.driver));
+  });
+  it("un chauffeur suspendu lit encore son propre historique", async () => {
+    await setDriver({ status: "suspended" });
+    await assertSucceeds(mineQuery(as.driver().firestore(), UID.driver));
+  });
+  it("écriture refusée à tous, chauffeur concerné compris (création, mise à jour, suppression)", async () => {
+    for (const ctx of [as.driver(), as.driver2(), as.client(), as.admin(), as.anonymous()]) {
+      const col = ctx.firestore().collection("driverRides").doc(UID.driver).collection("rides");
+      await assertFails(col.doc("nouveau").set({ bookingId: "nouveau", prix: 1 }));
+      await assertFails(col.doc(BOOKING.assigned).update({ driverShareCents: 999999 }));
+      await assertFails(col.doc(BOOKING.assigned).delete());
+    }
+  });
+});
+
+describe("chauffeur : plus aucune écriture dans bookings (accept / start / complete / release = /api/rides/*)", () => {
+  it("accepter une course du pool (transaction de l'ancien acceptRide) : refusé", async () => {
     const db = as.driver().firestore();
-    await assertSucceeds(
+    await assertFails(
       db.runTransaction(async (tx) => {
         const rideRef = db.collection("bookings").doc(BOOKING.pool);
         await tx.get(rideRef);
-        await tx.get(db.collection("drivers").doc(UID.driver));
         tx.update(rideRef, acceptFields(UID.driver));
       })
     );
   });
-  it("accepte une course dont le prix a des décimales (79.99 EUR)", async () => {
-    await assertSucceeds(
+  it("accepter une course à prix décimal (79.99 EUR) : refusé", async () => {
+    await assertFails(
       as.driver().firestore().collection("bookings").doc("bkDecimal").update(acceptFields(UID.driver, 79.99))
     );
   });
-  it("refuse l'acceptation avec un taux de commission falsifié", async () => {
+  it("accepter avec commission falsifiée ou parts incohérentes : refusé", async () => {
     const ref = as.driver().firestore().collection("bookings").doc(BOOKING.pool);
     await assertFails(ref.update({ ...acceptFields(UID.driver), commissionRate: 0.05 }));
-    await assertFails(ref.update({ ...acceptFields(UID.driver), commissionRate: 0.5 }));
-  });
-  it("refuse l'acceptation avec des parts incohérentes (plateforme à 0, somme fausse)", async () => {
-    const ref = as.driver().firestore().collection("bookings").doc(BOOKING.pool);
     await assertFails(ref.update({ ...acceptFields(UID.driver), platformShareCents: 0, driverShareCents: 8000 }));
-    await assertFails(ref.update({ ...acceptFields(UID.driver), driverShareCents: 9999 }));
-    await assertFails(ref.update({ ...acceptFields(UID.driver), platformShareCents: 100, driverShareCents: 7900 }));
+    await assertFails(ref.update({ ...acceptFields(UID.driver), platformShareCents: 1600.5, driverShareCents: 6399.5 }));
   });
-  it("refuse l'acceptation sans les champs de commission", async () => {
-    const { commissionRate, platformShareCents, driverShareCents, ...bare } = acceptFields(UID.driver);
-    void commissionRate; void platformShareCents; void driverShareCents;
-    await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.pool).update(bare));
-  });
-  it("refuse de modifier prix / userId / paymentStatus en acceptant", async () => {
+  it("accepter en modifiant prix / userId / paymentStatus, ou pour un autre chauffeur : refusé", async () => {
     const ref = as.driver().firestore().collection("bookings").doc(BOOKING.pool);
     await assertFails(ref.update({ ...acceptFields(UID.driver), prix: 1 }));
     await assertFails(ref.update({ ...acceptFields(UID.driver), userId: UID.driver }));
     await assertFails(ref.update({ ...acceptFields(UID.driver), paymentStatus: "captured" }));
+    await assertFails(ref.update(acceptFields(UID.driver2)));
   });
-  it("refuse d'attribuer la course à un autre chauffeur", async () => {
-    await assertFails(
-      as.driver().firestore().collection("bookings").doc(BOOKING.pool).update(acceptFields(UID.driver2))
-    );
-  });
-  it("chauffeur non validé : refusé d'accepter ; et une fois validé par l'admin, accepté", async () => {
+  it("chauffeur non validé, puis validé et en ligne : toujours refusé d'accepter dans bookings", async () => {
     const ref = as.driverPending().firestore().collection("bookings").doc(BOOKING.pool);
     await assertFails(ref.update(acceptFields(UID.driverPending)));
     await env.withSecurityRulesDisabled(async (ctx) => {
       await ctx.firestore().collection("drivers").doc(UID.driverPending).update({ status: "active", availability: "online" });
     });
-    await assertSucceeds(ref.update(acceptFields(UID.driverPending)));
+    await assertFails(ref.update(acceptFields(UID.driverPending)));
+    await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.pool).update(acceptFields(UID.driver)));
   });
-  it("refuse d'accepter une course déjà assignée (à soi ou à un autre)", async () => {
+  it("accepter une course déjà assignée, ou sa propre course (D-003) : refusé", async () => {
     await assertFails(
       as.driver().firestore().collection("bookings").doc(BOOKING.otherDriver).update(acceptFields(UID.driver))
     );
-  });
-
-  it("chauffeur hors ligne (availability offline) : refusé d'accepter ; en ligne : accepté", async () => {
-    const ref = as.driver().firestore().collection("bookings").doc(BOOKING.pool);
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection("drivers").doc(UID.driver).update({ availability: "offline" });
-    });
-    await assertFails(ref.update(acceptFields(UID.driver)));
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection("drivers").doc(UID.driver).update({ availability: "online" });
-    });
-    await assertSucceeds(ref.update(acceptFields(UID.driver)));
-  });
-  it("refuse d'accepter sa propre course (userId == soi, D-003) ; la course d'un tiers passe", async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {
       await ctx.firestore().collection("bookings").doc("bkOwnPool").set({
-        userId: UID.driver, status: "awaiting_driver", prix: 80, createdAt: new Date(), name: "P", phone: "+33600000001",
+        userId: UID.driver, status: "awaiting_driver", prix: 80, createdAt: new Date(),
       });
     });
-    const db = as.driver().firestore();
-    await assertFails(db.collection("bookings").doc("bkOwnPool").update(acceptFields(UID.driver)));
-    await assertSucceeds(db.collection("bookings").doc(BOOKING.pool).update(acceptFields(UID.driver)));
+    await assertFails(as.driver().firestore().collection("bookings").doc("bkOwnPool").update(acceptFields(UID.driver)));
   });
-  it("refuse des centimes non entiers (platformShareCents / driverShareCents)", async () => {
-    const ref = as.driver().firestore().collection("bookings").doc(BOOKING.pool);
-    await assertFails(ref.update({ ...acceptFields(UID.driver), platformShareCents: 1600.5, driverShareCents: 6399.5 }));
-    await assertFails(ref.update({ ...acceptFields(UID.driver), platformShareCents: 1600.0001 }));
-  });
-  it("refuse des horodatages à l'heure client (new Date()) à l'acceptation, au démarrage, à la fin, à la libération", async () => {
-    const db = as.driver().firestore();
-    await assertFails(db.collection("bookings").doc(BOOKING.pool).update({ ...acceptFields(UID.driver), driverAcceptedAt: new Date() }));
-    await assertFails(db.collection("bookings").doc(BOOKING.pool).update({ ...acceptFields(UID.driver), updatedAt: new Date() }));
-    await assertFails(db.collection("bookings").doc(BOOKING.assigned).update({ status: "in_progress", driverStartedAt: new Date(), updatedAt: ts() }));
-    await assertFails(db.collection("bookings").doc(BOOKING.assigned).update({ status: "in_progress", driverStartedAt: ts(), updatedAt: new Date() }));
-    await assertFails(db.collection("bookings").doc(BOOKING.inProgress).update({ status: "completed_by_driver", driverCompletedAt: new Date(), updatedAt: ts() }));
+  it("démarrer sa course (assigned -> in_progress) : refusé", async () => {
     await assertFails(
-      db.collection("bookings").doc(BOOKING.assigned).update({ driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: "x", updatedAt: new Date() })
-    );
-  });
-  it("libération : driverAcceptedAt doit valoir null (une date est refusée)", async () => {
-    await assertFails(
-      as.driver().firestore().collection("bookings").doc(BOOKING.assigned)
-        .update({ driverId: null, driverAcceptedAt: ts(), status: "awaiting_driver", driverReleaseReason: "x", updatedAt: ts() })
-    );
-  });
-  it("chauffeur suspendu : refus de démarrer et de terminer, libération acceptée", async () => {
-    await env.withSecurityRulesDisabled(async (ctx) => {
-      await ctx.firestore().collection("drivers").doc(UID.driver).update({ status: "suspended" });
-    });
-    const db = as.driver().firestore();
-    await assertFails(db.collection("bookings").doc(BOOKING.assigned).update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() }));
-    await assertFails(db.collection("bookings").doc(BOOKING.inProgress).update({ status: "completed_by_driver", driverCompletedAt: ts(), updatedAt: ts() }));
-    await assertFails(db.collection("bookings").doc(BOOKING.pool).update(acceptFields(UID.driver)));
-    await assertSucceeds(
-      db.collection("bookings").doc(BOOKING.assigned).update({ driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: "suspendu", updatedAt: ts() })
-    );
-  });
-
-  it("démarre sa course (assigned -> in_progress)", async () => {
-    await assertSucceeds(
       as.driver().firestore().collection("bookings").doc(BOOKING.assigned)
         .update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() })
     );
   });
-  it("termine sa course (in_progress -> completed_by_driver)", async () => {
-    await assertSucceeds(
+  it("terminer sa course (in_progress -> completed_by_driver) : refusé", async () => {
+    await assertFails(
       as.driver().firestore().collection("bookings").doc(BOOKING.inProgress)
         .update({ status: "completed_by_driver", driverCompletedAt: ts(), updatedAt: ts() })
     );
   });
-  it("libère sa course assignée (retour au pool)", async () => {
-    await assertSucceeds(
-      as.driver().firestore().collection("bookings").doc(BOOKING.assigned).update({
-        driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: "imprévu", updatedAt: ts(),
-      })
-    );
+  it("libérer sa course assignée : refusé (même suspendu, même motif trop long)", async () => {
+    const ref = as.driver().firestore().collection("bookings").doc(BOOKING.assigned);
+    const release = (reason: string) => ({
+      driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: reason, updatedAt: ts(),
+    });
+    await assertFails(ref.update(release("imprévu")));
+    await assertFails(ref.update(release("x".repeat(501))));
+    await setDriver({ status: "suspended" });
+    await assertFails(ref.update(release("suspendu")));
   });
-  it("refuse de libérer une course déjà démarrée (in_progress)", async () => {
-    await assertFails(
-      as.driver().firestore().collection("bookings").doc(BOOKING.inProgress).update({
-        driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: "x", updatedAt: ts(),
-      })
-    );
-  });
-  it("refuse un motif de libération de plus de 500 caractères", async () => {
-    await assertFails(
-      as.driver().firestore().collection("bookings").doc(BOOKING.assigned).update({
-        driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: "x".repeat(501), updatedAt: ts(),
-      })
-    );
-  });
-  it("refuse de modifier prix / userId / paymentStatus en démarrant ou terminant", async () => {
+  it("modifier prix / userId / paymentStatus / statut final de sa course : refusé", async () => {
     const ref = as.driver().firestore().collection("bookings").doc(BOOKING.inProgress);
     await assertFails(ref.update({ status: "completed_by_driver", prix: 1 }));
     await assertFails(ref.update({ status: "completed_by_driver", userId: UID.driver }));
     await assertFails(ref.update({ status: "completed_by_driver", paymentStatus: "captured" }));
-    await assertFails(ref.update({ status: "completed" })); // statut final réservé au serveur / admin
+    await assertFails(ref.update({ status: "completed" }));
   });
-
   it("mêmes opérations sur la course d'un autre chauffeur : refusées", async () => {
     const ref = as.driver().firestore().collection("bookings").doc(BOOKING.otherDriver);
     await assertFails(ref.update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() }));
-    await assertFails(ref.update({ status: "completed_by_driver", driverCompletedAt: ts(), updatedAt: ts() }));
-    await assertFails(
-      ref.update({ driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: "x", updatedAt: ts() })
-    );
     await assertFails(ref.update({ driverId: UID.driver, status: "in_progress" }));
-  });
-  it("chauffeur non validé : refus de démarrer/terminer une course qui ne lui est pas assignée", async () => {
-    const ref = as.driverPending().firestore().collection("bookings").doc(BOOKING.assigned);
-    await assertFails(ref.update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() }));
-    await assertFails(ref.update({ status: "completed_by_driver", driverCompletedAt: ts(), updatedAt: ts() }));
   });
   it("chauffeur : ne supprime aucune course", async () => {
     await assertFails(as.driver().firestore().collection("bookings").doc(BOOKING.assigned).delete());
+  });
+  it("témoin : l'admin, lui, modifie une course (statut)", async () => {
+    await assertSucceeds(as.admin().firestore().collection("bookings").doc(BOOKING.pool).update({ status: "cancelled" }));
   });
 });
 

@@ -11,6 +11,7 @@ import {
 import { creditCompanyWallet } from "@/lib/wallet/companyServer";
 import { sendReviewRequestEmail } from "@/lib/emails/reviewRequestEmail";
 import { recordAuthorizedHold } from "@/lib/payments/deferredHold";
+import { refreshRidePoolSafe } from "@/lib/rides/pool";
 
 // Webhook Stripe — source unique de vérité pour les transitions de statut.
 // Côtés client/admin appellent les endpoints (capture/cancel/increment) puis
@@ -67,6 +68,8 @@ const updateBookingByPaymentIntent = async (paymentIntentId, fields) => {
       })
     )
   );
+  // lot 2.1 : une course capturée, annulée ou en échec quitte le pool des chauffeurs.
+  await refreshRidePoolSafe(...bookings.map((b) => b.id));
   return bookings;
 };
 
@@ -254,6 +257,8 @@ export async function POST(request) {
                 })
               )
           );
+          // lot 2.1 : la course autorisée entre dans le pool des chauffeurs.
+          await refreshRidePoolSafe(...bookings.map((b) => b.id));
         }
         break;
 

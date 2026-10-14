@@ -83,7 +83,7 @@ Vitest, avec `@firebase/rules-unit-testing` pour les règles Firestore sur l'ém
 **Pourquoi** : léger, compatible TypeScript sans configuration lourde, adapté aux tests des règles et des routes API.
 
 ## D-010 — Pool visible en entier par les chauffeurs validés (acceptation temporaire)
-**Date** : 2026-10-05 · **Statut** : validée (porte 2, phase 0) · **Échéance** : 2026-10-31
+**Date** : 2026-10-05 · **Statut** : **close** par le lot 2.1 (voir D-014) · **Échéance** : 2026-10-31
 
 Les courses à prendre (`bookings` en `awaiting_driver`) restent lisibles en entier, données personnelles du passager comprises, par les chauffeurs validés. C'est un écart temporaire au tableau « Qui voit quoi » (« version sans données perso »). La collection `ridePool` (version sans données personnelles, écrite par le serveur) est le premier lot de la phase 2.
 
@@ -122,7 +122,22 @@ Validées telles quelles :
 - **La carte reste enregistrée après la course** (pas de détachement) ; le texte d'accord le dit (« pour cette course et mes prochaines réservations ») et indique que la suppression se demande à contact@izymoto.com. La réutilisation d'une carte enregistrée à l'écran n'est pas encore proposée.
 - Seul le serveur crée les réservations `deferred_<seti>` (règle Firestore).
 
-**Pourquoi** : une empreinte n'est valable que 7 jours ; l'autorisation prolongée (30 jours) est réservée à la tarification IC+. Laisser la décision à l'admin à J-1 évite d'annuler une course qu'un simple appel au client peut sauver. Accepté par Fayssal : une course peut être réalisée sans empreinte si personne n'agit (risque d'impayé tracé par l'alerte admin).
+**Pourquoi** : une empreinte n'est valable que 7 jours ; l'autorisation prolongée (30 jours) est réservée à la tarification IC+.
+
+## D-014 — Pool sans données personnelles et coordonnées du passager pendant la course seulement (lot 2.1)
+**Date** : 2026-10-13 · **Statut** : validée (porte 1)
+
+- Courses à prendre : collection `ridePool` écrite par le serveur ; le chauffeur validé **en service** n'y voit que la **zone** (pôle, arrondissement de Paris, ou département hors Paris, d'après une table fermée), la date, la distance, le prix et sa part — jamais nom, téléphone, e-mail, notes ni adresse exacte.
+- Coordonnées du passager (adresse exacte, téléphone) : lisibles par le chauffeur assigné et validé **pendant la course uniquement** (attribuée / en cours). Ensuite, son historique est une copie réduite (`driverRides`) : zones, date, statut, gains.
+- Accepter / démarrer / terminer / libérer et les changements de statut de l'admin passent par le serveur (transaction, journal `auditLogs`). D-003 vérifié aussi sur le téléphone ; la comparaison du **moyen de paiement** (empreinte de carte Stripe) fera l'objet d'un **lot dédié** (décision de Fayssal, 2026-10-14).
+- Admin : une course dont l'empreinte est active s'annule par « Annuler le hold » ; une course déjà payée ne s'annule qu'après confirmation du remboursement ; une course au paiement actif ne se supprime pas.
+
+**Pourquoi** : tableau « Qui voit quoi » ; fin de l'écart D-010 avant son échéance ; prérequis de l'appli Chauffeur.
+
+## D-015 — Applis mobiles : technologie, ordre, comptes, position
+**Date** : 2026-10-13 · **Statut** : validée (porte 1, plan `docs/plans/2026-10-13-applis-mobiles.md`)
+
+Expo / React Native (TypeScript) ; appli **Chauffeur d'abord**, Client ensuite ; comptes Apple Developer et Google Play **au nom de la société IZYMOTO** (D-U-N-S) ; appli Chauffeur v1 **avec position en arrière-plan** (en service / en course seulement, dernière position sans historique, visible de l'admin et du client de la course acceptée). Prérequis serveur (lot M2) : pool sans données perso (D-014), suppression de compte complète (solde positif → refus et remboursement via contact@izymoto.com ; courses passées pseudonymisées et conservées), notifications push. Laisser la décision à l'admin à J-1 évite d'annuler une course qu'un simple appel au client peut sauver. Accepté par Fayssal : une course peut être réalisée sans empreinte si personne n'agit (risque d'impayé tracé par l'alerte admin).
 
 ---
 

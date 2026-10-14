@@ -2,6 +2,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe-server";
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
+import { refreshRidePoolSafe } from "@/lib/rides/pool";
 import {
   sendHoldActionRequiredEmail,
   sendHoldAdminAlertEmail,
@@ -246,6 +247,8 @@ export async function placeDeferredHold(bookingId: string, now: Date = new Date(
 // (une confirmation tardive du client ne doit plus rien bloquer) et on prévient
 // l'admin, car la course a pu être réalisée sans être payée.
 async function abandonHold(ref: FirebaseFirestore.DocumentReference, b: FirebaseFirestore.DocumentData) {
+  // lot 2.1 : une course sans paiement garanti n'est plus proposée aux chauffeurs.
+  await refreshRidePoolSafe(ref.id);
   if (typeof b.paymentId === "string" && b.paymentId.startsWith("pi_")) {
     try {
       const pi = await stripe.paymentIntents.retrieve(b.paymentId);

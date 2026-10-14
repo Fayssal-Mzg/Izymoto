@@ -28,7 +28,8 @@ function DashboardContent() {
   const { driver, loading } = useDriver();
   const isActive = driver?.status === "active";
   const isOnline = driver?.availability === "online";
-  const { rides: poolRides } = useRidePool(isActive);
+  // Le pool n'est lisible qu'en service (règles ridePool, lot 2.1).
+  const { rides: poolRides } = useRidePool(isActive && isOnline);
   const { rides: myRides } = useDriverRides(isActive && driver ? driver.uid : null);
   const [toggling, setToggling] = useState(false);
 

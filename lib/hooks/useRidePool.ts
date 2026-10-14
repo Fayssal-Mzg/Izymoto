@@ -60,10 +60,15 @@ export function useDriverRides(driverId: string | null): {
       return;
     }
     setLoading(true);
-    const unsub = subscribeDriverRides(driverId, (r) => {
-      setRides(r);
-      setLoading(false);
-    });
+    const unsub = subscribeDriverRides(
+      driverId,
+      (r) => {
+        setRides(r);
+        setLoading(false);
+      },
+      // Ex. index Firestore en cours de construction : ne pas rester bloqué sur le chargement.
+      () => setLoading(false)
+    );
     return () => unsub();
   }, [driverId]);
 
