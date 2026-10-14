@@ -15,6 +15,7 @@ import {
   addDoc,
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -278,32 +279,48 @@ export async function getAllBookings(): Promise<Booking[]> {
   }
 }
 
-// Mettre à jour le statut d'une réservation
+// lot 2.1 : statut et suppression passent par le serveur (/api/admin/booking), qui
+// garde le pool des chauffeurs (ridePool) synchronisé.
+async function adminBookingRequest(body: Record<string, unknown>): Promise<{ ok: boolean; code?: string; error?: string }> {
+  const user = getAuth().currentUser;
+  if (!user) throw new Error("Session expirée : reconnectez-vous.");
+  const res = await fetch("/api/admin/booking", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` },
+    body: JSON.stringify(body),
+  });
+  if (res.ok) return { ok: true };
+  const data = await res.json().catch(() => ({}));
+  return { ok: false, code: data.code, error: data.error || `Erreur ${res.status}` };
+}
+
+// Mettre à jour le statut d'une réservation. Une course déjà payée ne s'annule
+// qu'après confirmation du remboursement par l'admin ; une empreinte active se
+// libère par « Annuler le hold » (le serveur refuse l'annulation simple).
 export async function updateBookingStatus(
   bookingId: string,
   status: Booking["status"]
 ): Promise<boolean> {
-  try {
-    await updateDoc(doc(db, "bookings", bookingId), {
-      status,
-      updatedAt: Timestamp.now(),
-    });
-    return true;
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour du statut:", error);
-    throw error;
+  let result = await adminBookingRequest({ bookingId, status });
+  if (!result.ok && result.code === "REFUND_REQUIRED") {
+    if (!window.confirm(`${result.error}\n\nLe client a-t-il bien été remboursé ?`)) return false;
+    result = await adminBookingRequest({ bookingId, status, refundConfirmed: true });
   }
+  if (!result.ok) {
+    window.alert(result.error);
+    throw new Error(result.error);
+  }
+  return true;
 }
 
 // Supprimer une réservation
 export async function deleteBooking(bookingId: string): Promise<boolean> {
-  try {
-    await deleteDoc(doc(db, "bookings", bookingId));
-    return true;
-  } catch (error) {
-    console.error("Erreur lors de la suppression de la réservation:", error);
-    throw error;
+  const result = await adminBookingRequest({ bookingId, action: "delete" });
+  if (!result.ok) {
+    window.alert(result.error);
+    throw new Error(result.error);
   }
+  return true;
 }
 
 // Obtenir tous les utilisateurs

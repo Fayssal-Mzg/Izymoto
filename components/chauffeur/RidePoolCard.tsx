@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MapPin, Clock, Route, Euro, Loader2, AlertCircle } from "lucide-react";
-import { acceptRide, COMMISSION_RATE, type PoolRide, RideUnavailableError } from "@/lib/firebase/dispatch";
+import { acceptRide, type PoolRide, RideUnavailableError } from "@/lib/firebase/dispatch";
 
 export default function RidePoolCard({
   ride,
@@ -18,7 +18,7 @@ export default function RidePoolCard({
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const driverShare = ride.prix * (1 - COMMISSION_RATE);
+  const driverShare = ride.driverShareCents / 100;
 
   const handleAccept = async () => {
     setError(null);
@@ -77,10 +77,14 @@ export default function RidePoolCard({
           <div className="w-2 h-2 rounded-full bg-red-500" />
         </div>
         <div className="flex-1 min-w-0 space-y-2 text-sm">
-          <div className="break-words text-slate-900">{ride.depart}</div>
-          <div className="break-words text-slate-900">{ride.arrivee}</div>
+          <div className="break-words text-slate-900">{ride.departZone}</div>
+          <div className="break-words text-slate-900">{ride.arriveeZone}</div>
         </div>
       </div>
+      <p className="text-[11px] text-slate-500 mb-3">
+        Adresse exacte et contact du passager affichés après acceptation.
+        {ride.prioriteReservation ? " · Course prioritaire" : ""}
+      </p>
 
       <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
         {ride.distance > 0 && (

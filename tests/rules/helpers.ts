@@ -103,6 +103,34 @@ export async function seed(env: RulesTestEnvironment): Promise<void> {
     await db.collection("bookings").doc(BOOKING.otherClient).set(ride({ userId: UID.client2, status: "pending" }));
     await db.collection("bookings").doc(BOOKING.otherDriver).set(ride({ userId: UID.client2, status: "assigned", driverId: UID.driver2 }));
 
+    // Pool serveur (lot 2.1) : copie réduite de la course à prendre, sans données personnelles.
+    await db.collection("ridePool").doc(BOOKING.pool).set({
+      bookingId: BOOKING.pool,
+      reservationId: "bkPool",
+      departZone: "Paris 1er",
+      arriveeZone: "Aéroport d'Orly",
+      reservationDate: now,
+      createdAt: now,
+      distance: 18,
+      duree: 30,
+      prix: 80,
+      driverShareCents: 6400,
+      prioriteReservation: false,
+      updatedAt: now,
+    });
+
+    // Historique réduit du chauffeur (serveur uniquement).
+    for (const [driver, id, status] of [
+      [UID.driver, BOOKING.assigned, "assigned"],
+      [UID.driver, BOOKING.inProgress, "in_progress"],
+      [UID.driver2, BOOKING.otherDriver, "assigned"],
+    ] as const) {
+      await db.collection("driverRides").doc(driver).collection("rides").doc(id).set({
+        bookingId: id, reservationId: id, departZone: "Paris 1er", arriveeZone: "Aéroport d'Orly",
+        reservationDate: now, createdAt: now, status, paymentStatus: "authorized", prix: 80, driverShareCents: 6400, updatedAt: now,
+      });
+    }
+
     await db.collection("wallets").doc(UID.client).set({ balanceCents: 5000, cumulativeRechargedCents: 5000, currency: "EUR" });
     await db.collection("wallets").doc(UID.client2).set({ balanceCents: 100, cumulativeRechargedCents: 100, currency: "EUR" });
     await db.collection("walletTransactions").doc("tx1").set({ userId: UID.client, type: "recharge", amountCents: 5000, createdAt: now });

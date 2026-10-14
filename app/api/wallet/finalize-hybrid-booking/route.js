@@ -25,6 +25,7 @@ import {
   readClaim,
   rejectClaim,
 } from "@/lib/payments/claims";
+import { refreshRidePoolSafe } from "@/lib/rides/pool";
 
 // Finalise un booking hybride (wallet + CB) après confirmation 3DS côté client.
 // Le PaymentIntent est déjà en hold (status requires_capture). On débite le
@@ -167,6 +168,7 @@ export async function POST(request) {
           reservationId: result.reservationId,
         });
         held = null;
+        await refreshRidePoolSafe(result.bookingId);
         return NextResponse.json(result);
       }
 
@@ -266,6 +268,7 @@ export async function POST(request) {
           reservationId: result.reservationId,
         });
         held = null;
+        await refreshRidePoolSafe(result.bookingId);
         return NextResponse.json(result);
       } catch (err) {
         if (err instanceof WalletError && err.code === "CONFLICT") {

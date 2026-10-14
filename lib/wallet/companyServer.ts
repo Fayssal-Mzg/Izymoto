@@ -1,5 +1,6 @@
 import { Timestamp, type Transaction } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin-server";
+import { syncRidePoolInTx } from "@/lib/rides/pool";
 import { WalletError, getWalletBalance } from "@/lib/wallet/server";
 
 // Cœur serveur du portefeuille ENTREPRISE (partagé entre collaborateurs).
@@ -399,7 +400,7 @@ export async function debitCompanyWalletForBooking(
     });
 
     const now = Timestamp.now();
-    tx.set(bookingRef, {
+    const bookingDoc = {
       ...bookingData,
       userId: actorUid,
       companyId,
@@ -412,7 +413,10 @@ export async function debitCompanyWalletForBooking(
       isPaid: true,
       status: "awaiting_driver",
       createdAt: now,
-    });
+    };
+    tx.set(bookingRef, bookingDoc);
+    // lot 2.1 : la course entre au pool des chauffeurs dans la même transaction.
+    syncRidePoolInTx(tx, bookingRef.id, bookingDoc);
 
     tx.set(txRef, {
       companyId,
@@ -519,7 +523,7 @@ export async function debitCompanyWalletForHybridBooking(
     });
 
     const now = Timestamp.now();
-    tx.set(bookingRef, {
+    const bookingDoc = {
       ...bookingData,
       userId: actorUid,
       companyId,
@@ -536,7 +540,10 @@ export async function debitCompanyWalletForHybridBooking(
       isPaid: false,
       status: "awaiting_driver",
       createdAt: now,
-    });
+    };
+    tx.set(bookingRef, bookingDoc);
+    // lot 2.1 : la course entre au pool des chauffeurs dans la même transaction.
+    syncRidePoolInTx(tx, bookingRef.id, bookingDoc);
 
     tx.set(txRef, {
       companyId,

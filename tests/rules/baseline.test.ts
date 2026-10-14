@@ -35,11 +35,15 @@ beforeEach(async () => {
 });
 
 describe("espace chauffeur (validé) — dispatch.ts, drivers.ts, useDriver.ts", () => {
-  // Réserve phase 2 : les documents bookings contiennent name/phone du passager ; le pool
-  // expose le document complet (voir le it.fails « pool sans données personnelles » plus bas).
-  it("lit le pool (bookings status == awaiting_driver, tri createdAt desc)", async () => {
+  it("lit le pool (ridePool, tri createdAt desc) — lot 2.1", async () => {
     const db = as.driver().firestore();
-    await assertSucceeds(
+    const snap = await assertSucceeds(db.collection("ridePool").orderBy("createdAt", "desc").get());
+    if (snap.size !== 1) throw new Error(`1 course attendue dans le pool, ${snap.size} reçue(s)`);
+  });
+
+  it("ne lit plus le pool dans bookings (requête awaiting_driver refusée)", async () => {
+    const db = as.driver().firestore();
+    await assertFails(
       db.collection("bookings").where("status", "==", "awaiting_driver").orderBy("createdAt", "desc").get()
     );
   });
@@ -47,7 +51,8 @@ describe("espace chauffeur (validé) — dispatch.ts, drivers.ts, useDriver.ts",
   it("lit ses courses (bookings driverId == uid)", async () => {
     const db = as.driver().firestore();
     const snap = await assertSucceeds(
-      db.collection("bookings").where("driverId", "==", UID.driver).orderBy("createdAt", "desc").get()
+      db.collection("bookings").where("driverId", "==", UID.driver)
+        .where("status", "in", ["assigned", "in_progress"]).orderBy("createdAt", "desc").get()
     );
     if (snap.size !== 2) throw new Error(`2 courses attendues, ${snap.size} reçues`);
   });
@@ -157,18 +162,15 @@ describe("back-office admin — lib/firebase/admin.ts, drivers.ts", () => {
 
 });
 
-describe("non conforme D-001 mais encore autorisé — réserve phase 2 (à migrer côté serveur)", () => {
-  // Écritures encore faites directement par le client, contraintes par les règles du lot 0.5
-  // (commissions : taux 0.2 et parts cohérentes ; rôle : client -> driver seulement).
-  // Réserve phase 2 : à remplacer par le test de la route serveur équivalente.
-  it("accepte une course du pool (transaction : lit course + sa fiche, update driverId/status)", async () => {
+describe("écritures client restantes (réserve phase 2) et écritures chauffeur supprimées (lot 2.1)", () => {
+  // Lot 2.1 : accepter / démarrer / terminer / libérer passent par /api/rides/* (tests/api/rides.test.ts).
+  // Côté règles, un chauffeur n'écrit plus rien dans bookings.
+  it("accepter une course du pool dans bookings : refusé", async () => {
     const db = as.driver().firestore();
-    await assertSucceeds(
+    await assertFails(
       db.runTransaction(async (tx) => {
         const rideRef = db.collection("bookings").doc(BOOKING.pool);
-        const driverRef = db.collection("drivers").doc(UID.driver);
         await tx.get(rideRef);
-        await tx.get(driverRef);
         tx.update(rideRef, {
           driverId: UID.driver,
           driverAcceptedAt: ts(),
@@ -182,41 +184,24 @@ describe("non conforme D-001 mais encore autorisé — réserve phase 2 (à migr
     );
   });
 
-  it("démarre sa course (assigned -> in_progress)", async () => {
-    const db = as.driver().firestore();
-    await assertSucceeds(
-      db.runTransaction(async (tx) => {
-        const ref = db.collection("bookings").doc(BOOKING.assigned);
-        await tx.get(ref);
-        tx.update(ref, { status: "in_progress", driverStartedAt: ts(), updatedAt: ts() });
-      })
+  it("démarrer sa course dans bookings : refusé", async () => {
+    await assertFails(
+      as.driver().firestore().collection("bookings").doc(BOOKING.assigned)
+        .update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() })
     );
   });
 
-  it("termine sa course (in_progress -> completed_by_driver)", async () => {
-    const db = as.driver().firestore();
-    await assertSucceeds(
-      db.runTransaction(async (tx) => {
-        const ref = db.collection("bookings").doc(BOOKING.inProgress);
-        await tx.get(ref);
-        tx.update(ref, { status: "completed_by_driver", driverCompletedAt: ts(), updatedAt: ts() });
-      })
+  it("terminer sa course dans bookings : refusé", async () => {
+    await assertFails(
+      as.driver().firestore().collection("bookings").doc(BOOKING.inProgress)
+        .update({ status: "completed_by_driver", driverCompletedAt: ts(), updatedAt: ts() })
     );
   });
 
-  it("libère sa course (assigned -> awaiting_driver, driverId null)", async () => {
-    const db = as.driver().firestore();
-    await assertSucceeds(
-      db.runTransaction(async (tx) => {
-        const ref = db.collection("bookings").doc(BOOKING.assigned);
-        await tx.get(ref);
-        tx.update(ref, {
-          driverId: null,
-          driverAcceptedAt: null,
-          status: "awaiting_driver",
-          driverReleaseReason: "imprévu",
-          updatedAt: ts(),
-        });
+  it("libérer sa course dans bookings : refusé", async () => {
+    await assertFails(
+      as.driver().firestore().collection("bookings").doc(BOOKING.assigned).update({
+        driverId: null, driverAcceptedAt: null, status: "awaiting_driver", driverReleaseReason: "imprévu", updatedAt: ts(),
       })
     );
   });
@@ -368,26 +353,34 @@ describe("refus qui doivent rester vrais après resserrement", () => {
 });
 
 describe("resserrement du lot 0.5 (ex-todo)", () => {
-  it("un client / chauffeur non validé / anonyme ne lit PAS le pool awaiting_driver", async () => {
-    const q = (db: any) => db.collection("bookings").where("status", "==", "awaiting_driver").orderBy("createdAt", "desc").get();
-    await assertSucceeds(q(as.driver().firestore())); // témoin : chauffeur validé
+  it("ridePool : lu par le chauffeur validé en service ; pas par client / non validé / anonyme", async () => {
+    const q = (db: any) => db.collection("ridePool").orderBy("createdAt", "desc").get();
+    await assertSucceeds(q(as.driver().firestore())); // témoin
     await assertFails(q(as.client2().firestore()));
     await assertFails(q(as.driverPending().firestore()));
     await assertFails(q(as.anonymous().firestore()));
   });
 
-  // Réserve phase 2 (en-tête de firestore.rules) : les règles ne filtrent pas les champs, le pool
-  // renvoie encore name/phone. it.fails : devient vert (et doit passer en it) quand le pool sera
-  // une version sans données personnelles.
-  it.fails("le pool exposé au chauffeur validé ne contient pas de données personnelles (name, phone, email) — réserve phase 2", async () => {
-    const snap = await as.driver().firestore().collection("bookings").doc(BOOKING.pool).get();
-    const d = snap.data()!;
-    if ("name" in d || "phone" in d || "email" in d) throw new Error("données personnelles exposées");
+  it("le chauffeur ne lit plus aucune course non assignée dans bookings, et le pool n'a aucune donnée personnelle", async () => {
+    const db = as.driver().firestore();
+    await assertFails(db.collection("bookings").doc(BOOKING.pool).get());
+    const d = (await assertSucceeds(db.collection("ridePool").doc(BOOKING.pool).get())) as { data(): Record<string, unknown> };
+    const data = d.data();
+    for (const k of ["name", "phone", "email", "notes", "depart", "arrivee", "userId"]) {
+      if (k in data) throw new Error(`champ personnel exposé dans ridePool : ${k}`);
+    }
   });
 
   it("un chauffeur lit sa course assignée, pas celle d'un autre ni une course sans lien", async () => {
     const db = as.driver().firestore();
-    await assertSucceeds(db.collection("bookings").doc(BOOKING.assigned).get());
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().collection("bookings").doc("bkDone").set({
+        userId: UID.client, driverId: UID.driver, status: "completed_by_driver", name: "P", phone: "+33600000001", createdAt: new Date(),
+      });
+    });
+    await assertFails(db.collection("bookings").doc("bkDone").get()); // course terminée : plus de coordonnées
+    const mine = (await assertSucceeds(db.collection("bookings").doc(BOOKING.assigned).get())) as { data(): Record<string, unknown> };
+    if (mine.data().phone !== "+33600000001") throw new Error("coordonnées du passager attendues sur la course assignée");
     await assertFails(db.collection("bookings").doc(BOOKING.otherDriver).get());
     await assertFails(db.collection("bookings").doc(BOOKING.clientOwn).get());
   });
@@ -434,13 +427,14 @@ describe("resserrement du lot 0.5 (ex-todo)", () => {
     await assertFails(db.collection("bookings").add({ ...base, paymentStatus: "authorized" }));
   });
 
-  it("update booking par le chauffeur : seuls les champs de transition (pas prix, userId, paymentStatus)", async () => {
+  it("update booking par le chauffeur : refusé quels que soient les champs", async () => {
     const db = as.driver().firestore();
     const ref = db.collection("bookings").doc(BOOKING.assigned);
     await assertFails(ref.update({ status: "in_progress", prix: 1 }));
     await assertFails(ref.update({ status: "in_progress", userId: UID.driver }));
     await assertFails(ref.update({ status: "in_progress", paymentStatus: "captured" }));
-    await assertSucceeds(ref.update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() })); // témoin
+    await assertFails(ref.update({ status: "in_progress", driverStartedAt: ts(), updatedAt: ts() }));
+    await assertSucceeds(as.admin().firestore().collection("bookings").doc(BOOKING.assigned).update({ status: "in_progress" })); // témoin admin
   });
 
   it("un chauffeur ne s'affecte pas une course d'autrui (driverId == uid sur course d'un autre)", async () => {

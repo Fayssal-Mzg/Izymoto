@@ -1,5 +1,6 @@
 import { Timestamp, type Transaction } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
+import { syncRidePoolInTx } from "@/lib/rides/pool";
 import { getTierById, type WalletTier } from "@/lib/wallet/tiers";
 
 export type WalletTransactionType =
@@ -259,7 +260,7 @@ export async function debitWalletForBooking(
       updatedAt: now,
     });
 
-    tx.set(bookingRef, {
+    const bookingDoc = {
       ...bookingData,
       userId,
       reservationId,
@@ -271,7 +272,10 @@ export async function debitWalletForBooking(
       // le pool des chauffeurs (FCFS).
       status: "awaiting_driver",
       createdAt: now,
-    });
+    };
+    tx.set(bookingRef, bookingDoc);
+    // lot 2.1 : la course entre au pool des chauffeurs dans la même transaction.
+    syncRidePoolInTx(tx, bookingRef.id, bookingDoc);
 
     const txDoc: WalletTransactionDoc & { reservationId?: string } = {
       userId,
@@ -380,7 +384,7 @@ export async function debitWalletForHybridBooking(
       updatedAt: now,
     });
 
-    tx.set(bookingRef, {
+    const bookingDoc = {
       ...bookingData,
       userId,
       reservationId,
@@ -397,7 +401,10 @@ export async function debitWalletForHybridBooking(
       // refundHybridBookings remboursera la part wallet et passera en cancelled.
       status: "awaiting_driver",
       createdAt: now,
-    });
+    };
+    tx.set(bookingRef, bookingDoc);
+    // lot 2.1 : la course entre au pool des chauffeurs dans la même transaction.
+    syncRidePoolInTx(tx, bookingRef.id, bookingDoc);
 
     const txDoc: WalletTransactionDoc & { reservationId?: string } = {
       userId,

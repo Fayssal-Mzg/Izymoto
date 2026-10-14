@@ -1,41 +1,33 @@
 // lib/firebase/dispatch.ts
-// Pool de courses FCFS sans géolocalisation.
+// Pool de courses FCFS sans géolocalisation (côté navigateur).
 //
-// Flow :
-// 1. Côté client : booking créé → paiement authorized → status = "awaiting_driver"
-// 2. Chauffeurs en service (status=active, availability=online) voient le pool
-//    via un onSnapshot où status == "awaiting_driver" && !driverId
-// 3. acceptRide() est une transaction Firestore qui verrouille la course au
-//    premier qui clique. Les autres reçoivent une erreur "déjà attribuée".
+// Flow (lot 2.1) :
+// 1. Le serveur crée la course et, quand elle attend un chauffeur, en publie une
+//    version SANS données personnelles dans `ridePool/{bookingId}` (zone de départ et
+//    d'arrivée, date, prix, part chauffeur).
+// 2. Les chauffeurs validés en service lisent `ridePool` en temps réel.
+// 3. Accepter / démarrer / terminer / libérer passent par /api/rides/* : le serveur
+//    vérifie le chauffeur, verrouille la course (premier qui accepte) et met le pool à jour.
+//    L'adresse exacte et le téléphone du passager ne sont lisibles qu'après acceptation.
 
 import { db } from "@/lib/firebaseConfig";
-import {
-  collection,
-  doc,
-  query,
-  where,
-  onSnapshot,
-  runTransaction,
-  serverTimestamp,
-  Unsubscribe,
-  orderBy,
-} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { collection, query, where, onSnapshot, Unsubscribe, orderBy } from "firebase/firestore";
 
 export const COMMISSION_RATE = 0.2;
 
 export interface PoolRide {
   id: string;
   reservationId: string;
-  depart: string;
-  arrivee: string;
+  departZone: string;
+  arriveeZone: string;
   distance: number;
   duree: number;
   prix: number;
+  driverShareCents: number;
+  prioriteReservation: boolean;
   reservationDate: Date | null;
   createdAt: Date | null;
-  name?: string;
-  phone?: string;
-  notes?: string;
 }
 
 function coerceDate(value: any): Date | null {
@@ -49,39 +41,34 @@ function coerceDate(value: any): Date | null {
 }
 
 function hydrateRide(id: string, data: any): PoolRide {
+  const prix = Number(data.prix ?? 0);
   return {
     id,
     reservationId: data.reservationId ?? id.substring(0, 6),
-    depart: data.depart ?? "",
-    arrivee: data.arrivee ?? "",
+    departZone: data.departZone ?? "",
+    arriveeZone: data.arriveeZone ?? "",
     distance: data.distance ?? 0,
     duree: data.duree ?? 0,
-    prix: data.prix ?? 0,
+    prix,
+    driverShareCents:
+      typeof data.driverShareCents === "number"
+        ? data.driverShareCents
+        : Math.round(prix * 100 * (1 - COMMISSION_RATE)),
+    prioriteReservation: data.prioriteReservation === true,
     reservationDate: coerceDate(data.reservationDate),
     createdAt: coerceDate(data.createdAt),
-    name: data.name,
-    phone: data.phone,
-    notes: data.notes,
   };
 }
 
-// Pool partagé : toutes les courses qui attendent un chauffeur.
-// On filtre côté requête pour ne pas exposer les autres statuts.
+// Pool partagé : courses à prendre, version réduite écrite par le serveur.
 export function subscribePool(
   onUpdate: (rides: PoolRide[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe {
-  const q = query(
-    collection(db, "bookings"),
-    where("status", "==", "awaiting_driver"),
-    orderBy("createdAt", "desc")
-  );
+  const q = query(collection(db, "ridePool"), orderBy("createdAt", "desc"));
   return onSnapshot(
     q,
-    (snap) => {
-      const rides = snap.docs.map((d) => hydrateRide(d.id, d.data()));
-      onUpdate(rides);
-    },
+    (snap) => onUpdate(snap.docs.map((d) => hydrateRide(d.id, d.data()))),
     (err) => {
       console.error("[dispatch] subscribePool error:", err);
       onError?.(err);
@@ -89,34 +76,73 @@ export function subscribePool(
   );
 }
 
-// Courses acceptées par un chauffeur (assigned / in_progress / completed).
+// Courses d'un chauffeur. Deux sources (lot 2.1, « Qui voit quoi ») :
+// - courses EN COURS (assigned / in_progress) : réservation complète dans `bookings`
+//   (adresse exacte, téléphone du passager) ;
+// - historique : copie réduite `driverRides/{uid}/rides` (zones, date, statut, gains),
+//   sans aucune coordonnée du passager.
 export function subscribeDriverRides(
   driverId: string,
   onUpdate: (rides: any[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe {
-  const q = query(
-    collection(db, "bookings"),
-    where("driverId", "==", driverId),
-    orderBy("createdAt", "desc")
-  );
-  return onSnapshot(
-    q,
+  let active: any[] = [];
+  let history: any[] = [];
+  const emit = () => {
+    const activeIds = new Set(active.map((r) => r.id));
+    const merged = [...active, ...history.filter((r) => !activeIds.has(r.id))];
+    merged.sort((a, b) => (b.createdAt?.getTime?.() ?? 0) - (a.createdAt?.getTime?.() ?? 0));
+    onUpdate(merged);
+  };
+  const handleError = (err: Error) => {
+    console.error("[dispatch] subscribeDriverRides error:", err);
+    onError?.(err);
+  };
+
+  const unsubActive = onSnapshot(
+    query(
+      collection(db, "bookings"),
+      where("driverId", "==", driverId),
+      where("status", "in", ["assigned", "in_progress"]),
+      orderBy("createdAt", "desc")
+    ),
     (snap) => {
-      const rides = snap.docs.map((d) => ({
+      active = snap.docs.map((d) => ({
         id: d.id,
         ...d.data(),
         createdAt: coerceDate(d.data().createdAt),
         reservationDate: coerceDate(d.data().reservationDate),
         driverAcceptedAt: coerceDate(d.data().driverAcceptedAt),
       }));
-      onUpdate(rides);
+      emit();
     },
-    (err) => {
-      console.error("[dispatch] subscribeDriverRides error:", err);
-      onError?.(err);
-    }
+    handleError
   );
+
+  const unsubHistory = onSnapshot(
+    query(collection(db, "driverRides", driverId, "rides"), orderBy("createdAt", "desc")),
+    (snap) => {
+      history = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          // Libellés de zone à la place des adresses (aucune coordonnée du passager).
+          depart: data.departZone ?? "",
+          arrivee: data.arriveeZone ?? "",
+          createdAt: coerceDate(data.createdAt),
+          reservationDate: coerceDate(data.reservationDate),
+        };
+      });
+      emit();
+    },
+    handleError
+  );
+
+  return () => {
+    unsubActive();
+    unsubHistory();
+  };
 }
 
 export class RideUnavailableError extends Error {
@@ -126,129 +152,38 @@ export class RideUnavailableError extends Error {
   }
 }
 
-// Acceptation FCFS : transaction Firestore qui garantit qu'une seule
-// acceptation aboutit, même si deux chauffeurs cliquent au même instant.
-export async function acceptRide(
-  rideId: string,
-  driverId: string
-): Promise<void> {
-  await runTransaction(db, async (tx) => {
-    const rideRef = doc(db, "bookings", rideId);
-    const driverRef = doc(db, "drivers", driverId);
-
-    const rideSnap = await tx.get(rideRef);
-    if (!rideSnap.exists()) {
-      throw new RideUnavailableError("Cette course n'existe plus.");
-    }
-    const ride = rideSnap.data();
-    if (ride.status !== "awaiting_driver" || ride.driverId) {
-      throw new RideUnavailableError("Cette course a déjà été acceptée.");
-    }
-
-    const driverSnap = await tx.get(driverRef);
-    if (!driverSnap.exists()) {
-      throw new RideUnavailableError("Profil chauffeur introuvable.");
-    }
-    const driver = driverSnap.data();
-    if (driver.status !== "active") {
-      throw new RideUnavailableError(
-        "Votre compte n'est pas encore validé. Patientez la validation administrateur."
-      );
-    }
-    if (driver.availability !== "online") {
-      throw new RideUnavailableError(
-        "Vous devez être en service pour accepter une course."
-      );
-    }
-
-    const prix = Number(ride.prix ?? 0);
-    const platformCents = Math.round(prix * COMMISSION_RATE * 100);
-    const driverCents = Math.round(prix * 100) - platformCents;
-
-    tx.update(rideRef, {
-      driverId,
-      driverAcceptedAt: serverTimestamp(),
-      status: "assigned",
-      commissionRate: COMMISSION_RATE,
-      platformShareCents: platformCents,
-      driverShareCents: driverCents,
-      updatedAt: serverTimestamp(),
-    });
+// Appel d'une action de course côté serveur. Les erreurs métier (course déjà prise,
+// mauvais état…) remontent en RideUnavailableError avec le message du serveur.
+async function rideAction(action: "accept" | "start" | "complete" | "release", rideId: string, reason?: string) {
+  const user = getAuth().currentUser;
+  if (!user) throw new RideUnavailableError("Session expirée : reconnectez-vous.");
+  const res = await fetch(`/api/rides/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` },
+    body: JSON.stringify({ bookingId: rideId, ...(reason !== undefined ? { reason } : {}) }),
   });
+  if (res.ok) return;
+  const data = await res.json().catch(() => ({}));
+  if (res.status >= 400 && res.status < 500) {
+    throw new RideUnavailableError(data.error || "Action impossible sur cette course.");
+  }
+  throw new Error(data.error || "Erreur serveur");
 }
 
-// Le chauffeur démarre la course (en route vers le client / course en cours).
-export async function startRide(rideId: string, driverId: string): Promise<void> {
-  await runTransaction(db, async (tx) => {
-    const rideRef = doc(db, "bookings", rideId);
-    const snap = await tx.get(rideRef);
-    if (!snap.exists()) throw new RideUnavailableError("Course introuvable.");
-    const ride = snap.data();
-    if (ride.driverId !== driverId) {
-      throw new RideUnavailableError("Cette course ne vous est pas attribuée.");
-    }
-    if (ride.status !== "assigned") {
-      throw new RideUnavailableError("La course n'est pas dans le bon état.");
-    }
-    tx.update(rideRef, {
-      status: "in_progress",
-      driverStartedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  });
+// Le paramètre driverId est conservé pour les appelants : le serveur identifie le
+// chauffeur par son jeton, jamais par une valeur envoyée par le navigateur.
+export async function acceptRide(rideId: string, _driverId?: string): Promise<void> {
+  await rideAction("accept", rideId);
 }
 
-// Le chauffeur marque la course terminée. L'admin gardera la main sur la
-// capture Stripe finale (déjà en place dans le back-office).
-export async function completeRide(
-  rideId: string,
-  driverId: string
-): Promise<void> {
-  await runTransaction(db, async (tx) => {
-    const rideRef = doc(db, "bookings", rideId);
-    const snap = await tx.get(rideRef);
-    if (!snap.exists()) throw new RideUnavailableError("Course introuvable.");
-    const ride = snap.data();
-    if (ride.driverId !== driverId) {
-      throw new RideUnavailableError("Cette course ne vous est pas attribuée.");
-    }
-    if (ride.status !== "in_progress" && ride.status !== "assigned") {
-      throw new RideUnavailableError("La course n'est pas dans le bon état.");
-    }
-    tx.update(rideRef, {
-      status: "completed_by_driver",
-      driverCompletedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  });
+export async function startRide(rideId: string, _driverId?: string): Promise<void> {
+  await rideAction("start", rideId);
 }
 
-// Cas exceptionnel : un chauffeur libère une course qu'il avait acceptée.
-// On la replace dans le pool, et la prochaine acceptation gagne.
-export async function releaseRide(
-  rideId: string,
-  driverId: string,
-  reason: string
-): Promise<void> {
-  await runTransaction(db, async (tx) => {
-    const rideRef = doc(db, "bookings", rideId);
-    const snap = await tx.get(rideRef);
-    if (!snap.exists()) throw new RideUnavailableError("Course introuvable.");
-    const ride = snap.data();
-    if (ride.driverId !== driverId) {
-      throw new RideUnavailableError("Cette course ne vous est pas attribuée.");
-    }
-    if (ride.status !== "assigned") {
-      throw new RideUnavailableError(
-        "Une course déjà démarrée doit être annulée par l'admin."
-      );
-    }
-    tx.update(rideRef, {
-      driverId: null,
-      driverAcceptedAt: null,
-      status: "awaiting_driver",
-      driverReleaseReason: reason,
-      updatedAt: serverTimestamp(),
-    });
-  });
+export async function completeRide(rideId: string, _driverId?: string): Promise<void> {
+  await rideAction("complete", rideId);
+}
+
+export async function releaseRide(rideId: string, _driverId: string, reason: string): Promise<void> {
+  await rideAction("release", rideId, reason);
 }

@@ -35,7 +35,8 @@ export default function ReservationsPage() {
 
   const handleStatusChange = async (bookingId, newStatus) => {
     try {
-      await updateBookingStatus(bookingId, newStatus);
+      // false : l'admin n'a pas confirmé le remboursement, rien n'a changé.
+      if (!(await updateBookingStatus(bookingId, newStatus))) return;
       setBookings(
         bookings.map((booking) =>
           booking.id === bookingId ? { ...booking, status: newStatus } : booking
