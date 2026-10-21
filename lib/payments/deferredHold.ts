@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe-server";
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
 import { refreshRidePoolSafe } from "@/lib/rides/pool";
+import { notifyRideStatus } from "@/lib/push/events";
 import {
   sendHoldActionRequiredEmail,
   sendHoldAdminAlertEmail,
@@ -309,6 +310,35 @@ async function markActionRequired(
     } catch (err) {
       console.error(`[deferred-hold] alerte admin non envoyée pour ${ref.id}:`, err);
     }
+  }
+  await notifyActionRequired(ref, b, now);
+}
+
+const PUSH_CLAIM_MS = 10 * 60 * 1000;
+
+// Notification au client, une seule fois. `holdActionPushSentAt` (comme holdActionEmailSentAt)
+// est posé après l'envoi ; un bail court (`holdActionPushClaimUntil`) écarte les appels
+// simultanés, et une relance rattrape l'envoi si le processus s'est arrêté avant.
+async function notifyActionRequired(
+  ref: FirebaseFirestore.DocumentReference,
+  b: FirebaseFirestore.DocumentData,
+  now: Date
+) {
+  try {
+    const claimed = await getAdminFirestore().runTransaction(async (tx) => {
+      const cur = (await tx.get(ref)).data();
+      if (!cur || cur.holdActionPushSentAt) return false;
+      if ((cur.holdActionPushClaimUntil?.toMillis?.() ?? 0) > Date.now()) return false;
+      tx.update(ref, { holdActionPushClaimUntil: Timestamp.fromMillis(Date.now() + PUSH_CLAIM_MS) });
+      return true;
+    });
+    if (!claimed) return;
+    const sent = await notifyRideStatus("payment_action_required", ref.id, b, Timestamp.fromDate(now));
+    await ref.update(
+      sent ? { holdActionPushSentAt: Timestamp.now(), holdActionPushClaimUntil: null } : { holdActionPushClaimUntil: null }
+    );
+  } catch (err) {
+    console.error(`[deferred-hold] notification non envoyée pour ${ref.id}:`, err);
   }
 }
 

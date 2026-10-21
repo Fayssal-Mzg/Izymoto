@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp, type DocumentData } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin-server";
-import { COMMISSION_RATE, sharesFor, syncDriverHistoryInTx, syncRidePoolInTx } from "@/lib/rides/pool";
+import { COMMISSION_RATE, phoneKey, sharesFor, syncDriverHistoryInTx, syncRidePoolInTx } from "@/lib/rides/pool";
+import { notifyRideAvailable, notifyRideStatus } from "@/lib/push/events";
 
 // Actions du chauffeur sur une course (lot 2.1) : exécutées par le serveur, en
 // transaction, le chauffeur étant identifié par son jeton. Mêmes règles métier que
@@ -20,12 +21,6 @@ const fail = (status: number, code: string, message: string): never => {
 };
 
 const BOOKING_ID_RE = /^[A-Za-z0-9_-]{1,200}$/;
-
-// Téléphone ramené à ses 9 derniers chiffres (+33 6…, 06…, 0033 6… comparables).
-const phoneKey = (v: unknown): string | null => {
-  const digits = typeof v === "string" ? v.replace(/\D/g, "") : "";
-  return digits.length >= 9 ? digits.slice(-9) : null;
-};
 
 // Journal d'audit des actions sensibles (D-012), écrit dans la même transaction.
 function audit(
@@ -49,7 +44,8 @@ export async function runRideAction(
   const rideRef = db.collection("bookings").doc(id);
   const driverRef = db.collection("drivers").doc(driverUid);
 
-  return db.runTransaction(async (tx) => {
+  let committed: { ride: DocumentData; at: Timestamp } | null = null;
+  const result = await db.runTransaction(async (tx) => {
     const [rideSnap, driverSnap] = await Promise.all([tx.get(rideRef), tx.get(driverRef)]);
     const ride = rideSnap.data();
     const driver = driverSnap.data();
@@ -128,8 +124,19 @@ export async function runRideAction(
       bookingId: id,
       ...(action === "release" ? { details: { reason: String(reason).trim().slice(0, 500) } } : {}),
     });
+    committed = { ride: finalRide, at: now };
     return { status: finalRide.status as string };
   });
+
+  // Après la validation de la transaction : les notifications n'altèrent jamais la réponse.
+  if (committed) {
+    const { ride, at } = committed as { ride: DocumentData; at: Timestamp };
+    if (action === "accept") await notifyRideStatus("ride_accepted", id, ride, at);
+    else if (action === "start") await notifyRideStatus("ride_started", id, ride, at);
+    else if (action === "complete") await notifyRideStatus("ride_completed", id, ride, at);
+    else await notifyRideAvailable(id, { excludeUids: [driverUid] });
+  }
+  return result;
 }
 
 // Paiement encore actif : annuler ou supprimer la course sans libérer l'empreinte ni

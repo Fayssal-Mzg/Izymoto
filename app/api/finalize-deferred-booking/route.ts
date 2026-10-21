@@ -12,6 +12,7 @@ import {
   isDeferredHold,
 } from "@/lib/payments/deferredHold";
 import { refreshRidePoolSafe, syncRidePoolInTx } from "@/lib/rides/pool";
+import { notifyRidesAvailable } from "@/lib/push/events";
 
 // lot 1.1 : finalise une course lointaine payée par carte, APRÈS confirmSetup côté
 // client (SetupIntent « succeeded » = carte enregistrée, 3-D Secure fait). Aucune
@@ -170,6 +171,7 @@ export async function POST(request: Request) {
     });
     if (!created) return replay();
     await refreshRidePoolSafe(bookingRef.id);
+    await notifyRidesAvailable(bookingRef.id);
     return NextResponse.json({ bookingId: bookingRef.id, reservationId });
   } catch (err) {
     console.error("[finalize-deferred-booking] erreur:", err);
