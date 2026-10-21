@@ -9,9 +9,13 @@ import { db } from "@/lib/firebaseConfig";
 import {
   updateProfile,
   updateEmail,
-  deleteUser,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
   EmailAuthProvider,
+  GoogleAuthProvider,
+  OAuthProvider,
+  getAuth,
+  signOut,
   User,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -94,6 +98,7 @@ export default function ProfilPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [password, setPassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
     if (!loading && !user) {
       router.push("/connexion");
@@ -178,29 +183,50 @@ export default function ProfilPage() {
     }
   };
 
+  // lot 2.2 : la suppression est faite par le serveur (profil, portefeuille, client
+  // Stripe, données chauffeur, pseudonymisation des courses). Il exige une connexion
+  // récente : on redemande le mot de passe, ou la connexion Google.
+  const usesPassword = !!user?.providerData.some((p) => p.providerId === "password");
+
   const handleDeleteAccount = async () => {
-    if (!password) {
+    if (!user) return;
+    if (usesPassword && !password) {
       setDeleteError("Veuillez entrer votre mot de passe pour confirmer");
       return;
     }
-
+    setDeleteError("");
+    setDeleting(true);
     try {
-      if (!user || !user.email) {
-        setDeleteError("Utilisateur non connecté ou email manquant");
+      if (usesPassword) {
+        await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? "", password));
+      } else if (user.providerData.some((p) => p.providerId === "apple.com")) {
+        await reauthenticateWithPopup(user, new OAuthProvider("apple.com"));
+      } else {
+        await reauthenticateWithPopup(user, new GoogleAuthProvider());
+      }
+      const token = await user.getIdToken(true);
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeleteError(data.error || "La suppression n'a pas pu aboutir. Réessayez ou contactez-nous.");
         return;
       }
-
-      const credential = EmailAuthProvider.credential(user.email, password);
-      await reauthenticateWithCredential(user, credential);
-      await deleteUser(user);
+      await signOut(getAuth()).catch(() => undefined);
       router.push("/");
     } catch (error: any) {
       console.error("Erreur lors de la suppression du compte:", error);
       setDeleteError(
-        error.code === "auth/wrong-password"
+        error?.code === "auth/wrong-password" || error?.code === "auth/invalid-credential"
           ? "Mot de passe incorrect"
+          : error?.code === "auth/popup-closed-by-user"
+          ? "Confirmation annulée."
           : "Erreur lors de la suppression du compte. Veuillez réessayer."
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -522,8 +548,11 @@ export default function ProfilPage() {
               Supprimer mon compte
             </h2>
             <p className="text-gray-600 mb-4">
-              Attention : La suppression de votre compte est définitive et
-              entraînera la perte de toutes vos données.
+              La suppression est définitive : votre profil, vos coordonnées, votre
+              portefeuille et vos cartes enregistrées sont effacés. L'historique de vos
+              courses est conservé pour la comptabilité, sans aucune donnée permettant de
+              vous identifier. Impossible tant qu'une course est en cours ou à venir, ou
+              qu'il reste un solde sur votre portefeuille.
             </p>
 
             {!showDeleteConfirm ? (
@@ -536,29 +565,33 @@ export default function ProfilPage() {
             ) : (
               <div className="border border-red-200 rounded-md p-4 bg-red-50">
                 <p className="text-red-600 font-medium mb-3">
-                  Veuillez confirmer la suppression de votre compte en
-                  saisissant votre mot de passe :
+                  {usesPassword
+                    ? "Confirmez la suppression de votre compte en saisissant votre mot de passe :"
+                    : "Confirmez la suppression de votre compte en vous reconnectant (Google ou Apple)."}
                 </p>
                 {deleteError && (
                   <div className="p-3 mb-3 bg-red-100 text-red-700 rounded-md">
                     {deleteError}
                   </div>
                 )}
-                <div className="mb-4">
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Votre mot de passe"
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+                {usesPassword && (
+                  <div className="mb-4">
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Votre mot de passe"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                )}
                 <div className="flex space-x-4">
                   <button
                     onClick={handleDeleteAccount}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                    disabled={deleting}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
-                    Confirmer la suppression
+                    {deleting ? "Suppression…" : "Confirmer la suppression"}
                   </button>
                   <button
                     onClick={() => {

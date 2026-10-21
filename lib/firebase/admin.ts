@@ -342,15 +342,24 @@ export async function getAllUsers(): Promise<User[]> {
   }
 }
 
-// Supprimer un utilisateur
+// Supprimer un utilisateur : suppression complète par le serveur (lot 2.2), mêmes
+// refus et même pseudonymisation que « Supprimer mon compte ».
 export async function deleteUser(userId: string): Promise<boolean> {
-  try {
-    await deleteDoc(doc(db, "users", userId));
-    return true;
-  } catch (error) {
-    console.error("Erreur lors de la suppression de l'utilisateur:", error);
-    throw error;
+  const user = getAuth().currentUser;
+  if (!user) throw new Error("Session expirée : reconnectez-vous.");
+  const res = await fetch("/api/admin/user/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${await user.getIdToken()}` },
+    body: JSON.stringify({ uid: userId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    if (data.code === "RECENT_LOGIN_REQUIRED") {
+      throw new Error("Action sensible : déconnectez-vous puis reconnectez-vous, et relancez la suppression dans les 5 minutes.");
+    }
+    throw new Error(data.error || `Erreur ${res.status}`);
   }
+  return true;
 }
 
 // Définir ou retirer les droits d'administrateur

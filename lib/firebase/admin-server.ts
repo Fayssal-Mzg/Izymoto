@@ -121,6 +121,37 @@ export async function requireAuth(request: Request): Promise<AdminContext> {
   }
 }
 
+// Comme requireAuth, mais exige une connexion RÉCENTE (jeton émis après une
+// authentification datant de moins de `maxAgeSeconds`). Sert aux actions
+// irréversibles (suppression de compte) : marche aussi pour Google / Apple, qui
+// n'ont pas de mot de passe à redemander.
+export async function requireRecentAuth(
+  request: Request,
+  maxAgeSeconds = 5 * 60
+): Promise<AdminContext> {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new AdminAuthError("Token manquant", 401);
+  }
+  const token = authHeader.substring("Bearer ".length).trim();
+  if (!token) throw new AdminAuthError("Token vide", 401);
+  let decoded;
+  try {
+    decoded = await getAdminAuth().verifyIdToken(token, true);
+  } catch (e) {
+    throw toTokenError(e);
+  }
+  const authTime = typeof decoded.auth_time === "number" ? decoded.auth_time : 0;
+  if (Date.now() / 1000 - authTime > maxAgeSeconds) {
+    throw new AdminAuthError("Reconnexion requise", 401);
+  }
+  return {
+    uid: decoded.uid,
+    email: decoded.email ?? null,
+    emailVerified: decoded.email_verified === true,
+  };
+}
+
 export async function requireAdmin(
   request: Request
 ): Promise<AdminContext> {

@@ -5,9 +5,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const constructEvent = vi.hoisted(() => vi.fn());
+const refundsCreate = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/stripe-server", () => ({
-  stripe: { webhooks: { constructEvent } },
+  stripe: { webhooks: { constructEvent }, refunds: { create: refundsCreate } },
 }));
 vi.mock("@/lib/emails/reviewRequestEmail", () => ({ sendReviewRequestEmail: vi.fn() }));
 
@@ -37,6 +38,7 @@ function send(event: unknown) {
 beforeEach(async () => {
   await resetEmulators();
   constructEvent.mockReset();
+  refundsCreate.mockReset().mockResolvedValue({ id: "re_test" });
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_dummy";
 });
 
@@ -146,5 +148,79 @@ describe("webhook amount_capturable_updated tardif : ne régresse pas l'état du
     expect(b.paymentStatus).toBe("authorized");
     expect(b.amountAuthorized).toBe(76);
     expect(b.status).toBe("awaiting_driver");
+  });
+});
+
+// Lot 2.2 : recharge payée après la suppression du compte (ou pour une société fermée) ->
+// remboursement idempotent, aucun crédit.
+describe("webhook checkout.session.completed (recharge) : compte supprimé -> remboursement", () => {
+  const rechargeEvent = (meta: Record<string, string>, sessionId = "cs_1") => ({
+    id: `evt_${sessionId}`,
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: sessionId,
+        payment_status: "paid",
+        payment_intent: `pi_${sessionId}`,
+        metadata: { intent: "wallet_recharge", ...meta },
+      },
+    },
+  });
+  const walletBalance = async (uid: string) => (await db().collection("wallets").doc(uid).get()).data()?.balanceCents;
+  const txCount = async () => (await db().collection("walletTransactions").get()).size;
+
+  it("témoin : profil existant -> crédit du portefeuille, aucun remboursement", async () => {
+    await db().collection("users").doc("u1").set({ email: "u1@test.dev" });
+    const res = await send(rechargeEvent({ userId: "u1", tierId: "individual-essai" }));
+    expect(res.status).toBe(200);
+    expect(await walletBalance("u1")).toBe(10500);
+    expect(refundsCreate).not.toHaveBeenCalled();
+  });
+
+  it("profil absent (compte supprimé) -> remboursement avec clé d'idempotence, aucun crédit", async () => {
+    const res = await send(rechargeEvent({ userId: "u2", tierId: "individual-essai" }, "cs_2"));
+    expect(res.status).toBe(200);
+    expect(refundsCreate).toHaveBeenCalledTimes(1);
+    expect(refundsCreate).toHaveBeenCalledWith({ payment_intent: "pi_cs_2" }, { idempotencyKey: "refund-deleted-cs_2" });
+    expect(await walletBalance("u2")).toBeUndefined();
+    expect(await txCount()).toBe(0);
+  });
+
+  it("suppression en cours (deletionPseudonym posé) -> remboursement, aucun crédit", async () => {
+    await db().collection("users").doc("u3").set({ deletionPseudonym: "supprime_" + "a".repeat(24) });
+    await send(rechargeEvent({ userId: "u3", tierId: "individual-essai" }, "cs_3"));
+    expect(refundsCreate).toHaveBeenCalledWith({ payment_intent: "pi_cs_3" }, { idempotencyKey: "refund-deleted-cs_3" });
+    expect(await walletBalance("u3")).toBeUndefined();
+    expect(await txCount()).toBe(0);
+  });
+
+  it("société fermée -> remboursement, solde société inchangé", async () => {
+    await db().collection("companies").doc("coC").set({ status: "closed", walletBalanceCents: 0, memberCount: 0 });
+    await send(rechargeEvent({ userId: "own", companyId: "coC", tierId: "business-tpe" }, "cs_4"));
+    expect(refundsCreate).toHaveBeenCalledWith({ payment_intent: "pi_cs_4" }, { idempotencyKey: "refund-deleted-cs_4" });
+    expect((await db().collection("companies").doc("coC").get()).data()?.walletBalanceCents).toBe(0);
+    expect(await txCount()).toBe(0);
+  });
+
+  it("société absente -> remboursement", async () => {
+    await send(rechargeEvent({ userId: "own", companyId: "coNone", tierId: "business-tpe" }, "cs_5"));
+    expect(refundsCreate).toHaveBeenCalledTimes(1);
+    expect((await db().collection("companies").doc("coNone").get()).exists).toBe(false);
+  });
+
+  it("société ouverte -> crédit société, aucun remboursement", async () => {
+    await db().collection("companies").doc("coOk").set({ status: "active", walletBalanceCents: 0, cumulativeRechargedCents: 0, memberCount: 1, ownerUid: "own" });
+    const res = await send(rechargeEvent({ userId: "own", companyId: "coOk", tierId: "business-tpe" }, "cs_6"));
+    expect(res.status).toBe(200);
+    expect((await db().collection("companies").doc("coOk").get()).data()?.walletBalanceCents).toBe(105000);
+    expect(refundsCreate).not.toHaveBeenCalled();
+  });
+
+  it("événement rejoué sur compte supprimé -> même clé d'idempotence", async () => {
+    const ev = rechargeEvent({ userId: "u7", tierId: "individual-essai" }, "cs_7");
+    await send(ev);
+    await send(ev);
+    const keys = refundsCreate.mock.calls.map((c) => c[1].idempotencyKey);
+    expect(new Set(keys)).toEqual(new Set(["refund-deleted-cs_7"]));
   });
 });

@@ -77,7 +77,8 @@ export default function UsersPage() {
       setUsers(users.filter((user) => user.uid !== userId));
     } catch (error) {
       console.error("Erreur lors de la suppression de l'utilisateur:", error);
-      alert("Une erreur est survenue lors de la suppression de l'utilisateur.");
+      // Message du serveur (course en cours, solde positif, société avec membres…).
+      alert(error?.message || "Une erreur est survenue lors de la suppression de l'utilisateur.");
     } finally {
       setIsProcessing(false);
     }
