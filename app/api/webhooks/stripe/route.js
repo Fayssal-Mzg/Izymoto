@@ -180,6 +180,32 @@ export async function POST(request) {
         const paymentIntentId =
           typeof obj.payment_intent === "string" ? obj.payment_intent : undefined;
 
+        // lot 2.2 : recharge payée après la suppression du compte (session ouverte
+        // avant) ou pour une société fermée : on rembourse au lieu de créditer.
+        {
+          const db = getAdminFirestore();
+          const target = companyId
+            ? await db.collection("companies").doc(companyId).get()
+            : await db.collection("users").doc(userId).get();
+          // Profil absent, suppression en cours (pseudonyme posé et pas d'échec signalé)
+          // ou société fermée.
+          const gone =
+            !target.exists ||
+            (companyId
+              ? target.data()?.status === "closed"
+              : Boolean(target.data()?.deletionPseudonym) && !target.data()?.deletionFailedAt);
+          if (gone) {
+            console.error(`[stripe-webhook] recharge ${obj.id} pour un compte supprimé ou une société fermée : remboursement.`);
+            if (paymentIntentId) {
+              await stripe.refunds.create(
+                { payment_intent: paymentIntentId },
+                { idempotencyKey: `refund-deleted-${obj.id}` }
+              );
+            }
+            break;
+          }
+        }
+
         // Recharge entreprise → solde société. Sinon → wallet perso.
         const result = companyId
           ? await creditCompanyWallet({

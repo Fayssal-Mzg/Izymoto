@@ -137,7 +137,16 @@ Validées telles quelles :
 ## D-015 — Applis mobiles : technologie, ordre, comptes, position
 **Date** : 2026-10-13 · **Statut** : validée (porte 1, plan `docs/plans/2026-10-13-applis-mobiles.md`)
 
-Expo / React Native (TypeScript) ; appli **Chauffeur d'abord**, Client ensuite ; comptes Apple Developer et Google Play **au nom de la société IZYMOTO** (D-U-N-S) ; appli Chauffeur v1 **avec position en arrière-plan** (en service / en course seulement, dernière position sans historique, visible de l'admin et du client de la course acceptée). Prérequis serveur (lot M2) : pool sans données perso (D-014), suppression de compte complète (solde positif → refus et remboursement via contact@izymoto.com ; courses passées pseudonymisées et conservées), notifications push. Laisser la décision à l'admin à J-1 évite d'annuler une course qu'un simple appel au client peut sauver. Accepté par Fayssal : une course peut être réalisée sans empreinte si personne n'agit (risque d'impayé tracé par l'alerte admin).
+Expo / React Native (TypeScript) ; appli **Chauffeur d'abord**, Client ensuite ; comptes Apple Developer et Google Play **au nom de la société IZYMOTO** (D-U-N-S) ; appli Chauffeur v1 **avec position en arrière-plan** (en service / en course seulement, dernière position sans historique, visible de l'admin et du client de la course acceptée). Prérequis serveur (lot M2) : pool sans données perso (D-014), suppression de compte complète (solde positif → refus et remboursement via contact@izymoto.com ; courses passées pseudonymisées et conservées), notifications push.
+
+## D-016 — Suppression de compte : ce qui est effacé, ce qui est conservé (lot 2.2)
+**Date** : 2026-10-14 · **Statut** : validée (porte 1 M2 + arbitrage de la relecture sécurité)
+
+- Effacés : profil, portefeuille (solde nul exigé), client Stripe et cartes enregistrées, fiche chauffeur (réduite au statut « supprimé »), IBAN et pièces, historique chauffeur, invitations entreprise le concernant ; le compte de connexion en dernier.
+- Pseudonymisés (pseudonyme aléatoire) et conservés pour la comptabilité : courses (liste blanche : montants, dates, statuts, références de paiement, zones), devis invités envoyés avec son e-mail, mouvements de portefeuille, verrous de paiement, journal d'audit.
+- **Factures émises : conservées telles quelles (obligation comptable, 10 ans)**, y compris nom et e-mail — **à faire confirmer par le comptable** et à mentionner dans la politique de confidentialité.
+- Données détenues par des tiers (Stripe : paiements et données de facturation ; Resend : e-mails envoyés) : non effacées par Izymoto, conservées par ces prestataires selon leurs propres obligations.
+- Refus : course en cours ou à venir, course chauffeur non encore encaissée, solde positif, société avec collaborateurs ou solde ; un compte administrateur ne se supprime pas lui-même et un admin ne supprime pas un autre admin. Laisser la décision à l'admin à J-1 évite d'annuler une course qu'un simple appel au client peut sauver. Accepté par Fayssal : une course peut être réalisée sans empreinte si personne n'agit (risque d'impayé tracé par l'alerte admin).
 
 ---
 

@@ -167,6 +167,10 @@ export async function acceptInvitation(params: {
       throw new WalletError("WALLET_NOT_FOUND", "Société introuvable");
     }
     const company = companySnap.data() as CompanyDoc;
+    // lot 2.2 : société fermée (propriétaire supprimé) : plus d'adhésion possible.
+    if ((company as CompanyDoc & { status?: string }).status === "closed") {
+      throw new WalletError("FORBIDDEN", "Cette société n'existe plus");
+    }
 
     const now = Timestamp.now();
     const memberRef = companyRef.collection(MEMBERS).doc(uid);
