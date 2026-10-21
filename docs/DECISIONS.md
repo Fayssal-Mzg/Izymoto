@@ -122,7 +122,7 @@ Validées telles quelles :
 - **La carte reste enregistrée après la course** (pas de détachement) ; le texte d'accord le dit (« pour cette course et mes prochaines réservations ») et indique que la suppression se demande à contact@izymoto.com. La réutilisation d'une carte enregistrée à l'écran n'est pas encore proposée.
 - Seul le serveur crée les réservations `deferred_<seti>` (règle Firestore).
 
-**Pourquoi** : une empreinte n'est valable que 7 jours ; l'autorisation prolongée (30 jours) est réservée à la tarification IC+.
+**Pourquoi** : une empreinte n'est valable que 7 jours ; l'autorisation prolongée (30 jours) est réservée à la tarification IC+. Laisser la décision à l'admin à J-1 évite d'annuler une course qu'un simple appel au client peut sauver. Accepté par Fayssal : une course peut être réalisée sans empreinte si personne n'agit (risque d'impayé tracé par l'alerte admin).
 
 ## D-014 — Pool sans données personnelles et coordonnées du passager pendant la course seulement (lot 2.1)
 **Date** : 2026-10-13 · **Statut** : validée (porte 1)
@@ -146,7 +146,16 @@ Expo / React Native (TypeScript) ; appli **Chauffeur d'abord**, Client ensuite ;
 - Pseudonymisés (pseudonyme aléatoire) et conservés pour la comptabilité : courses (liste blanche : montants, dates, statuts, références de paiement, zones), devis invités envoyés avec son e-mail, mouvements de portefeuille, verrous de paiement, journal d'audit.
 - **Factures émises : conservées telles quelles (obligation comptable, 10 ans)**, y compris nom et e-mail — **à faire confirmer par le comptable** et à mentionner dans la politique de confidentialité.
 - Données détenues par des tiers (Stripe : paiements et données de facturation ; Resend : e-mails envoyés) : non effacées par Izymoto, conservées par ces prestataires selon leurs propres obligations.
-- Refus : course en cours ou à venir, course chauffeur non encore encaissée, solde positif, société avec collaborateurs ou solde ; un compte administrateur ne se supprime pas lui-même et un admin ne supprime pas un autre admin. Laisser la décision à l'admin à J-1 évite d'annuler une course qu'un simple appel au client peut sauver. Accepté par Fayssal : une course peut être réalisée sans empreinte si personne n'agit (risque d'impayé tracé par l'alerte admin).
+- Refus : course en cours ou à venir, course chauffeur non encore encaissée, solde positif, société avec collaborateurs ou solde ; un compte administrateur ne se supprime pas lui-même et un admin ne supprime pas un autre admin.
+
+## D-017 — Notifications push, socle (lot 2.3, M2c)
+**Date** : 2026-10-21 · **Statut** : validée (porte 1, cadrage M2c de `docs/plans/2026-10-13-lot-M2-prerequis-serveur.md`)
+
+- Envoi vers Expo par appel HTTP direct (`fetch`), sans nouvelle dépendance.
+- « Chauffeur en route » couvert par la notification d'acceptation ; le statut `on_the_way` attend M3b (position en arrière-plan).
+- « Nouvelle course » envoyée à tous les chauffeurs validés en service, sans filtrage par zone.
+- `EXPO_ACCESS_TOKEN` obligatoire en production, créé par Fayssal dans le compte Expo de la société (M0) et ajouté aux variables Vercel avant la mise en production ; les tests n'en ont pas besoin.
+- Jetons d'appareil à mentionner dans la politique de confidentialité (prérequis stores n° 4).
 
 ---
 

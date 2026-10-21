@@ -52,7 +52,7 @@ export function zoneLabel(address: unknown): string {
 }
 
 // Date de la course en Timestamp (les courses portefeuille l'enregistrent en texte ISO).
-function asTimestamp(value: unknown): Timestamp | null {
+export function asTimestamp(value: unknown): Timestamp | null {
   if (value instanceof Timestamp) return value;
   if (typeof value === "string" || value instanceof Date) {
     const d = new Date(value as string);
@@ -60,6 +60,12 @@ function asTimestamp(value: unknown): Timestamp | null {
   }
   return null;
 }
+
+// Téléphone ramené à ses 9 derniers chiffres (+33 6…, 06…, 0033 6… comparables).
+export const phoneKey = (v: unknown): string | null => {
+  const digits = typeof v === "string" ? v.replace(/\D/g, "") : "";
+  return digits.length >= 9 ? digits.slice(-9) : null;
+};
 
 // Une course est « à prendre » si elle attend un chauffeur, n'en a pas, et que son
 // paiement n'est ni échoué ni libéré.

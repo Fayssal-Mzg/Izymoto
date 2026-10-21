@@ -33,7 +33,7 @@ Le web reste en place : site public, réservation web, back-office admin et espa
 1. **Comptes développeur** au nom de la société : Apple Developer Program (99 $/an ; compte d'organisation → numéro **D-U-N-S** de la société, gratuit, quelques jours à obtenir) et Google Play Console (25 $ une fois ; organisation → D-U-N-S aussi). Compte Expo (offre gratuite suffisante au départ).
 2. **Suppression du compte complète depuis l'appli** (exigence Apple) : aujourd'hui seul le compte Auth est supprimé → route serveur qui supprime / anonymise le profil et conserve ce qui est comptable.
 3. **« Se connecter avec Apple »** obligatoire sur iPhone dès qu'on propose « Continuer avec Google ».
-4. **Politique de confidentialité** corrigée (passages à compléter et affirmations inexactes relevés dans le guide) + déclaration des données dans les fiches des stores.
+4. **Politique de confidentialité** corrigée (passages à compléter et affirmations inexactes relevés dans le guide) + déclaration des données dans les fiches des stores. À rédiger aussi : jetons d'appareil pour les notifications (finalité : suivi des courses ; effacés à la déconnexion ou à la suppression du compte — D-017).
 5. **Pool sans données personnelles** (`ridePool`, D-010, premier lot de la phase 2) : l'appli Chauffeur lira le pool en temps réel ; il ne doit plus exposer le passager avant acceptation.
 
 ## Ajouts côté serveur (réutilisés par le web)
@@ -71,3 +71,7 @@ Ordre recommandé : **Chauffeur avant Client**. Les chauffeurs ont besoin de not
 2. Ordre : **Chauffeur d'abord**.
 3. Comptes stores : **société IZYMOTO** (D-U-N-S).
 4. Chauffeur v1 : **avec** position en arrière-plan (lot M3b).
+
+## Points ouverts
+
+- **BLOQUANT pour M1 — « Se connecter avec Apple » non implémenté** (relevé le 2026-10-21, prérequis #3). Le site propose « Continuer avec Google » (`app/connexion/page.tsx`, `app/inscription/page.tsx`, `contexts/AuthContext.tsx`) mais aucune connexion Apple. Seule la reconnexion Apple avant suppression de compte est prévue (`app/profil/page.tsx`, lot 2.2). Apple refuse une appli iPhone qui propose Google sans Apple. À intégrer au cadrage de M1 : fournisseur Apple dans Firebase Auth (identifiant de service, clé et domaine configurés dans le compte Apple Developer de la société, lot M0), bouton sur le web et dans les applis, cas de l'adresse e-mail masquée par Apple (« Masquer mon adresse »).

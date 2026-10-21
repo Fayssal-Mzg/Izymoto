@@ -4,6 +4,7 @@ import { getStorage } from "firebase-admin/storage";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin-server";
 import { stripe } from "@/lib/stripe-server";
 import { zoneLabel } from "@/lib/rides/pool";
+import { deletePushDataForUid } from "@/lib/push/tokens";
 
 // Suppression complète d'un compte (lot 2.2, D-015). Décisions de Fayssal :
 // - refus tant qu'un solde portefeuille est positif (remboursement via contact@) ;
@@ -158,6 +159,8 @@ export async function deleteAccount(
   await getAdminAuth().revokeRefreshTokens(uid).catch((err) => {
     if ((err as { code?: string })?.code !== "auth/user-not-found") throw err;
   });
+  // Appareils de notification effacés d'abord : plus aucune notification pendant ni après.
+  await deletePushDataForUid(uid);
   const previousDriver = driverSnap.data();
   if (driverSnap.exists && previousDriver?.status !== "deleted") {
     await driverRef.update({ availability: "offline", status: "deleted" });
@@ -235,6 +238,10 @@ async function eraseAccountData(p: {
     ));
   await forEachDoc(db.collection("paymentClaims").where("userId", "==", uid), (batch, d) => batch.update(d.ref, { userId: anon }));
   await forEachDoc(db.collection("auditLogs").where("actorUid", "==", uid), (batch, d) => batch.update(d.ref, { actorUid: anon }));
+  // Changements de propriétaire d'un jeton de notification (lot 2.3) : même pseudonyme.
+  for (const field of ["previousOwner", "newOwner"]) {
+    await forEachDoc(db.collection("auditLogs").where(field, "==", uid), (batch, d) => batch.update(d.ref, { [field]: anon }));
+  }
 
   // 5. Invitations : toutes celles adressées à son e-mail ou acceptées par lui sont
   //    supprimées ; celles qu'il a envoyées gardent la trace sans son identité.
@@ -336,6 +343,8 @@ async function eraseAccountData(p: {
     details: { bookings, transactions },
     at: now,
   });
+  // Un appareil enregistré pendant la suppression ne doit pas survivre au compte.
+  await deletePushDataForUid(uid);
   await getAdminAuth().deleteUser(uid).catch((err) => {
     if ((err as { code?: string })?.code !== "auth/user-not-found") throw err;
   });

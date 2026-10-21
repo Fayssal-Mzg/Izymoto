@@ -23,7 +23,8 @@
     }
   ],
   "crons": [
-    { "path": "/api/cron/deferred-holds", "schedule": "0 5 * * *" }
+    { "path": "/api/cron/deferred-holds", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/push-receipts", "schedule": "0 6 * * *" }
   ],
   "installCommand": "npm install --legacy-peer-deps",
   "buildCommand": "next build",
